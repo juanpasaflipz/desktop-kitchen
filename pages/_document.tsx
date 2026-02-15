@@ -7,29 +7,40 @@ class MyDocument extends Document {
         <Head>
           <link rel="icon" href="/favicon.ico" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link
-            href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin="anonymous"
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
             rel="stylesheet"
           />
+          <meta name="theme-color" content="#DC2626" />
           <meta
             name="description"
-            content="Juanbertos is coming to Mexico City. Massive burritos, bold flavors, zero compromise. Sign up to be the first to know."
+            content="JUANBERTO'S — California burritos are coming to Roma Sur, CDMX. Carne asada. Fries inside. No shortcuts. Get on the list."
           />
-          <meta property="og:site_name" content="juanbertos.com" />
+          <meta property="og:site_name" content="JUANBERTO'S" />
           <meta
             property="og:description"
-            content="Juanbertos is coming to Mexico City. Massive burritos, bold flavors, zero compromise."
+            content="California burritos are coming to Roma Sur, CDMX. Carne asada. Fries inside. No shortcuts."
           />
-          <meta property="og:title" content="Juanbertos | Coming Soon to Mexico City" />
+          <meta
+            property="og:title"
+            content="JUANBERTO'S — California Burritos — Roma Sur, CDMX"
+          />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content="Juanbertos | Coming Soon to Mexico City" />
+          <meta
+            name="twitter:title"
+            content="JUANBERTO'S — California Burritos — Roma Sur, CDMX"
+          />
           <meta
             name="twitter:description"
-            content="We're bringing the heat to CDMX. Massive burritos, bold flavors, zero compromise."
+            content="Roma Sur isn't ready. California burritos. Opening soon."
           />
         </Head>
-        <body className="bg-brand-dark antialiased">
+        <body className="bg-white antialiased">
           <Main />
           <NextScript />
         </body>
