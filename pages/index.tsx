@@ -376,7 +376,7 @@ const Home: NextPage = () => {
             </FadeIn>
             <FadeIn delay={0.1}>
               <a
-                href="https://instagram.com/juanbertos"
+                href="https://www.instagram.com/juanbertos.california.burritos/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-8 inline-flex items-center gap-3 text-xl sm:text-2xl text-red-500 font-bold hover:text-red-400 transition-colors duration-200 group"
