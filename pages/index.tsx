@@ -54,8 +54,8 @@ const Home: NextPage = () => {
     }
     setError("");
     setSubmitted(true);
-    // TODO: POST email to your API endpoint (e.g., /api/subscribe)
-    console.log("Email captured:", email);
+    // Open mailto with user's email in the body
+    window.location.href = `mailto:hello@juanbertos.com?subject=Notify%20Me&body=Hi!%20Please%20add%20me%20to%20the%20early%20access%20list.%20My%20email%3A%20${encodeURIComponent(email)}`;
     setEmail("");
   };
 
@@ -402,6 +402,12 @@ const Home: NextPage = () => {
           <p className="text-xl sm:text-2xl font-black tracking-tighter text-white">
             JUANBERTO&apos;S
           </p>
+          <a
+            href="mailto:hello@juanbertos.com"
+            className="mt-4 inline-block text-sm text-white/40 hover:text-red-500 transition-colors duration-200"
+          >
+            Contact us
+          </a>
           <p className="mt-4 text-xs text-white/15">
             &copy; {new Date().getFullYear()} Juanberto&apos;s. All rights
             reserved.
