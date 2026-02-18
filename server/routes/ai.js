@@ -7,7 +7,8 @@ import { getAIStatus } from '../ai/index.js';
 import { getTopItemPairs } from '../ai/data-pipeline.js';
 import { generatePricingSuggestions } from '../ai/suggestions/dynamic-pricing.js';
 import { generateInventoryForecast } from '../ai/suggestions/inventory-forecast.js';
-import { getClaudeStats } from '../ai/claude-client.js';
+import { getGrokStats, analyzeUpsellPatterns, analyzeInventoryTrends, enhanceForecast } from '../ai/claude-client.js';
+import { getConfigBool } from '../ai/config.js';
 
 const router = Router();
 
@@ -156,7 +157,7 @@ router.get('/insights', (req, res) => {
       },
       topItemPairs: topPairs,
       recentSnapshots,
-      claudeStats: getClaudeStats(),
+      grokStats: getGrokStats(),
       aiStatus: getAIStatus(),
     });
   } catch (error) {
@@ -288,13 +289,92 @@ router.post('/pricing-suggestions/:id/apply', (req, res) => {
 // ==================== Inventory Forecast Endpoints ====================
 
 // GET /api/ai/inventory-forecast
-router.get('/inventory-forecast', (req, res) => {
+router.get('/inventory-forecast', async (req, res) => {
   try {
     const forecasts = generateInventoryForecast();
+
+    // Optionally enhance with Claude if enabled
+    if (getConfigBool('grok_api_enabled') && process.env.XAI_API_KEY && req.query.enhance === '1') {
+      const criticalItems = forecasts.filter(f => f.risk_level === 'critical' || f.risk_level === 'high');
+      if (criticalItems.length > 0) {
+        const enhanced = await enhanceForecast(criticalItems);
+        if (enhanced) {
+          return res.json({ forecasts, claudeEnhanced: enhanced });
+        }
+      }
+    }
+
     res.json(forecasts);
   } catch (error) {
     console.error('Error getting inventory forecast:', error);
     res.status(500).json({ error: 'Failed to get forecast' });
+  }
+});
+
+// ==================== Claude Analysis Endpoint ====================
+
+// POST /api/ai/analyze - trigger on-demand Grok analysis
+router.post('/analyze', async (req, res) => {
+  try {
+    if (!getConfigBool('grok_api_enabled')) {
+      return res.status(400).json({ error: 'Grok API is not enabled. Turn it on in AI Config.' });
+    }
+
+    if (!process.env.XAI_API_KEY) {
+      return res.status(400).json({ error: 'XAI_API_KEY is not set in environment.' });
+    }
+
+    const { type = 'all' } = req.body;
+    const results = {};
+
+    // Upsell pattern analysis
+    if (type === 'all' || type === 'upsell') {
+      const topPairs = getTopItemPairs(15);
+      if (topPairs.length > 0) {
+        const upsellResult = await analyzeUpsellPatterns(topPairs);
+        results.upsell = upsellResult || { message: 'Not enough pair data for analysis' };
+      } else {
+        results.upsell = { message: 'No item pair data available yet' };
+      }
+    }
+
+    // Inventory trend analysis
+    if (type === 'all' || type === 'inventory') {
+      const velocityData = all(`
+        SELECT iv.inventory_item_id, ii.name, iv.date, iv.quantity_used
+        FROM ai_inventory_velocity iv
+        JOIN inventory_items ii ON iv.inventory_item_id = ii.id
+        WHERE iv.date >= DATE('now', '-7 days', 'localtime')
+        ORDER BY iv.date DESC
+      `);
+
+      if (velocityData.length > 0) {
+        const inventoryResult = await analyzeInventoryTrends(velocityData);
+        results.inventory = inventoryResult || { message: 'Could not analyze inventory trends' };
+      } else {
+        results.inventory = { message: 'No velocity data available yet' };
+      }
+    }
+
+    // Forecast enhancement
+    if (type === 'all' || type === 'forecast') {
+      const forecastData = generateInventoryForecast();
+      const criticalItems = forecastData.filter(f => f.risk_level === 'critical' || f.risk_level === 'high');
+      if (criticalItems.length > 0) {
+        const forecastResult = await enhanceForecast(criticalItems);
+        results.forecast = forecastResult || { message: 'Could not enhance forecast' };
+      } else {
+        results.forecast = { message: 'No critical/high risk items to analyze' };
+      }
+    }
+
+    results.timestamp = new Date().toISOString();
+    results.grokStats = getGrokStats();
+
+    res.json(results);
+  } catch (error) {
+    console.error('Error running Grok analysis:', error);
+    res.status(500).json({ error: 'Failed to run Claude analysis' });
   }
 });
 

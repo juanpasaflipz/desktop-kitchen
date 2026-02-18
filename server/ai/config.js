@@ -12,9 +12,9 @@ const DEFAULT_CONFIG = {
   inventory_push_enabled: '1',
   combo_upgrade_enabled: '1',
   dynamic_pricing_enabled: '0',
-  claude_api_enabled: '0',
-  claude_max_calls_per_hour: '10',
-  claude_model: 'claude-sonnet-4-20250514',
+  grok_api_enabled: '0',
+  grok_max_calls_per_hour: '10',
+  grok_model: 'grok-3-mini',
   suggestion_cache_ttl_minutes: '5',
   inventory_push_threshold_multiplier: '1.5',
 };

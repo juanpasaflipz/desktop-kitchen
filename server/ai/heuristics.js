@@ -1,7 +1,9 @@
 import { generateInventoryPushSuggestions } from './suggestions/inventory-push.js';
 import { generateCartUpsellSuggestions } from './suggestions/upsell.js';
-import { refreshSuggestions } from './cache.js';
+import { refreshSuggestions, writeSuggestion } from './cache.js';
 import { getConfigBool, getConfigNumber } from './config.js';
+import { analyzeUpsellPatterns } from './claude-client.js';
+import { getTopItemPairs } from './data-pipeline.js';
 
 /**
  * Run all heuristic rules and update the suggestion cache.
@@ -53,6 +55,36 @@ export function refreshAllHeuristics() {
       refreshSuggestions('inventory-push', inventorySuggestions, ttl);
     } catch (error) {
       console.error('[AI] Error refreshing inventory push:', error.message);
+    }
+  }
+
+  // Grok-enhanced upsell suggestions (async, fire-and-forget)
+  if (getConfigBool('grok_api_enabled') && process.env.XAI_API_KEY) {
+    const topPairs = getTopItemPairs(10);
+    if (topPairs.length > 0) {
+      analyzeUpsellPatterns(topPairs)
+        .then(claudeResults => {
+          if (claudeResults && Array.isArray(claudeResults)) {
+            for (const result of claudeResults) {
+              writeSuggestion({
+                type: 'claude-upsell',
+                context: 'claude-enhanced',
+                data: {
+                  item_name: result.item_name,
+                  upsell_message: result.upsell_message,
+                  confidence: result.confidence,
+                  source: 'claude',
+                },
+                priority: 95,
+                ttlMinutes: ttl,
+              });
+            }
+            console.log(`[AI] Grok enhanced ${claudeResults.length} upsell suggestions`);
+          }
+        })
+        .catch(err => {
+          console.error('[AI] Grok upsell analysis failed:', err.message);
+        });
     }
   }
 }

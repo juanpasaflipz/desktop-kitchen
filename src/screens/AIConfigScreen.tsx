@@ -23,6 +23,7 @@ import {
   applyPricingSuggestion,
   exportAIConfig,
   importAIConfig,
+  runGrokAnalysis,
 } from '../api';
 import {
   AIInsights,
@@ -47,6 +48,8 @@ export default function AIConfigScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [grokInsights, setGrokInsights] = useState<any>(null);
+  const [analyzingGrok, setAnalyzingGrok] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -119,6 +122,19 @@ export default function AIConfigScreen() {
       );
     } catch (err) {
       setError('Failed to update role');
+    }
+  };
+
+  const handleRunAnalysis = async () => {
+    try {
+      setAnalyzingGrok(true);
+      setError(null);
+      const result = await runGrokAnalysis('all');
+      setGrokInsights(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to run Claude analysis');
+    } finally {
+      setAnalyzingGrok(false);
     }
   };
 
@@ -245,12 +261,12 @@ export default function AIConfigScreen() {
                     <p className="text-neutral-500 text-xs mt-1">Low ingredient items</p>
                   </div>
                   <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
-                    <p className="text-neutral-400 text-sm">Claude API</p>
+                    <p className="text-neutral-400 text-sm">Grok API</p>
                     <p className="text-3xl font-bold text-white mt-2">
-                      {insights.claudeStats.enabled ? 'Active' : 'Off'}
+                      {insights.grokStats.enabled ? 'Active' : 'Off'}
                     </p>
                     <p className="text-neutral-500 text-xs mt-1">
-                      {insights.claudeStats.callsThisHour}/{insights.claudeStats.maxCallsPerHour} calls/hr
+                      {insights.grokStats.callsThisHour}/{insights.grokStats.maxCallsPerHour} calls/hr
                     </p>
                   </div>
                 </div>
@@ -288,6 +304,105 @@ export default function AIConfigScreen() {
                     </div>
                   </div>
                 )}
+
+                {/* Claude Analysis */}
+                <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-white">Grok AI Analysis</h3>
+                    <button
+                      onClick={handleRunAnalysis}
+                      disabled={analyzingGrok || !insights.grokStats.enabled}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {analyzingGrok ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} />
+                          Run Analysis
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {!insights.grokStats.enabled && (
+                    <p className="text-neutral-500 text-sm">
+                      Enable Grok API in the Config tab and set XAI_API_KEY to use AI analysis.
+                    </p>
+                  )}
+
+                  {grokInsights && (
+                    <div className="space-y-4 mt-4">
+                      {grokInsights.upsell && (
+                        <div className="p-4 bg-neutral-800 rounded-lg">
+                          <p className="text-sm font-semibold text-amber-400 mb-2">Upsell Patterns</p>
+                          {Array.isArray(grokInsights.upsell) ? (
+                            <div className="space-y-2">
+                              {grokInsights.upsell.map((item: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between text-sm">
+                                  <span className="text-white">{item.item_name}</span>
+                                  <span className="text-neutral-400 italic">{item.upsell_message}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-neutral-400 text-sm">{grokInsights.upsell.message || 'No data'}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {grokInsights.inventory && (
+                        <div className="p-4 bg-neutral-800 rounded-lg">
+                          <p className="text-sm font-semibold text-blue-400 mb-2">Inventory Trends</p>
+                          {grokInsights.inventory.insights ? (
+                            <ul className="space-y-1">
+                              {grokInsights.inventory.insights.map((insight: string, i: number) => (
+                                <li key={i} className="text-sm text-neutral-300">- {insight}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-neutral-400 text-sm">{grokInsights.inventory.message || 'No data'}</p>
+                          )}
+                          {grokInsights.inventory.recommendations && (
+                            <div className="mt-2 pt-2 border-t border-neutral-700">
+                              <p className="text-xs font-semibold text-neutral-500 mb-1">Recommendations:</p>
+                              {grokInsights.inventory.recommendations.map((rec: string, i: number) => (
+                                <p key={i} className="text-sm text-green-400">- {rec}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {grokInsights.forecast && (
+                        <div className="p-4 bg-neutral-800 rounded-lg">
+                          <p className="text-sm font-semibold text-purple-400 mb-2">Supply Chain Forecast</p>
+                          {grokInsights.forecast.summary ? (
+                            <p className="text-sm text-neutral-300">{grokInsights.forecast.summary}</p>
+                          ) : (
+                            <p className="text-neutral-400 text-sm">{grokInsights.forecast.message || 'No data'}</p>
+                          )}
+                          {grokInsights.forecast.urgent_actions && grokInsights.forecast.urgent_actions.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-neutral-700">
+                              <p className="text-xs font-semibold text-red-400 mb-1">Urgent Actions:</p>
+                              {grokInsights.forecast.urgent_actions.map((action: string, i: number) => (
+                                <p key={i} className="text-sm text-red-300">- {action}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <p className="text-xs text-neutral-600">
+                        Analysis ran at {new Date(grokInsights.timestamp).toLocaleString()}
+                        {grokInsights.grokStats && ` | ${grokInsights.grokStats.callsThisHour}/${grokInsights.grokStats.maxCallsPerHour} calls/hr`}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Scheduler Status */}
                 <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">

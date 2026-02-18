@@ -1,7 +1,6 @@
 import { getConfig, getConfigNumber, getConfigBool } from './config.js';
 
-let Anthropic = null;
-let client = null;
+const XAI_BASE_URL = 'https://api.x.ai/v1/chat/completions';
 
 // Rate limiting
 let callsThisHour = 0;
@@ -12,30 +11,19 @@ const promptCache = new Map();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 /**
- * Initialize the Anthropic client lazily
+ * Check if Grok API is available
  */
-async function getClient() {
-  if (!getConfigBool('claude_api_enabled')) {
-    return null;
+function isAvailable() {
+  if (!getConfigBool('grok_api_enabled')) {
+    return false;
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn('[Claude] ANTHROPIC_API_KEY not set');
-    return null;
+  if (!process.env.XAI_API_KEY) {
+    console.warn('[Grok] XAI_API_KEY not set');
+    return false;
   }
 
-  if (!client) {
-    try {
-      const sdk = await import('@anthropic-ai/sdk');
-      Anthropic = sdk.default || sdk.Anthropic;
-      client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    } catch (error) {
-      console.warn('[Claude] @anthropic-ai/sdk not installed. Run: npm install @anthropic-ai/sdk');
-      return null;
-    }
-  }
-
-  return client;
+  return true;
 }
 
 /**
@@ -48,7 +36,7 @@ function checkRateLimit() {
     hourResetTime = now + 3600000;
   }
 
-  const maxCalls = getConfigNumber('claude_max_calls_per_hour') || 10;
+  const maxCalls = getConfigNumber('grok_max_calls_per_hour') || 10;
   if (callsThisHour >= maxCalls) {
     return false;
   }
@@ -70,12 +58,11 @@ function hashPrompt(prompt) {
 }
 
 /**
- * Send a message to Claude with caching, rate limiting, and retry
+ * Send a message to Grok with caching, rate limiting, and retry
  */
 export async function sendMessage(prompt, { systemPrompt, maxTokens = 1024, useCache = true } = {}) {
-  const anthropicClient = await getClient();
-  if (!anthropicClient) {
-    return { success: false, error: 'Claude API not available', fallback: true };
+  if (!isAvailable()) {
+    return { success: false, error: 'Grok API not available', fallback: true };
   }
 
   if (!checkRateLimit()) {
@@ -91,22 +78,39 @@ export async function sendMessage(prompt, { systemPrompt, maxTokens = 1024, useC
     }
   }
 
-  const model = getConfig('claude_model') || 'claude-sonnet-4-20250514';
+  const model = getConfig('grok_model') || 'grok-3-mini';
+
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: 'system', content: systemPrompt });
+  }
+  messages.push({ role: 'user', content: prompt });
 
   // Retry logic (max 2 attempts)
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const messages = [{ role: 'user', content: prompt }];
-      const params = { model, max_tokens: maxTokens, messages };
+      const response = await fetch(XAI_BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.XAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokens,
+          messages,
+        }),
+      });
 
-      if (systemPrompt) {
-        params.system = systemPrompt;
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorBody}`);
       }
 
-      const response = await anthropicClient.messages.create(params);
+      const data = await response.json();
       callsThisHour++;
 
-      const content = response.content[0]?.text || '';
+      const content = data.choices?.[0]?.message?.content || '';
 
       // Cache the result
       if (useCache) {
@@ -125,11 +129,11 @@ export async function sendMessage(prompt, { systemPrompt, maxTokens = 1024, useC
       return { success: true, content, cached: false };
     } catch (error) {
       if (attempt === 0) {
-        console.warn(`[Claude] Attempt 1 failed, retrying:`, error.message);
+        console.warn(`[Grok] Attempt 1 failed, retrying:`, error.message);
         await new Promise(r => setTimeout(r, 1000));
         continue;
       }
-      console.error(`[Claude] Both attempts failed:`, error.message);
+      console.error(`[Grok] Both attempts failed:`, error.message);
       return { success: false, error: error.message, fallback: true };
     }
   }
@@ -179,7 +183,7 @@ Return JSON object with: anomalies (array), insights (array of strings), recomme
 }
 
 /**
- * Generate daily inventory forecast with Claude enhancement
+ * Generate daily inventory forecast with Grok enhancement
  */
 export async function enhanceForecast(forecastData) {
   const systemPrompt = `You are a supply chain analyst for a Mexican restaurant.
@@ -202,13 +206,13 @@ Return JSON object with: summary (string), urgent_actions (array), weekly_plan (
 /**
  * Get current stats
  */
-export function getClaudeStats() {
+export function getGrokStats() {
   return {
-    enabled: getConfigBool('claude_api_enabled'),
-    apiKeySet: !!process.env.ANTHROPIC_API_KEY,
+    enabled: getConfigBool('grok_api_enabled'),
+    apiKeySet: !!process.env.XAI_API_KEY,
     callsThisHour,
-    maxCallsPerHour: getConfigNumber('claude_max_calls_per_hour') || 10,
+    maxCallsPerHour: getConfigNumber('grok_max_calls_per_hour') || 10,
     cacheSize: promptCache.size,
-    model: getConfig('claude_model') || 'claude-sonnet-4-20250514',
+    model: getConfig('grok_model') || 'grok-3-mini',
   };
 }

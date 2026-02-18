@@ -35,10 +35,15 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   notes?: string;
+  combo_instance_id?: string | null;
+  modifiers?: OrderItemModifier[];
 }
 
 export interface CartItem extends OrderItem {
+  cart_id: string;
   menuItem?: MenuItem;
+  selectedModifierIds?: number[];
+  selectedModifierNames?: string[];
 }
 
 export interface Order {
@@ -52,7 +57,9 @@ export interface Order {
   tip: number;
   total: number;
   payment_intent_id?: string;
-  payment_status: 'unpaid' | 'processing' | 'completed' | 'failed' | 'refunded';
+  payment_status: 'unpaid' | 'processing' | 'paid' | 'completed' | 'failed' | 'refunded';
+  payment_method?: 'card' | 'cash' | 'split' | null;
+  source?: 'pos' | 'uber_eats' | 'rappi' | 'didi_food';
   created_at: string;
   completed_at?: string;
   items?: OrderItem[];
@@ -189,7 +196,7 @@ export interface AIInsights {
     revenue: number;
     avg_ticket: number;
   }>;
-  claudeStats: {
+  grokStats: {
     enabled: boolean;
     apiKeySet: boolean;
     callsThisHour: number;
@@ -249,6 +256,172 @@ export interface CategoryRole {
   category_id: number;
   role: string;
   category_name: string;
+}
+
+/* Financial Report Types */
+export interface CashCardBreakdown {
+  period: string;
+  total_orders: number;
+  total_revenue: number;
+  breakdown: Array<{
+    payment_method: string;
+    count: number;
+    total: number;
+    tips: number;
+    percentage: number;
+    revenue_percentage: number;
+  }>;
+}
+
+export interface COGSReport {
+  period: string;
+  items: Array<{
+    menu_item_id: number;
+    item_name: string;
+    quantity_sold: number;
+    revenue: number;
+    cogs: number;
+    margin: number;
+    margin_percent: number;
+  }>;
+  totals: {
+    total_revenue: number;
+    total_cogs: number;
+    total_margin: number;
+    overall_margin_percent: number;
+  };
+}
+
+export interface CategoryMargins {
+  period: string;
+  categories: Array<{
+    category_id: number;
+    category_name: string;
+    quantity_sold: number;
+    revenue: number;
+    cogs: number;
+    margin: number;
+    margin_percent: number;
+  }>;
+}
+
+export interface ContributionMarginReport {
+  period: string;
+  data: Array<{
+    date: string;
+    revenue: number;
+    cogs: number;
+    contribution_margin: number;
+    margin_percent: number;
+    orders: number;
+  }>;
+}
+
+export interface LiveDashboardData {
+  date: string;
+  kpis: {
+    order_count: number;
+    revenue: number;
+    avg_ticket: number;
+    tips: number;
+    cash_orders: number;
+    card_orders: number;
+    cash_revenue: number;
+    card_revenue: number;
+  };
+  hourly: Array<{ hour: number; orders: number; revenue: number }>;
+  sources: Array<{ source: string; count: number; revenue: number }>;
+  topItems: Array<{ item_name: string; qty: number }>;
+}
+
+/* Modifier Types */
+export interface ModifierGroup {
+  id: number;
+  name: string;
+  selection_type: 'single' | 'multi';
+  required: boolean;
+  min_selections: number;
+  max_selections: number;
+  sort_order: number;
+  active: boolean;
+  modifiers?: Modifier[];
+}
+
+export interface Modifier {
+  id: number;
+  group_id: number;
+  name: string;
+  price_adjustment: number;
+  sort_order: number;
+  active: boolean;
+}
+
+export interface OrderItemModifier {
+  id: number;
+  order_item_id: number;
+  modifier_id: number;
+  modifier_name: string;
+  price_adjustment: number;
+}
+
+/* Combo Types */
+export interface ComboDefinition {
+  id: number;
+  name: string;
+  description: string;
+  combo_price: number;
+  active: boolean;
+  slots?: ComboSlot[];
+}
+
+export interface ComboSlot {
+  id: number;
+  combo_id: number;
+  slot_label: string;
+  category_id: number | null;
+  specific_item_id: number | null;
+  sort_order: number;
+}
+
+/* Split Payment Types */
+export interface OrderPayment {
+  id: number;
+  order_id: number;
+  payment_method: 'card' | 'cash';
+  amount: number;
+  tip: number;
+  payment_intent_id?: string;
+  status: string;
+}
+
+/* Printer Types */
+export interface Printer {
+  id: number;
+  name: string;
+  printer_type: string;
+  address: string;
+  active: boolean;
+}
+
+/* Delivery Types */
+export interface DeliveryPlatform {
+  id: number;
+  name: string;
+  display_name: string;
+  commission_percent: number;
+  active: boolean;
+}
+
+export interface DeliveryOrder {
+  id: number;
+  order_id: number;
+  platform_id: number;
+  external_order_id: string;
+  platform_status: string;
+  delivery_fee: number;
+  platform_commission: number;
+  customer_name: string;
+  delivery_address: string;
 }
 
 /* API Response Types */
