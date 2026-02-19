@@ -1,4 +1,4 @@
-import initSqlJs from 'sql.js';
+import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,7 +8,6 @@ const dataDir = path.join(__dirname, '../data');
 const dbPath = path.join(dataDir, 'juanbertos.db');
 
 let db = null;
-let SQL = null;
 
 // Ensure data directory exists
 if (!fs.existsSync(dataDir)) {
@@ -16,24 +15,18 @@ if (!fs.existsSync(dataDir)) {
 }
 
 /**
- * Initialize sql.js database
+ * Initialize better-sqlite3 database with WAL mode and foreign keys.
+ * Kept async for backward-compatible `await initDb()` call sites.
  */
 export async function initDb() {
   if (db !== null) return db;
 
-  // Initialize sql.js
-  SQL = await initSqlJs();
-
-  // Try to load existing database file
-  if (fs.existsSync(dbPath)) {
-    const filebuffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(filebuffer);
-  } else {
-    db = new SQL.Database();
-  }
+  db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
 
   // Create tables if they don't exist
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS employees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -44,7 +37,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS menu_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -53,7 +46,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS menu_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id INTEGER NOT NULL REFERENCES menu_categories(id),
@@ -65,7 +58,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_number INTEGER NOT NULL,
@@ -83,7 +76,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -95,7 +88,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS inventory_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -106,7 +99,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS menu_item_ingredients (
       menu_item_id INTEGER NOT NULL REFERENCES menu_items(id),
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -117,8 +110,7 @@ export async function initDb() {
 
   // ==================== AI Intelligence Layer Tables ====================
 
-  // Pre-computed suggestions the frontend reads from
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_suggestion_cache (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       suggestion_type TEXT NOT NULL,
@@ -130,8 +122,7 @@ export async function initDb() {
     )
   `);
 
-  // Maps categories to roles for generalizability
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_category_roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id INTEGER NOT NULL REFERENCES menu_categories(id),
@@ -140,8 +131,7 @@ export async function initDb() {
     )
   `);
 
-  // Key-value config store for restaurant-specific AI settings
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_config (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -150,8 +140,7 @@ export async function initDb() {
     )
   `);
 
-  // Tracks if cashier accepted/dismissed suggestions
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_suggestion_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       suggestion_type TEXT NOT NULL,
@@ -163,8 +152,7 @@ export async function initDb() {
     )
   `);
 
-  // Hourly aggregated sales snapshots
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_hourly_snapshots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       snapshot_hour TEXT NOT NULL,
@@ -176,8 +164,7 @@ export async function initDb() {
     )
   `);
 
-  // Items frequently ordered together
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_item_pairs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       item_a_id INTEGER NOT NULL REFERENCES menu_items(id),
@@ -188,8 +175,7 @@ export async function initDb() {
     )
   `);
 
-  // Daily consumption rate per inventory item
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_inventory_velocity (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -200,8 +186,7 @@ export async function initDb() {
     )
   `);
 
-  // Tracks restock events for pattern analysis
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS ai_restock_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -214,41 +199,41 @@ export async function initDb() {
 
   // Add was_ai_suggested column to order_items if it doesn't exist
   try {
-    db.run(`ALTER TABLE order_items ADD COLUMN was_ai_suggested INTEGER DEFAULT 0`);
+    db.exec(`ALTER TABLE order_items ADD COLUMN was_ai_suggested INTEGER DEFAULT 0`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // Phase 1: Add payment_method to orders
+  // Add payment_method to orders
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT NULL`);
+    db.exec(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT NULL`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // Phase 1: Add cost_price to inventory_items
+  // Add cost_price to inventory_items
   try {
-    db.run(`ALTER TABLE inventory_items ADD COLUMN cost_price REAL DEFAULT 0`);
+    db.exec(`ALTER TABLE inventory_items ADD COLUMN cost_price REAL DEFAULT 0`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // Phase 1: Add source column to orders (for delivery platforms)
+  // Add source column to orders (for delivery platforms)
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'pos'`);
+    db.exec(`ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'pos'`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // Phase 2: Add printer_target to menu_categories
+  // Add printer_target to menu_categories
   try {
-    db.run(`ALTER TABLE menu_categories ADD COLUMN printer_target TEXT DEFAULT 'kitchen'`);
+    db.exec(`ALTER TABLE menu_categories ADD COLUMN printer_target TEXT DEFAULT 'kitchen'`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // Phase 3: Modifier groups
-  db.run(`
+  // Modifier groups
+  db.exec(`
     CREATE TABLE IF NOT EXISTS modifier_groups (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -261,7 +246,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS modifiers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       group_id INTEGER NOT NULL REFERENCES modifier_groups(id),
@@ -272,7 +257,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS menu_item_modifier_groups (
       menu_item_id INTEGER NOT NULL REFERENCES menu_items(id),
       modifier_group_id INTEGER NOT NULL REFERENCES modifier_groups(id),
@@ -281,7 +266,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS order_item_modifiers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_item_id INTEGER NOT NULL REFERENCES order_items(id),
@@ -291,15 +276,15 @@ export async function initDb() {
     )
   `);
 
-  // Phase 3: Add combo_instance_id to order_items
+  // Add combo_instance_id to order_items
   try {
-    db.run(`ALTER TABLE order_items ADD COLUMN combo_instance_id TEXT DEFAULT NULL`);
+    db.exec(`ALTER TABLE order_items ADD COLUMN combo_instance_id TEXT DEFAULT NULL`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // Phase 3: Combo definitions
-  db.run(`
+  // Combo definitions
+  db.exec(`
     CREATE TABLE IF NOT EXISTS combo_definitions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -309,7 +294,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS combo_slots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       combo_id INTEGER NOT NULL REFERENCES combo_definitions(id),
@@ -320,8 +305,8 @@ export async function initDb() {
     )
   `);
 
-  // Phase 4: Split payment tables
-  db.run(`
+  // Split payment tables
+  db.exec(`
     CREATE TABLE IF NOT EXISTS order_payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -334,7 +319,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS order_payment_items (
       payment_id INTEGER NOT NULL REFERENCES order_payments(id),
       order_item_id INTEGER NOT NULL REFERENCES order_items(id),
@@ -343,8 +328,8 @@ export async function initDb() {
     )
   `);
 
-  // Phase 4: Printer tables
-  db.run(`
+  // Printer tables
+  db.exec(`
     CREATE TABLE IF NOT EXISTS printers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -354,7 +339,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS category_printer_routes (
       category_id INTEGER NOT NULL REFERENCES menu_categories(id),
       printer_id INTEGER NOT NULL REFERENCES printers(id),
@@ -362,8 +347,8 @@ export async function initDb() {
     )
   `);
 
-  // Phase 5: Delivery platform tables
-  db.run(`
+  // Delivery platform tables
+  db.exec(`
     CREATE TABLE IF NOT EXISTS delivery_platforms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -374,7 +359,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS delivery_orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -390,16 +375,16 @@ export async function initDb() {
     )
   `);
 
-  // Phase 5: Add delivery_order_id to orders
+  // Add delivery_order_id to orders
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN delivery_order_id INTEGER DEFAULT NULL`);
+    db.exec(`ALTER TABLE orders ADD COLUMN delivery_order_id INTEGER DEFAULT NULL`);
   } catch (e) {
     // Column already exists, ignore
   }
 
-  // ==================== Phase 6: Granular Role-Based Permissions ====================
+  // ==================== Granular Role-Based Permissions ====================
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS role_permissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       role TEXT NOT NULL,
@@ -410,8 +395,8 @@ export async function initDb() {
   `);
 
   // Seed default permissions (only if table is empty)
-  const permCount = db.exec("SELECT COUNT(*) FROM role_permissions");
-  const permTotal = permCount.length > 0 && permCount[0].values.length > 0 ? permCount[0].values[0][0] : 0;
+  const permRow = db.prepare("SELECT COUNT(*) as cnt FROM role_permissions").get();
+  const permTotal = permRow?.cnt || 0;
   if (permTotal === 0) {
     const allPermissions = [
       'pos_access', 'kitchen_access', 'bar_access', 'view_reports', 'manage_menu',
@@ -429,32 +414,33 @@ export async function initDb() {
       bar: ['bar_access'],
     };
 
+    const insertPerm = db.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, ?, ?)`);
     for (const [role, perms] of Object.entries(roleDefaults)) {
       for (const perm of allPermissions) {
         const granted = perms.includes(perm) ? 1 : 0;
-        db.run(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, ?, ?)`,
-          [role, perm, granted]);
+        insertPerm.run(role, perm, granted);
       }
     }
   }
 
   // Backfill manage_loyalty permission for existing databases
   try {
-    const hasLoyaltyPerm = db.exec("SELECT COUNT(*) FROM role_permissions WHERE permission = 'manage_loyalty'");
-    const loyaltyPermCount = hasLoyaltyPerm.length > 0 && hasLoyaltyPerm[0].values.length > 0 ? hasLoyaltyPerm[0].values[0][0] : 0;
+    const loyaltyPermRow = db.prepare("SELECT COUNT(*) as cnt FROM role_permissions WHERE permission = 'manage_loyalty'").get();
+    const loyaltyPermCount = loyaltyPermRow?.cnt || 0;
     if (loyaltyPermCount === 0 && permTotal > 0) {
       const loyaltyRoles = { admin: 1, manager: 1, cashier: 0, kitchen: 0, bar: 0 };
+      const insertLoyalty = db.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_loyalty', ?)`);
       for (const [role, granted] of Object.entries(loyaltyRoles)) {
-        db.run(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_loyalty', ?)`, [role, granted]);
+        insertLoyalty.run(role, granted);
       }
     }
   } catch (e) {
     // ignore
   }
 
-  // ==================== Phase 6: Refunds Table ====================
+  // ==================== Refunds Table ====================
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS refunds (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -471,14 +457,14 @@ export async function initDb() {
 
   // Add refund_total to orders
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN refund_total REAL DEFAULT 0`);
+    db.exec(`ALTER TABLE orders ADD COLUMN refund_total REAL DEFAULT 0`);
   } catch (e) {
     // Column already exists
   }
 
   // ==================== Crypto Payments (NOWPayments) ====================
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS crypto_payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -499,14 +485,14 @@ export async function initDb() {
 
   // Add crypto_payment_id to orders
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN crypto_payment_id INTEGER DEFAULT NULL`);
+    db.exec(`ALTER TABLE orders ADD COLUMN crypto_payment_id INTEGER DEFAULT NULL`);
   } catch (e) {
     // Column already exists
   }
 
-  // ==================== Phase 6: Advanced Inventory Tables ====================
+  // ==================== Advanced Inventory Tables ====================
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS inventory_counts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -520,7 +506,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS shrinkage_alerts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -534,7 +520,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS vendors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -548,7 +534,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS vendor_items (
       vendor_id INTEGER NOT NULL REFERENCES vendors(id),
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -560,7 +546,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS purchase_orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       po_number TEXT NOT NULL UNIQUE,
@@ -575,7 +561,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS purchase_order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       po_id INTEGER NOT NULL REFERENCES purchase_orders(id),
@@ -589,14 +575,14 @@ export async function initDb() {
 
   // Add last_counted_at to inventory_items
   try {
-    db.run(`ALTER TABLE inventory_items ADD COLUMN last_counted_at TEXT`);
+    db.exec(`ALTER TABLE inventory_items ADD COLUMN last_counted_at TEXT`);
   } catch (e) {
     // Column already exists
   }
 
   // ==================== Financial Projection Tables ====================
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS financial_targets (
       category TEXT PRIMARY KEY,
       target_percent REAL NOT NULL DEFAULT 0,
@@ -604,7 +590,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS financial_actuals (
       category TEXT NOT NULL,
       period TEXT NOT NULL,
@@ -616,7 +602,7 @@ export async function initDb() {
 
   // ==================== Loyalty / CRM Tables ====================
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS loyalty_customers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT NOT NULL UNIQUE,
@@ -633,7 +619,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS stamp_cards (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES loyalty_customers(id),
@@ -648,7 +634,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS stamp_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       stamp_card_id INTEGER NOT NULL REFERENCES stamp_cards(id),
@@ -659,7 +645,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS referral_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       referrer_id INTEGER NOT NULL REFERENCES loyalty_customers(id),
@@ -670,7 +656,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS loyalty_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES loyalty_customers(id),
@@ -681,7 +667,7 @@ export async function initDb() {
     )
   `);
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS loyalty_config (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -691,8 +677,8 @@ export async function initDb() {
   `);
 
   // Seed default loyalty config (only if table is empty)
-  const lcCount = db.exec("SELECT COUNT(*) FROM loyalty_config");
-  const lcTotal = lcCount.length > 0 && lcCount[0].values.length > 0 ? lcCount[0].values[0][0] : 0;
+  const lcRow = db.prepare("SELECT COUNT(*) as cnt FROM loyalty_config").get();
+  const lcTotal = lcRow?.cnt || 0;
   if (lcTotal === 0) {
     const loyaltyDefaults = [
       ['stamps_required', '10', 'Number of stamps needed for a free reward'],
@@ -700,12 +686,13 @@ export async function initDb() {
       ['referral_bonus_stamps', '2', 'Bonus stamps for referrer and referee'],
       ['sms_enabled', 'true', 'Enable SMS notifications for loyalty events'],
     ];
+    const insertLC = db.prepare(`INSERT OR IGNORE INTO loyalty_config (key, value, description) VALUES (?, ?, ?)`);
     for (const [key, value, desc] of loyaltyDefaults) {
-      db.run(`INSERT OR IGNORE INTO loyalty_config (key, value, description) VALUES (?, ?, ?)`, [key, value, desc]);
+      insertLC.run(key, value, desc);
     }
   }
 
-  db.run(`
+  db.exec(`
     CREATE TABLE IF NOT EXISTS order_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -720,21 +707,21 @@ export async function initDb() {
 
   // Add loyalty_customer_id to orders
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN loyalty_customer_id INTEGER DEFAULT NULL`);
+    db.exec(`ALTER TABLE orders ADD COLUMN loyalty_customer_id INTEGER DEFAULT NULL`);
   } catch (e) {
     // Column already exists
   }
 
   // Add offline_temp_id to orders (for offline order dedup)
   try {
-    db.run(`ALTER TABLE orders ADD COLUMN offline_temp_id TEXT`);
+    db.exec(`ALTER TABLE orders ADD COLUMN offline_temp_id TEXT`);
   } catch (e) {
     // Column already exists
   }
 
   // Seed default financial targets (only if table is empty)
-  const ftCount = db.exec("SELECT COUNT(*) FROM financial_targets");
-  const ftTotal = ftCount.length > 0 && ftCount[0].values.length > 0 ? ftCount[0].values[0][0] : 0;
+  const ftRow = db.prepare("SELECT COUNT(*) as cnt FROM financial_targets").get();
+  const ftTotal = ftRow?.cnt || 0;
   if (ftTotal === 0) {
     const defaultTargets = [
       ['food_cost', 30],
@@ -747,15 +734,11 @@ export async function initDb() {
       ['insurance', 2],
       ['supplies', 3],
     ];
+    const insertFT = db.prepare(`INSERT OR IGNORE INTO financial_targets (category, target_percent, updated_at) VALUES (?, ?, datetime('now','localtime'))`);
     for (const [cat, pct] of defaultTargets) {
-      db.run(`INSERT OR IGNORE INTO financial_targets (category, target_percent, updated_at) VALUES (?, ?, datetime('now','localtime'))`, [cat, pct]);
+      insertFT.run(cat, pct);
     }
   }
-
-  // Save to disk (note: just direct save here, not through saveDb() since we're not doing transforms)
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(dbPath, buffer);
 
   return db;
 }
@@ -771,85 +754,34 @@ export function getDb() {
 }
 
 /**
- * Save database to disk (debounced to prevent I/O thrashing under load)
+ * No-op: better-sqlite3 writes are synchronous and durable.
+ * Kept for API backward compatibility.
  */
-let saveTimer = null;
-let saveDirty = false;
-
-function scheduleSave() {
-  saveDirty = true;
-  if (saveTimer) return; // already scheduled
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    if (saveDirty) {
-      saveDirty = false;
-      saveDbNow();
-    }
-  }, 500); // flush to disk every 500ms at most
-}
-
-function saveDbNow() {
-  if (!db) return;
-  try {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
-  } catch (err) {
-    console.error('[DB] Save error:', err.message);
-  }
-}
-
-export function saveDb() {
-  scheduleSave();
-}
+export function saveDb() {}
 
 /**
- * Force immediate save (for shutdown/seed)
+ * No-op: better-sqlite3 writes are synchronous and durable.
+ * Kept for API backward compatibility.
  */
-export function saveDbSync() {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
-  }
-  saveDirty = false;
-  saveDbNow();
-}
-
-// Flush on process exit
-process.on('exit', () => saveDbNow());
-process.on('SIGINT', () => { saveDbNow(); process.exit(); });
-process.on('SIGTERM', () => { saveDbNow(); process.exit(); });
+export function saveDbSync() {}
 
 /**
- * Execute INSERT/UPDATE/DELETE with auto-save
+ * Execute INSERT/UPDATE/DELETE and return { lastInsertRowid }
  */
 export function run(sql, params = []) {
   const database = getDb();
-  database.run(sql, params);
-  scheduleSave();
-  const result = database.exec('SELECT last_insert_rowid() as id');
-  const lastId = result.length > 0 && result[0].values.length > 0
-    ? result[0].values[0][0]
-    : null;
-  return { lastInsertRowid: lastId };
+  const stmt = database.prepare(sql);
+  const result = stmt.run(...params);
+  return { lastInsertRowid: Number(result.lastInsertRowid) };
 }
 
 /**
- * Execute a SELECT query and return a single row as an object
+ * Execute a SELECT query and return a single row as an object (or undefined)
  */
 export function get(sql, params = []) {
   const database = getDb();
   const stmt = database.prepare(sql);
-  stmt.bind(params);
-
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
-    stmt.free();
-    return row;
-  }
-
-  stmt.free();
-  return undefined;
+  return stmt.get(...params);
 }
 
 /**
@@ -858,24 +790,28 @@ export function get(sql, params = []) {
 export function all(sql, params = []) {
   const database = getDb();
   const stmt = database.prepare(sql);
-  stmt.bind(params);
-
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-
-  stmt.free();
-  return rows;
+  return stmt.all(...params);
 }
 
 /**
- * Execute raw SQL (for DML/DDL that doesn't return rows)
+ * Execute raw SQL (multi-statement DDL/DML without parameters)
  */
 export function exec(sql) {
   const database = getDb();
   return database.exec(sql);
 }
+
+// Graceful close on process exit
+function closeDb() {
+  if (db) {
+    db.close();
+    db = null;
+  }
+}
+
+process.on('exit', closeDb);
+process.on('SIGINT', () => { closeDb(); process.exit(); });
+process.on('SIGTERM', () => { closeDb(); process.exit(); });
 
 // Re-export helpers as named exports for convenience
 const dbHelpers = {
@@ -889,12 +825,12 @@ const dbHelpers = {
   exec,
 };
 
-// Create a proxy object that looks like the old db for backward compatibility
+// Proxy object for backward compatibility
 const dbProxy = {
   prepare: (sql) => ({
     run: (...params) => run(sql, params),
-    get: (param) => get(sql, [param]),
-    all: (...params) => all(sql, ...params),
+    get: (param) => get(sql, param !== undefined ? [param] : []),
+    all: (...params) => all(sql, params),
   }),
   exec: (sql) => exec(sql),
   run: (sql, params) => run(sql, params),

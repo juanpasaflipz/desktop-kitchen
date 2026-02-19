@@ -4,6 +4,9 @@ import { initDb, run, exec, saveDbSync } from './db.js';
   try {
     await initDb();
 
+    // Disable FK checks during cleanup so we can delete in any order
+    exec(`PRAGMA foreign_keys = OFF`);
+
     // Clear existing data and reset auto-increment sequences
     exec(`
       DELETE FROM menu_item_ingredients;
@@ -56,6 +59,9 @@ import { initDb, run, exec, saveDbSync } from './db.js';
     } catch (e) {
       // ignore
     }
+
+    // Re-enable FK checks for inserts
+    exec(`PRAGMA foreign_keys = ON`);
 
     // Seed employees
     run('INSERT INTO employees (name, pin, role, active) VALUES (?, ?, ?, 1)', ['Manager', '1234', 'admin']);
@@ -124,7 +130,7 @@ import { initDb, run, exec, saveDbSync } from './db.js';
     run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Victoria', 60, 'Vienna-style amber lager']);
     run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Michelada', 90, 'Beer with lime, chili, and Clamato']);
 
-    console.log('✓ Seeded 35 menu items');
+    console.log('✓ Seeded 34 menu items');
 
     // Seed inventory items (with cost_price)
     // cost_price = cost per unit in MXN
@@ -271,15 +277,15 @@ import { initDb, run, exec, saveDbSync } from './db.js';
     run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [20, 13, 1]);
     run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [20, 8, 0.5]);
 
-    // Beer ingredients (1 bottle each)
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [30, 21, 1]); // Corona
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [31, 22, 1]); // Modelo
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [32, 23, 1]); // Negra Modelo
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [33, 24, 1]); // Pacifico
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [34, 25, 1]); // Victoria
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [35, 22, 1]); // Michelada (uses modelo)
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [35, 26, 0.25]); // Michelada (uses clamato)
-    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [35, 20, 1]); // Michelada (uses lime)
+    // Beer ingredients (1 bottle each) — IDs 29-34
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [29, 21, 1]); // Corona
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [30, 22, 1]); // Modelo
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [31, 23, 1]); // Negra Modelo
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [32, 24, 1]); // Pacifico
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [33, 25, 1]); // Victoria
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [34, 22, 1]); // Michelada (uses modelo)
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [34, 26, 0.25]); // Michelada (uses clamato)
+    run('INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used) VALUES (?, ?, ?)', [34, 20, 1]); // Michelada (uses lime)
 
     console.log('✓ Seeded menu item ingredients');
 
