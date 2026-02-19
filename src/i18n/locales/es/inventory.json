@@ -120,6 +120,9 @@
     "noCategories": "No hay categorías disponibles",
     "noCategoriesYet": "No hay categorías aún. Crea una para comenzar.",
     "noItemsIn": "Sin productos en",
+    "liveMenu": "Menú Activo",
+    "preMenu": "Pre-Menú",
+    "noPreMenuItems": "No hay productos en Pre-Menú. Desactiva productos del Menú Activo para colocarlos aquí.",
     "dismiss": "Descartar",
     "creating": "Creando..."
   },

@@ -27,6 +27,7 @@ import { formatPrice } from '../utils/currency';
 
 type ModalMode = 'add' | 'edit' | null;
 type View = 'items' | 'categories';
+type ItemSubTab = 'live' | 'pre-menu';
 
 interface FormData {
   name: string;
@@ -43,6 +44,7 @@ interface CategoryFormData {
 export default function MenuManagement() {
   const { t } = useTranslation('inventory');
   const [view, setView] = useState<View>('items');
+  const [itemSubTab, setItemSubTab] = useState<ItemSubTab>('live');
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -93,12 +95,16 @@ export default function MenuManagement() {
   const fetchMenuItems = async (categoryId: number) => {
     try {
       setError(null);
-      const data = await getMenuItems(String(categoryId));
+      const data = await getMenuItems(String(categoryId), true);
       setMenuItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.fetchMenuItems'));
     }
   };
+
+  const liveItems = menuItems.filter(i => i.active);
+  const preMenuItems = menuItems.filter(i => !i.active);
+  const displayedItems = itemSubTab === 'live' ? liveItems : preMenuItems;
 
   const validateForm = (): boolean => {
     const errors: Partial<FormData> = {};
@@ -493,19 +499,49 @@ export default function MenuManagement() {
               </div>
             </div>
 
-            {menuItems.length === 0 ? (
+            {/* Live Menu / Pre-Menu sub-tabs */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setItemSubTab('live')}
+                className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                  itemSubTab === 'live'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-neutral-800 text-neutral-400 border border-neutral-700 hover:text-white'
+                }`}
+              >
+                {t('menu.liveMenu')} ({liveItems.length})
+              </button>
+              <button
+                onClick={() => setItemSubTab('pre-menu')}
+                className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                  itemSubTab === 'pre-menu'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-neutral-800 text-neutral-400 border border-neutral-700 hover:text-white'
+                }`}
+              >
+                {t('menu.preMenu')} ({preMenuItems.length})
+              </button>
+            </div>
+
+            {displayedItems.length === 0 ? (
               <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-12 text-center">
                 <AlertCircle className="mx-auto text-neutral-600 mb-3" size={40} />
-                <p className="text-neutral-400 mb-6">
-                  {t('menu.noItemsIn')} {getCategoryName(selectedCategory)}
-                </p>
-                <button
-                  onClick={openAddModal}
-                  className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors inline-flex items-center gap-2 min-h-[44px]"
-                >
-                  <Plus size={20} />
-                  {t('menu.addFirstItem')}
-                </button>
+                {itemSubTab === 'live' ? (
+                  <>
+                    <p className="text-neutral-400 mb-6">
+                      {t('menu.noItemsIn')} {getCategoryName(selectedCategory)}
+                    </p>
+                    <button
+                      onClick={openAddModal}
+                      className="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors inline-flex items-center gap-2 min-h-[44px]"
+                    >
+                      <Plus size={20} />
+                      {t('menu.addFirstItem')}
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-neutral-400">{t('menu.noPreMenuItems')}</p>
+                )}
               </div>
             ) : (
               <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
@@ -513,7 +549,7 @@ export default function MenuManagement() {
                   {getCategoryName(selectedCategory)}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {menuItems.map((item) => (
+                  {displayedItems.map((item) => (
                     <div
                       key={item.id}
                       className={`p-5 rounded-lg border transition-all ${

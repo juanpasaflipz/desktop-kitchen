@@ -108,21 +108,28 @@ router.put('/categories/:id/toggle', requireAuth('manage_menu'), (req, res) => {
   }
 });
 
-// GET /api/menu/items - list active items (optional ?category_id filter)
+// GET /api/menu/items - list items (optional ?category_id, ?include_inactive=1)
 router.get('/items', (req, res) => {
   try {
-    const { category_id } = req.query;
-    let query = `
-      SELECT id, category_id, name, price, description, image_url
-      FROM menu_items
-      WHERE active = 1
-    `;
+    const { category_id, include_inactive } = req.query;
+    const conditions = [];
     const params = [];
 
+    if (!include_inactive) {
+      conditions.push('active = 1');
+    }
+
     if (category_id) {
-      query += ' AND category_id = ?';
+      conditions.push('category_id = ?');
       params.push(category_id);
     }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    let query = `
+      SELECT id, category_id, name, price, description, image_url, active
+      FROM menu_items
+      ${whereClause}
+    `;
 
     query += ' ORDER BY name ASC';
 

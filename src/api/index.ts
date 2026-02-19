@@ -162,10 +162,12 @@ export async function toggleCategory(id: number): Promise<any> {
   return apiRequest(`/menu/categories/${id}/toggle`, { method: 'PUT' });
 }
 
-export async function getMenuItems(categoryId?: string): Promise<MenuItem[]> {
-  const endpoint = categoryId
-    ? `/menu/items?category_id=${categoryId}`
-    : '/menu/items';
+export async function getMenuItems(categoryId?: string, includeInactive?: boolean): Promise<MenuItem[]> {
+  const params = new URLSearchParams();
+  if (categoryId) params.set('category_id', categoryId);
+  if (includeInactive) params.set('include_inactive', '1');
+  const qs = params.toString();
+  const endpoint = qs ? `/menu/items?${qs}` : '/menu/items';
   return apiRequest<MenuItem[]>(endpoint);
 }
 

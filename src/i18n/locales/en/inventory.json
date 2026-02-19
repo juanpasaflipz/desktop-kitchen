@@ -120,6 +120,9 @@
     "noCategories": "No categories available",
     "noCategoriesYet": "No categories yet. Create one to get started.",
     "noItemsIn": "No items in",
+    "liveMenu": "Live Menu",
+    "preMenu": "Pre-Menu",
+    "noPreMenuItems": "No items in Pre-Menu. Deactivate items from the Live Menu to stage them here.",
     "dismiss": "Dismiss",
     "creating": "Creating..."
   },
