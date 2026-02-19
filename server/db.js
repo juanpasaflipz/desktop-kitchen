@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '../data');
@@ -14,19 +15,19 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
+// ==================== Tenant Context ====================
+// AsyncLocalStorage allows tenant middleware to set a per-request DB
+// so run/get/all/exec automatically resolve to the right tenant DB.
+export const tenantContext = new AsyncLocalStorage();
+
+// ==================== Schema ====================
+
 /**
- * Initialize better-sqlite3 database with WAL mode and foreign keys.
- * Kept async for backward-compatible `await initDb()` call sites.
+ * Apply the full POS schema to a database. Used by initDb for the default DB
+ * and by tenants.js when initializing new tenant databases.
  */
-export async function initDb() {
-  if (db !== null) return db;
-
-  db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-
-  // Create tables if they don't exist
-  db.exec(`
+export function applySchema(database) {
+  database.exec(`
     CREATE TABLE IF NOT EXISTS employees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -37,7 +38,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS menu_categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -46,7 +47,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS menu_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id INTEGER NOT NULL REFERENCES menu_categories(id),
@@ -58,7 +59,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_number INTEGER NOT NULL,
@@ -76,7 +77,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -88,7 +89,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS inventory_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -99,7 +100,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS menu_item_ingredients (
       menu_item_id INTEGER NOT NULL REFERENCES menu_items(id),
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -108,9 +109,8 @@ export async function initDb() {
     )
   `);
 
-  // ==================== AI Intelligence Layer Tables ====================
-
-  db.exec(`
+  // AI Intelligence Layer
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_suggestion_cache (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       suggestion_type TEXT NOT NULL,
@@ -122,7 +122,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_category_roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       category_id INTEGER NOT NULL REFERENCES menu_categories(id),
@@ -131,7 +131,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_config (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -140,7 +140,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_suggestion_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       suggestion_type TEXT NOT NULL,
@@ -152,7 +152,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_hourly_snapshots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       snapshot_hour TEXT NOT NULL,
@@ -164,7 +164,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_item_pairs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       item_a_id INTEGER NOT NULL REFERENCES menu_items(id),
@@ -175,7 +175,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_inventory_velocity (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -186,7 +186,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS ai_restock_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -197,43 +197,17 @@ export async function initDb() {
     )
   `);
 
-  // Add was_ai_suggested column to order_items if it doesn't exist
-  try {
-    db.exec(`ALTER TABLE order_items ADD COLUMN was_ai_suggested INTEGER DEFAULT 0`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
+  // Column migrations (safe try/catch for existing DBs)
+  const alterSafe = (sql) => { try { database.exec(sql); } catch {} };
 
-  // Add payment_method to orders
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT NULL`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
-
-  // Add cost_price to inventory_items
-  try {
-    db.exec(`ALTER TABLE inventory_items ADD COLUMN cost_price REAL DEFAULT 0`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
-
-  // Add source column to orders (for delivery platforms)
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'pos'`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
-
-  // Add printer_target to menu_categories
-  try {
-    db.exec(`ALTER TABLE menu_categories ADD COLUMN printer_target TEXT DEFAULT 'kitchen'`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
+  alterSafe(`ALTER TABLE order_items ADD COLUMN was_ai_suggested INTEGER DEFAULT 0`);
+  alterSafe(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT NULL`);
+  alterSafe(`ALTER TABLE inventory_items ADD COLUMN cost_price REAL DEFAULT 0`);
+  alterSafe(`ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'pos'`);
+  alterSafe(`ALTER TABLE menu_categories ADD COLUMN printer_target TEXT DEFAULT 'kitchen'`);
 
   // Modifier groups
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS modifier_groups (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -246,7 +220,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS modifiers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       group_id INTEGER NOT NULL REFERENCES modifier_groups(id),
@@ -257,7 +231,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS menu_item_modifier_groups (
       menu_item_id INTEGER NOT NULL REFERENCES menu_items(id),
       modifier_group_id INTEGER NOT NULL REFERENCES modifier_groups(id),
@@ -266,7 +240,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS order_item_modifiers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_item_id INTEGER NOT NULL REFERENCES order_items(id),
@@ -276,15 +250,9 @@ export async function initDb() {
     )
   `);
 
-  // Add combo_instance_id to order_items
-  try {
-    db.exec(`ALTER TABLE order_items ADD COLUMN combo_instance_id TEXT DEFAULT NULL`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
+  alterSafe(`ALTER TABLE order_items ADD COLUMN combo_instance_id TEXT DEFAULT NULL`);
 
-  // Combo definitions
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS combo_definitions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -294,7 +262,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS combo_slots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       combo_id INTEGER NOT NULL REFERENCES combo_definitions(id),
@@ -305,8 +273,7 @@ export async function initDb() {
     )
   `);
 
-  // Split payment tables
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS order_payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -319,7 +286,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS order_payment_items (
       payment_id INTEGER NOT NULL REFERENCES order_payments(id),
       order_item_id INTEGER NOT NULL REFERENCES order_items(id),
@@ -328,8 +295,7 @@ export async function initDb() {
     )
   `);
 
-  // Printer tables
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS printers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -339,7 +305,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS category_printer_routes (
       category_id INTEGER NOT NULL REFERENCES menu_categories(id),
       printer_id INTEGER NOT NULL REFERENCES printers(id),
@@ -347,8 +313,7 @@ export async function initDb() {
     )
   `);
 
-  // Delivery platform tables
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS delivery_platforms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -359,7 +324,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS delivery_orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -375,16 +340,10 @@ export async function initDb() {
     )
   `);
 
-  // Add delivery_order_id to orders
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN delivery_order_id INTEGER DEFAULT NULL`);
-  } catch (e) {
-    // Column already exists, ignore
-  }
+  alterSafe(`ALTER TABLE orders ADD COLUMN delivery_order_id INTEGER DEFAULT NULL`);
 
-  // ==================== Granular Role-Based Permissions ====================
-
-  db.exec(`
+  // Role-Based Permissions
+  database.exec(`
     CREATE TABLE IF NOT EXISTS role_permissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       role TEXT NOT NULL,
@@ -395,7 +354,7 @@ export async function initDb() {
   `);
 
   // Seed default permissions (only if table is empty)
-  const permRow = db.prepare("SELECT COUNT(*) as cnt FROM role_permissions").get();
+  const permRow = database.prepare("SELECT COUNT(*) as cnt FROM role_permissions").get();
   const permTotal = permRow?.cnt || 0;
   if (permTotal === 0) {
     const allPermissions = [
@@ -414,7 +373,7 @@ export async function initDb() {
       bar: ['bar_access'],
     };
 
-    const insertPerm = db.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, ?, ?)`);
+    const insertPerm = database.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, ?, ?)`);
     for (const [role, perms] of Object.entries(roleDefaults)) {
       for (const perm of allPermissions) {
         const granted = perms.includes(perm) ? 1 : 0;
@@ -423,24 +382,20 @@ export async function initDb() {
     }
   }
 
-  // Backfill manage_loyalty permission for existing databases
+  // Backfill manage_loyalty
   try {
-    const loyaltyPermRow = db.prepare("SELECT COUNT(*) as cnt FROM role_permissions WHERE permission = 'manage_loyalty'").get();
-    const loyaltyPermCount = loyaltyPermRow?.cnt || 0;
-    if (loyaltyPermCount === 0 && permTotal > 0) {
+    const loyaltyPermRow = database.prepare("SELECT COUNT(*) as cnt FROM role_permissions WHERE permission = 'manage_loyalty'").get();
+    if ((loyaltyPermRow?.cnt || 0) === 0 && permTotal > 0) {
       const loyaltyRoles = { admin: 1, manager: 1, cashier: 0, kitchen: 0, bar: 0 };
-      const insertLoyalty = db.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_loyalty', ?)`);
+      const insertLoyalty = database.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_loyalty', ?)`);
       for (const [role, granted] of Object.entries(loyaltyRoles)) {
         insertLoyalty.run(role, granted);
       }
     }
-  } catch (e) {
-    // ignore
-  }
+  } catch {}
 
-  // ==================== Refunds Table ====================
-
-  db.exec(`
+  // Refunds
+  database.exec(`
     CREATE TABLE IF NOT EXISTS refunds (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -455,16 +410,10 @@ export async function initDb() {
     )
   `);
 
-  // Add refund_total to orders
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN refund_total REAL DEFAULT 0`);
-  } catch (e) {
-    // Column already exists
-  }
+  alterSafe(`ALTER TABLE orders ADD COLUMN refund_total REAL DEFAULT 0`);
 
-  // ==================== Crypto Payments (NOWPayments) ====================
-
-  db.exec(`
+  // Crypto Payments
+  database.exec(`
     CREATE TABLE IF NOT EXISTS crypto_payments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL REFERENCES orders(id),
@@ -483,16 +432,10 @@ export async function initDb() {
     )
   `);
 
-  // Add crypto_payment_id to orders
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN crypto_payment_id INTEGER DEFAULT NULL`);
-  } catch (e) {
-    // Column already exists
-  }
+  alterSafe(`ALTER TABLE orders ADD COLUMN crypto_payment_id INTEGER DEFAULT NULL`);
 
-  // ==================== Advanced Inventory Tables ====================
-
-  db.exec(`
+  // Advanced Inventory
+  database.exec(`
     CREATE TABLE IF NOT EXISTS inventory_counts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -506,7 +449,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS shrinkage_alerts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -520,7 +463,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS vendors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -534,7 +477,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS vendor_items (
       vendor_id INTEGER NOT NULL REFERENCES vendors(id),
       inventory_item_id INTEGER NOT NULL REFERENCES inventory_items(id),
@@ -546,7 +489,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS purchase_orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       po_number TEXT NOT NULL UNIQUE,
@@ -561,7 +504,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS purchase_order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       po_id INTEGER NOT NULL REFERENCES purchase_orders(id),
@@ -573,16 +516,10 @@ export async function initDb() {
     )
   `);
 
-  // Add last_counted_at to inventory_items
-  try {
-    db.exec(`ALTER TABLE inventory_items ADD COLUMN last_counted_at TEXT`);
-  } catch (e) {
-    // Column already exists
-  }
+  alterSafe(`ALTER TABLE inventory_items ADD COLUMN last_counted_at TEXT`);
 
-  // ==================== Financial Projection Tables ====================
-
-  db.exec(`
+  // Financial Projections
+  database.exec(`
     CREATE TABLE IF NOT EXISTS financial_targets (
       category TEXT PRIMARY KEY,
       target_percent REAL NOT NULL DEFAULT 0,
@@ -590,7 +527,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS financial_actuals (
       category TEXT NOT NULL,
       period TEXT NOT NULL,
@@ -600,9 +537,8 @@ export async function initDb() {
     )
   `);
 
-  // ==================== Loyalty / CRM Tables ====================
-
-  db.exec(`
+  // Loyalty / CRM
+  database.exec(`
     CREATE TABLE IF NOT EXISTS loyalty_customers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       phone TEXT NOT NULL UNIQUE,
@@ -619,7 +555,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS stamp_cards (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES loyalty_customers(id),
@@ -634,7 +570,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS stamp_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       stamp_card_id INTEGER NOT NULL REFERENCES stamp_cards(id),
@@ -645,7 +581,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS referral_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       referrer_id INTEGER NOT NULL REFERENCES loyalty_customers(id),
@@ -656,7 +592,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS loyalty_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       customer_id INTEGER NOT NULL REFERENCES loyalty_customers(id),
@@ -667,7 +603,7 @@ export async function initDb() {
     )
   `);
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS loyalty_config (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
@@ -676,23 +612,21 @@ export async function initDb() {
     )
   `);
 
-  // Seed default loyalty config (only if table is empty)
-  const lcRow = db.prepare("SELECT COUNT(*) as cnt FROM loyalty_config").get();
-  const lcTotal = lcRow?.cnt || 0;
-  if (lcTotal === 0) {
-    const loyaltyDefaults = [
+  // Seed loyalty config defaults
+  const lcRow = database.prepare("SELECT COUNT(*) as cnt FROM loyalty_config").get();
+  if ((lcRow?.cnt || 0) === 0) {
+    const insertLC = database.prepare(`INSERT OR IGNORE INTO loyalty_config (key, value, description) VALUES (?, ?, ?)`);
+    for (const [key, value, desc] of [
       ['stamps_required', '10', 'Number of stamps needed for a free reward'],
       ['reward_description', 'Free item of your choice', 'Default reward description'],
       ['referral_bonus_stamps', '2', 'Bonus stamps for referrer and referee'],
       ['sms_enabled', 'true', 'Enable SMS notifications for loyalty events'],
-    ];
-    const insertLC = db.prepare(`INSERT OR IGNORE INTO loyalty_config (key, value, description) VALUES (?, ?, ?)`);
-    for (const [key, value, desc] of loyaltyDefaults) {
+    ]) {
       insertLC.run(key, value, desc);
     }
   }
 
-  db.exec(`
+  database.exec(`
     CREATE TABLE IF NOT EXISTS order_templates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -705,69 +639,61 @@ export async function initDb() {
     )
   `);
 
-  // Add loyalty_customer_id to orders
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN loyalty_customer_id INTEGER DEFAULT NULL`);
-  } catch (e) {
-    // Column already exists
-  }
+  alterSafe(`ALTER TABLE orders ADD COLUMN loyalty_customer_id INTEGER DEFAULT NULL`);
+  alterSafe(`ALTER TABLE orders ADD COLUMN offline_temp_id TEXT`);
 
-  // Add offline_temp_id to orders (for offline order dedup)
-  try {
-    db.exec(`ALTER TABLE orders ADD COLUMN offline_temp_id TEXT`);
-  } catch (e) {
-    // Column already exists
-  }
-
-  // Seed default financial targets (only if table is empty)
-  const ftRow = db.prepare("SELECT COUNT(*) as cnt FROM financial_targets").get();
-  const ftTotal = ftRow?.cnt || 0;
-  if (ftTotal === 0) {
-    const defaultTargets = [
-      ['food_cost', 30],
-      ['labor', 25],
-      ['rent', 8],
-      ['utilities', 4],
-      ['stripe_fees', 3],
-      ['delivery_commissions', 5],
-      ['marketing', 2],
-      ['insurance', 2],
-      ['supplies', 3],
-    ];
-    const insertFT = db.prepare(`INSERT OR IGNORE INTO financial_targets (category, target_percent, updated_at) VALUES (?, ?, datetime('now','localtime'))`);
-    for (const [cat, pct] of defaultTargets) {
+  // Seed financial targets defaults
+  const ftRow = database.prepare("SELECT COUNT(*) as cnt FROM financial_targets").get();
+  if ((ftRow?.cnt || 0) === 0) {
+    const insertFT = database.prepare(`INSERT OR IGNORE INTO financial_targets (category, target_percent, updated_at) VALUES (?, ?, datetime('now','localtime'))`);
+    for (const [cat, pct] of [
+      ['food_cost', 30], ['labor', 25], ['rent', 8], ['utilities', 4],
+      ['stripe_fees', 3], ['delivery_commissions', 5], ['marketing', 2],
+      ['insurance', 2], ['supplies', 3],
+    ]) {
       insertFT.run(cat, pct);
     }
   }
+}
+
+// ==================== Init ====================
+
+/**
+ * Initialize the default database with WAL mode and foreign keys.
+ * Kept async for backward-compatible `await initDb()` call sites.
+ */
+export async function initDb() {
+  if (db !== null) return db;
+
+  db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+  applySchema(db);
 
   return db;
 }
 
 /**
- * Get the database instance (must call initDb first)
+ * Get the current database. Checks tenant context first (per-request),
+ * falls back to the default singleton DB.
  */
 export function getDb() {
+  const store = tenantContext.getStore();
+  if (store?.db) return store.db;
   if (!db) {
     throw new Error('Database not initialized. Call initDb() first.');
   }
   return db;
 }
 
-/**
- * No-op: better-sqlite3 writes are synchronous and durable.
- * Kept for API backward compatibility.
- */
+/** No-op: better-sqlite3 writes are synchronous and durable. */
 export function saveDb() {}
-
-/**
- * No-op: better-sqlite3 writes are synchronous and durable.
- * Kept for API backward compatibility.
- */
+/** No-op: better-sqlite3 writes are synchronous and durable. */
 export function saveDbSync() {}
 
-/**
- * Execute INSERT/UPDATE/DELETE and return { lastInsertRowid }
- */
+// ==================== Query Helpers ====================
+
+/** Execute INSERT/UPDATE/DELETE and return { lastInsertRowid } */
 export function run(sql, params = []) {
   const database = getDb();
   const stmt = database.prepare(sql);
@@ -775,30 +701,46 @@ export function run(sql, params = []) {
   return { lastInsertRowid: Number(result.lastInsertRowid) };
 }
 
-/**
- * Execute a SELECT query and return a single row as an object (or undefined)
- */
+/** Execute a SELECT query and return a single row as an object (or undefined) */
 export function get(sql, params = []) {
   const database = getDb();
   const stmt = database.prepare(sql);
   return stmt.get(...params);
 }
 
-/**
- * Execute a SELECT query and return all rows as objects
- */
+/** Execute a SELECT query and return all rows as objects */
 export function all(sql, params = []) {
   const database = getDb();
   const stmt = database.prepare(sql);
   return stmt.all(...params);
 }
 
-/**
- * Execute raw SQL (multi-statement DDL/DML without parameters)
- */
+/** Execute raw SQL (multi-statement DDL/DML without parameters) */
 export function exec(sql) {
   const database = getDb();
   return database.exec(sql);
+}
+
+/**
+ * Create bound run/get/all/exec helpers for a specific database instance.
+ * Used by tenant system when direct DB access is needed outside of request context.
+ */
+export function createDbHelpers(database) {
+  return {
+    run(sql, params = []) {
+      const result = database.prepare(sql).run(...params);
+      return { lastInsertRowid: Number(result.lastInsertRowid) };
+    },
+    get(sql, params = []) {
+      return database.prepare(sql).get(...params);
+    },
+    all(sql, params = []) {
+      return database.prepare(sql).all(...params);
+    },
+    exec(sql) {
+      return database.exec(sql);
+    },
+  };
 }
 
 // Graceful close on process exit
@@ -812,18 +754,6 @@ function closeDb() {
 process.on('exit', closeDb);
 process.on('SIGINT', () => { closeDb(); process.exit(); });
 process.on('SIGTERM', () => { closeDb(); process.exit(); });
-
-// Re-export helpers as named exports for convenience
-const dbHelpers = {
-  initDb,
-  getDb,
-  saveDb,
-  saveDbSync,
-  run,
-  get,
-  all,
-  exec,
-};
 
 // Proxy object for backward compatibility
 const dbProxy = {

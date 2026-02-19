@@ -4,6 +4,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb } from './db.js';
+import { initMasterDb } from './tenants.js';
+import { tenantMiddleware } from './middleware/tenant.js';
 
 // Import routes
 import menuRoutes from './routes/menu.js';
@@ -20,6 +22,7 @@ import deliveryRoutes from './routes/delivery.js';
 import purchaseOrdersRoutes from './routes/purchase-orders.js';
 import loyaltyRoutes from './routes/loyalty.js';
 import orderTemplatesRoutes from './routes/order-templates.js';
+import adminRoutes from './routes/admin.js';
 import { initAI } from './ai/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -31,13 +34,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Health check endpoints
+// Health check endpoints (before tenant middleware — always accessible)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
+
+// Admin routes (uses master DB, not tenant-scoped)
+app.use('/admin', adminRoutes);
+
+// Tenant resolution middleware — all /api routes below use the resolved tenant DB
+app.use('/api', tenantMiddleware);
 
 // API Routes
 app.use('/api/menu', menuRoutes);
@@ -70,6 +79,7 @@ app.use((err, req, res, next) => {
 (async () => {
   try {
     await initDb();
+    initMasterDb();
     initAI();
     app.listen(PORT, () => {
       console.log(`Juanbertos POS server running on port ${PORT}`);
