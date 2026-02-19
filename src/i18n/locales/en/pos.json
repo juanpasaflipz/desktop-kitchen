@@ -306,5 +306,17 @@
     "saved": "Saved template: {{name}}",
     "saveCurrentCart": "Save Current Cart as Template",
     "enterName": "Enter template name..."
+  },
+  "offline": {
+    "indicator": "OFFLINE MODE — Cash Only",
+    "cashOnly": "Cash only while offline",
+    "orderSaved": "Order {{number}} saved offline",
+    "cardUnavailable": "Requires internet",
+    "pendingSync": "{{count}} pending",
+    "syncing": "Syncing orders...",
+    "syncComplete": "All orders synced!",
+    "syncFailed": "Sync failed — will retry",
+    "loginOffline": "Offline login",
+    "firstLoginRequired": "Connect to internet for first login"
   }
 }

@@ -78,7 +78,8 @@ export async function initDb() {
       payment_intent_id TEXT,
       payment_status TEXT DEFAULT 'unpaid',
       created_at TEXT DEFAULT (datetime('now','localtime')),
-      completed_at TEXT
+      completed_at TEXT,
+      offline_temp_id TEXT
     )
   `);
 
@@ -720,6 +721,13 @@ export async function initDb() {
   // Add loyalty_customer_id to orders
   try {
     db.run(`ALTER TABLE orders ADD COLUMN loyalty_customer_id INTEGER DEFAULT NULL`);
+  } catch (e) {
+    // Column already exists
+  }
+
+  // Add offline_temp_id to orders (for offline order dedup)
+  try {
+    db.run(`ALTER TABLE orders ADD COLUMN offline_temp_id TEXT`);
   } catch (e) {
     // Column already exists
   }

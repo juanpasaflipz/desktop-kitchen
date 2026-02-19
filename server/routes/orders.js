@@ -100,10 +100,26 @@ router.get('/:id', (req, res) => {
 // POST /api/orders - create order
 router.post('/', requireAuth('pos_access'), (req, res) => {
   try {
-    const { employee_id, items } = req.body;
+    const { employee_id, items, offline_temp_id } = req.body;
 
     if (!employee_id || !items || items.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Idempotent dedup: if offline_temp_id already exists, return existing order
+    if (offline_temp_id) {
+      const existing = get(`
+        SELECT o.id, o.order_number, o.employee_id, o.status, o.subtotal, o.tax, o.tip, o.total,
+               o.payment_status, o.payment_method, o.source, o.created_at
+        FROM orders o WHERE o.offline_temp_id = ?
+      `, [offline_temp_id]);
+      if (existing) {
+        const existingItems = all(`
+          SELECT id, order_id, menu_item_id, item_name, quantity, unit_price, notes, combo_instance_id
+          FROM order_items WHERE order_id = ?
+        `, [existing.id]);
+        return res.status(200).json({ ...existing, items: existingItems });
+      }
     }
 
     // Validate item quantities
@@ -165,9 +181,9 @@ router.post('/', requireAuth('pos_access'), (req, res) => {
 
     // Create order
     const result = run(`
-      INSERT INTO orders (order_number, employee_id, status, subtotal, tax, total, payment_status)
-      VALUES (?, ?, 'pending', ?, ?, ?, 'unpaid')
-    `, [orderNumber, employee_id, subtotal, tax, total]);
+      INSERT INTO orders (order_number, employee_id, status, subtotal, tax, total, payment_status, offline_temp_id)
+      VALUES (?, ?, 'pending', ?, ?, ?, 'unpaid', ?)
+    `, [orderNumber, employee_id, subtotal, tax, total, offline_temp_id || null]);
 
     const orderId = result.lastInsertRowid;
 

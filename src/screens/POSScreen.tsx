@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
-  getCategories,
-  getMenuItems,
   createOrder,
   createPaymentIntent,
   confirmPayment,
@@ -12,13 +10,17 @@ import {
   getModifierGroupsForItem,
   splitPayment,
   addStampsForOrder,
-  getItemsWithModifiers,
-  getPopularItems,
-  getCategorySuggestedOrder,
-  getCombos,
-  getOrderTemplates,
   createOrderTemplate,
 } from '../api';
+import {
+  getCachedCategories,
+  getCachedMenuItems,
+  getCachedItemsWithModifiers,
+  getCachedPopularItems,
+  getCachedCategorySuggestedOrder,
+  getCachedCombos,
+  getCachedOrderTemplates,
+} from '../lib/menuCache';
 import { MenuCategory, MenuItem, CartItem, Order, AISuggestion, LoyaltyCustomer, ComboDefinition, OrderTemplate } from '../types';
 import RefundModal from '../components/RefundModal';
 import { formatPrice, TAX_RATE, TAX_LABEL } from '../utils/currency';
@@ -31,7 +33,10 @@ import SplitPaymentModal from '../components/SplitPaymentModal';
 import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import CustomerLookupModal from '../components/CustomerLookupModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import { UtensilsCrossed, SlidersHorizontal, Star, X, Search, ClipboardList } from 'lucide-react';
+import { UtensilsCrossed, SlidersHorizontal, Star, X, Search, ClipboardList, WifiOff, Wifi } from 'lucide-react';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { createOfflineOrder, toReceiptOrder, calculateOrderTotals } from '../lib/offlineOrderQueue';
+import { offlineDb } from '../lib/offlineDb';
 
 /* ==================== Toast Notification ==================== */
 
@@ -101,6 +106,7 @@ interface PaymentModalProps {
   onCryptoPayment: (tip: number) => void;
   onCancel: () => void;
   isProcessing: boolean;
+  isOnline: boolean;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -110,6 +116,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   onCryptoPayment,
   onCancel,
   isProcessing,
+  isOnline,
 }) => {
   const { t } = useTranslation('pos');
   const [tip, setTip] = useState(0);
@@ -262,17 +269,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <div className="space-y-3">
             <button
               onClick={() => onCardPayment(tip)}
-              disabled={isProcessing}
-              className="w-full py-4 bg-red-600 text-white text-xl font-bold rounded-lg hover:bg-red-700 disabled:bg-neutral-700 transition-all touch-manipulation"
+              disabled={isProcessing || !isOnline}
+              className="w-full py-4 bg-red-600 text-white text-xl font-bold rounded-lg hover:bg-red-700 disabled:bg-neutral-700 disabled:text-neutral-400 transition-all touch-manipulation"
+              title={!isOnline ? t('offline.cardUnavailable') : undefined}
             >
-              {isProcessing ? t('payment.processing') : t('payment.payWithCard')}
+              {!isOnline ? t('offline.cardUnavailable') : isProcessing ? t('payment.processing') : t('payment.payWithCard')}
             </button>
             <button
               onClick={() => onCryptoPayment(tip)}
-              disabled={isProcessing}
-              className="w-full py-4 bg-orange-600 text-white text-xl font-bold rounded-lg hover:bg-orange-700 disabled:bg-neutral-700 transition-all touch-manipulation"
+              disabled={isProcessing || !isOnline}
+              className="w-full py-4 bg-orange-600 text-white text-xl font-bold rounded-lg hover:bg-orange-700 disabled:bg-neutral-700 disabled:text-neutral-400 transition-all touch-manipulation"
+              title={!isOnline ? t('offline.cardUnavailable') : undefined}
             >
-              {t('payment.payWithCrypto')}
+              {!isOnline ? t('offline.cardUnavailable') : t('payment.payWithCrypto')}
             </button>
             {showCashInput ? (
               <button
@@ -331,6 +340,11 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
         <div className="p-6 space-y-4 text-sm">
           <div className="text-center border-b pb-3">
             <p className="font-bold text-lg">{t('receipt.orderNumber', { number: order.order_number })}</p>
+            {String(order.order_number).startsWith('OFF-') && (
+              <span className="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded">
+                OFFLINE
+              </span>
+            )}
             <p className="text-neutral-600">
               {formatDateTime(new Date(order.created_at))}
             </p>
@@ -415,6 +429,7 @@ const POSScreen: React.FC = () => {
   const navigate = useNavigate();
   const { currentEmployee, logout, hasPermission } = useAuth();
   const { t } = useTranslation('pos');
+  const { isOnline, pendingSyncCount } = useNetworkStatus();
 
   // State Management
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -503,13 +518,13 @@ const POSScreen: React.FC = () => {
       try {
         setLoading(true);
         const [categoriesData, itemsData, modifierItemsData, popularData, categoryOrderData, combosData, templatesData] = await Promise.all([
-          getCategories(),
-          getMenuItems(),
-          getItemsWithModifiers().catch(() => ({ itemIds: [] })),
-          getPopularItems(8).catch(() => []),
-          getCategorySuggestedOrder().catch(() => []),
-          getCombos().catch(() => []),
-          getOrderTemplates().catch(() => []),
+          getCachedCategories(),
+          getCachedMenuItems(),
+          getCachedItemsWithModifiers().catch(() => ({ itemIds: [] })),
+          getCachedPopularItems(8).catch(() => []),
+          getCachedCategorySuggestedOrder().catch(() => []),
+          getCachedCombos().catch(() => []),
+          getCachedOrderTemplates().catch(() => []),
         ]);
         setCategories(categoriesData);
         setMenuItems(itemsData);
@@ -535,7 +550,26 @@ const POSScreen: React.FC = () => {
     };
 
     loadData();
+
+    // Restore cart from IndexedDB (crash recovery)
+    offlineDb.cart.get(1).then((saved) => {
+      if (saved && saved.items.length > 0) {
+        setCart(saved.items);
+      }
+    }).catch(() => {});
   }, []);
+
+  // Persist cart to IndexedDB (debounced 300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (cart.length > 0) {
+        offlineDb.cart.put({ id: 1, items: cart, updatedAt: Date.now() }).catch(() => {});
+      } else {
+        offlineDb.cart.delete(1).catch(() => {});
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [cart]);
 
   // Helper Functions
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -877,34 +911,52 @@ const POSScreen: React.FC = () => {
 
     setIsProcessingPayment(true);
     try {
-      const orderData = {
-        employee_id: currentEmployee!.id,
-        items: cart.map((item) => ({
-          menu_item_id: item.menu_item_id,
-          quantity: item.quantity,
-          notes: item.notes,
-          modifiers: item.selectedModifierIds || [],
-          combo_instance_id: item.combo_instance_id || null,
-        })),
-      };
+      if (!isOnline) {
+        // OFFLINE: save to IndexedDB queue
+        const offlineOrder = await createOfflineOrder(
+          currentEmployee!.id,
+          currentEmployee!.name,
+          cart,
+          tip,
+          amountReceived,
+        );
+        const receiptOrder = toReceiptOrder(offlineOrder);
+        setCompletedOrder(receiptOrder);
+        setShowPaymentModal(false);
+        setShowReceiptModal(true);
+        clearCart();
+        addToast(t('offline.orderSaved', { number: offlineOrder.offlineOrderNumber }), 'success');
+      } else {
+        // ONLINE: existing flow
+        const orderData = {
+          employee_id: currentEmployee!.id,
+          items: cart.map((item) => ({
+            menu_item_id: item.menu_item_id,
+            quantity: item.quantity,
+            notes: item.notes,
+            modifiers: item.selectedModifierIds || [],
+            combo_instance_id: item.combo_instance_id || null,
+          })),
+        };
 
-      const order = await createOrder(orderData);
-      const result = await cashPayment({ order_id: order.id, tip, amount_received: amountReceived });
+        const order = await createOrder(orderData);
+        const result = await cashPayment({ order_id: order.id, tip, amount_received: amountReceived });
 
-      const finalOrder: Order = {
-        ...order,
-        tip,
-        total: order.total + tip,
-        payment_method: 'cash',
-        employee_name: currentEmployee?.name,
-      };
+        const finalOrder: Order = {
+          ...order,
+          tip,
+          total: order.total + tip,
+          payment_method: 'cash',
+          employee_name: currentEmployee?.name,
+        };
 
-      await handleLoyaltyStamp(order);
-      setCompletedOrder(finalOrder);
-      setShowPaymentModal(false);
-      setShowReceiptModal(true);
-      clearCart();
-      addToast(t('toast.cashDone', { change: formatPrice(result.change_due) }), 'success');
+        await handleLoyaltyStamp(order);
+        setCompletedOrder(finalOrder);
+        setShowPaymentModal(false);
+        setShowReceiptModal(true);
+        clearCart();
+        addToast(t('toast.cashDone', { change: formatPrice(result.change_due) }), 'success');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('toast.cashFailed');
       addToast(errorMessage, 'error');
@@ -1068,9 +1120,38 @@ const POSScreen: React.FC = () => {
                 <p className="text-xs text-neutral-500">{t('header.ordersToday')}</p>
                 <p className="text-lg font-bold text-white">{todayOrderCount}</p>
               </div>
+              {isOnline ? (
+                <Wifi className="w-5 h-5 text-green-500" />
+              ) : (
+                <WifiOff className="w-5 h-5 text-red-500 animate-pulse" />
+              )}
               <LanguageSwitcher variant="nav" />
             </div>
           </div>
+
+          {/* Offline Mode Banner */}
+          {!isOnline && (
+            <div className="flex items-center justify-center gap-2 py-2 px-4 mb-3 bg-red-900/60 border border-red-700 rounded-lg">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-red-200 font-bold text-sm">{t('offline.indicator')}</span>
+              {pendingSyncCount > 0 && (
+                <span className="ml-2 bg-red-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {t('offline.pendingSync', { count: pendingSyncCount })}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Pending sync badge (online with pending orders) */}
+          {isOnline && pendingSyncCount > 0 && (
+            <div className="flex items-center justify-center gap-2 py-2 px-4 mb-3 bg-amber-900/40 border border-amber-700 rounded-lg">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              <span className="text-amber-200 font-bold text-sm">{t('offline.syncing')}</span>
+              <span className="ml-2 bg-amber-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {pendingSyncCount}
+              </span>
+            </div>
+          )}
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
@@ -1614,6 +1695,7 @@ const POSScreen: React.FC = () => {
           onCryptoPayment={handleCryptoPayment}
           onCancel={() => setShowPaymentModal(false)}
           isProcessing={isProcessingPayment}
+          isOnline={isOnline}
         />
       )}
 

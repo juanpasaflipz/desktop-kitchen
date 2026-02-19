@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Employee } from '../types';
 import { loginEmployee as loginEmployeeApi, setCurrentEmployeeId } from '../api';
+import { offlineDb, type CachedEmployee } from '../lib/offlineDb';
 
 interface AuthContextType {
   currentEmployee: Employee | null;
@@ -18,6 +19,53 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+/** SHA-256 hash a PIN string using Web Crypto API */
+async function hashPin(pin: string): Promise<string> {
+  const data = new TextEncoder().encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Cache employee + hashed PIN to IndexedDB for offline login */
+async function cacheEmployee(employee: Employee, pin: string): Promise<void> {
+  try {
+    const pinHash = await hashPin(pin);
+    const cached: CachedEmployee = {
+      id: employee.id,
+      name: employee.name,
+      role: employee.role,
+      active: employee.active,
+      permissions: employee.permissions || [],
+      pinHash,
+      cachedAt: Date.now(),
+    };
+    await offlineDb.employees.put(cached);
+  } catch {
+    // IndexedDB write failed — non-critical
+  }
+}
+
+/** Attempt offline login by hashing PIN and matching against cached employees */
+async function offlineLogin(pin: string): Promise<Employee | null> {
+  try {
+    const pinHash = await hashPin(pin);
+    const allCached = await offlineDb.employees.toArray();
+    const match = allCached.find((e) => e.pinHash === pinHash && e.active);
+    if (!match) return null;
+    return {
+      id: match.id,
+      name: match.name,
+      role: match.role,
+      active: match.active,
+      permissions: match.permissions,
+      created_at: '',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -28,11 +76,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Try online login first
       const employee = await loginEmployeeApi(pin);
       setCurrentEmployee(employee);
       setPermissions(employee.permissions || []);
       setCurrentEmployeeId(employee.id);
+      // Cache for future offline use
+      await cacheEmployee(employee, pin);
     } catch (err) {
+      // Online failed — try offline fallback
+      const offlineEmployee = await offlineLogin(pin);
+      if (offlineEmployee) {
+        setCurrentEmployee(offlineEmployee);
+        setPermissions(offlineEmployee.permissions || []);
+        setCurrentEmployeeId(offlineEmployee.id);
+        return; // success via offline
+      }
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
       setError(errorMessage);
       throw err;

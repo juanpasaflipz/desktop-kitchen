@@ -306,5 +306,17 @@
     "saved": "Plantilla guardada: {{name}}",
     "saveCurrentCart": "Guardar Orden Actual como Plantilla",
     "enterName": "Nombre de la plantilla..."
+  },
+  "offline": {
+    "indicator": "MODO SIN CONEXIÓN — Solo Efectivo",
+    "cashOnly": "Solo efectivo sin conexión",
+    "orderSaved": "Orden {{number}} guardada sin conexión",
+    "cardUnavailable": "Requiere internet",
+    "pendingSync": "{{count}} pendiente(s)",
+    "syncing": "Sincronizando órdenes...",
+    "syncComplete": "¡Todas las órdenes sincronizadas!",
+    "syncFailed": "Error al sincronizar — se reintentará",
+    "loginOffline": "Inicio de sesión sin conexión",
+    "firstLoginRequired": "Conecta a internet para el primer inicio de sesión"
   }
 }

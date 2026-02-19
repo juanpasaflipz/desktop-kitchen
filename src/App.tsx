@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SyncProvider } from './context/SyncContext';
 
 // Screens - these will be created as separate components
 // For now, we'll create placeholder components
@@ -349,7 +350,9 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <SyncProvider>
+        <AppContent />
+      </SyncProvider>
     </AuthProvider>
   );
 }
