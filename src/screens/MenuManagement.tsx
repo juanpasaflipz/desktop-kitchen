@@ -11,6 +11,7 @@ import {
   ChevronUp,
   ChevronDown,
   Layers,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   getCategories,
@@ -21,8 +22,12 @@ import {
   createCategory,
   updateCategory,
   toggleCategory,
+  getModifierGroups,
+  getModifierGroupsForItem,
+  assignModifierGroupToItem,
+  removeModifierGroupFromItem,
 } from '../api';
-import { MenuCategory, MenuItem } from '../types';
+import { MenuCategory, MenuItem, ModifierGroup } from '../types';
 import { formatPrice } from '../utils/currency';
 
 type ModalMode = 'add' | 'edit' | null;
@@ -62,6 +67,11 @@ export default function MenuManagement() {
   });
   const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Modifier assignment state
+  const [allModifierGroups, setAllModifierGroups] = useState<ModifierGroup[]>([]);
+  const [assignedGroupIds, setAssignedGroupIds] = useState<Set<number>>(new Set());
+  const [modifierLoading, setModifierLoading] = useState(false);
 
   // Category management state
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -129,18 +139,52 @@ export default function MenuManagement() {
     return Object.keys(errors).length === 0;
   };
 
+  const handleToggleModifierGroup = async (groupId: number) => {
+    const isAssigned = assignedGroupIds.has(groupId);
+    const newSet = new Set(assignedGroupIds);
+
+    if (isAssigned) {
+      newSet.delete(groupId);
+    } else {
+      newSet.add(groupId);
+    }
+    setAssignedGroupIds(newSet);
+
+    // For existing items (edit mode), call API immediately
+    if (editingId) {
+      try {
+        if (isAssigned) {
+          await removeModifierGroupFromItem(editingId, groupId);
+        } else {
+          await assignModifierGroupToItem(editingId, groupId);
+        }
+      } catch {
+        // Revert on failure
+        setAssignedGroupIds(assignedGroupIds);
+      }
+    }
+  };
+
   const handleAddItem = async () => {
     if (!validateForm()) return;
     setActionLoading(true);
     try {
       setError(null);
-      await createMenuItem({
+      const newItem = await createMenuItem({
         category_id: parseInt(formData.category_id),
         name: formData.name.trim(),
         price: parseFloat(formData.price),
         description: formData.description.trim() || undefined,
         image_url: formData.image_url.trim() || undefined,
       });
+      // Assign selected modifier groups to the new item
+      if (assignedGroupIds.size > 0 && newItem?.id) {
+        await Promise.all(
+          Array.from(assignedGroupIds).map(gId =>
+            assignModifierGroupToItem(newItem.id, gId).catch(() => {})
+          )
+        );
+      }
       // Refresh items for the category the item was added to
       const targetCategory = parseInt(formData.category_id);
       if (targetCategory === selectedCategory) {
@@ -197,7 +241,7 @@ export default function MenuManagement() {
     }
   };
 
-  const openAddModal = () => {
+  const openAddModal = async () => {
     setFormData({
       name: '',
       price: '',
@@ -207,10 +251,19 @@ export default function MenuManagement() {
     });
     setFormErrors({});
     setEditingId(null);
+    setAssignedGroupIds(new Set());
     setModalMode('add');
+
+    // Fetch modifier groups for assignment after creation
+    try {
+      const allGroups = await getModifierGroups();
+      setAllModifierGroups(allGroups.filter(g => g.active));
+    } catch {
+      setAllModifierGroups([]);
+    }
   };
 
-  const openEditModal = (item: MenuItem) => {
+  const openEditModal = async (item: MenuItem) => {
     setFormData({
       name: item.name,
       price: item.price.toString(),
@@ -221,6 +274,23 @@ export default function MenuManagement() {
     setFormErrors({});
     setEditingId(item.id);
     setModalMode('edit');
+
+    // Fetch modifier groups for assignment UI
+    setModifierLoading(true);
+    try {
+      const [allGroups, itemGroups] = await Promise.all([
+        getModifierGroups(),
+        getModifierGroupsForItem(item.id),
+      ]);
+      setAllModifierGroups(allGroups.filter(g => g.active));
+      setAssignedGroupIds(new Set(itemGroups.map(g => g.id)));
+    } catch {
+      // Non-critical — modifier section just won't show
+      setAllModifierGroups([]);
+      setAssignedGroupIds(new Set());
+    } finally {
+      setModifierLoading(false);
+    }
   };
 
   const closeModal = () => {
@@ -228,6 +298,8 @@ export default function MenuManagement() {
     setEditingId(null);
     setFormData({ name: '', price: '', description: '', category_id: '', image_url: '' });
     setFormErrors({});
+    setAllModifierGroups([]);
+    setAssignedGroupIds(new Set());
   };
 
   const getCategoryName = (id: number | null) => {
@@ -615,7 +687,7 @@ export default function MenuManagement() {
       {/* Add/Edit Item Modal */}
       {modalMode && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-          <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-xl max-w-md w-full p-6">
+          <div className="bg-neutral-900 rounded-lg border border-neutral-800 shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-white">
                 {modalMode === 'add' ? t('menu.addMenuItem') : t('menu.editMenuItem')}
@@ -742,6 +814,46 @@ export default function MenuManagement() {
                   </div>
                 )}
               </div>
+
+              {/* Modifier Groups Assignment */}
+              {allModifierGroups.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-300 mb-2 flex items-center gap-2">
+                    <SlidersHorizontal size={16} />
+                    {t('menu.form.modifierGroups')}
+                  </label>
+                  {modifierLoading ? (
+                    <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-3 animate-pulse h-16" />
+                  ) : (
+                    <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
+                      {allModifierGroups.map((group) => (
+                        <label
+                          key={group.id}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-700/50 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={assignedGroupIds.has(group.id)}
+                            onChange={() => handleToggleModifierGroup(group.id)}
+                            className="w-4 h-4 rounded border-neutral-600 bg-neutral-700 text-red-600 focus:ring-red-600 focus:ring-offset-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-white text-sm font-medium">{group.name}</span>
+                            <span className="text-neutral-500 text-xs ml-2">
+                              {group.selection_type === 'single' ? t('modifiers.singleSelectLabel') : t('modifiers.multiSelectLabel')}
+                              {' · '}
+                              {group.modifiers?.length || 0} {t('modifiers.optionsCount')}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {allModifierGroups.length > 0 && assignedGroupIds.size === 0 && (
+                    <p className="text-neutral-500 text-xs mt-1">{t('menu.form.noModifiersHint')}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 mt-6">

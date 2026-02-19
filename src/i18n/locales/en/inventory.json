@@ -109,7 +109,9 @@
       "itemNameRequired": "Item name is required",
       "priceRequired": "Price is required",
       "pricePositive": "Price must be greater than 0",
-      "categoryRequired": "Category is required"
+      "categoryRequired": "Category is required",
+      "modifierGroups": "Modifier Groups",
+      "noModifiersHint": "Select modifier groups to let cashiers add extras like guac, sour cream, etc."
     },
     "categoryForm": {
       "namePlaceholder": "Category name",

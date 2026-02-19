@@ -109,7 +109,9 @@
       "itemNameRequired": "El nombre del producto es obligatorio",
       "priceRequired": "El precio es obligatorio",
       "pricePositive": "El precio debe ser mayor a 0",
-      "categoryRequired": "La categoría es obligatoria"
+      "categoryRequired": "La categoría es obligatoria",
+      "modifierGroups": "Grupos de Modificadores",
+      "noModifiersHint": "Selecciona grupos de modificadores para que los cajeros agreguen extras como guacamole, crema, etc."
     },
     "categoryForm": {
       "namePlaceholder": "Nombre de categoría",
