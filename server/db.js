@@ -397,6 +397,14 @@ export function applySchema(database) {
     )
   `);
 
+  // Menu board columns on virtual_brands
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN display_type TEXT DEFAULT 'delivery'`);
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN primary_color TEXT`);
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN secondary_color TEXT`);
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN font_family TEXT`);
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN dark_bg TEXT`);
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN slug TEXT`);
+
   // Add markup-related columns to delivery_platforms
   alterSafe(`ALTER TABLE delivery_platforms ADD COLUMN default_markup_percent REAL DEFAULT 0`);
   alterSafe(`ALTER TABLE delivery_platforms ADD COLUMN avg_delivery_time_min INTEGER DEFAULT 30`);

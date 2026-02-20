@@ -1098,3 +1098,9 @@ export async function sendRecaptureSMS(data: {
 export async function markRecaptureConverted(id: number): Promise<any> {
   return apiRequest(`/delivery/recapture/${id}/convert`, { method: 'POST' });
 }
+
+/* ==================== Menu Board Endpoints ==================== */
+
+export async function getMenuBoardData(): Promise<any> {
+  return apiRequest('/menu-board/data');
+}

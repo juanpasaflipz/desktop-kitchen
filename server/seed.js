@@ -81,54 +81,56 @@ import { initDb, run, exec, saveDbSync } from './db.js';
 
     console.log('✓ Seeded 7 menu categories');
 
-    // Seed menu items (prices in MXN)
+    // Seed menu items (prices in MXN) — with image_url for menu board
+    const ins = 'INSERT INTO menu_items (category_id, name, price, description, image_url, active) VALUES (?, ?, ?, ?, ?, 1)';
+
     // Burritos (category_id = 1)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'California Burrito', 230, 'Carne asada, fries, cheese, guac, and sour cream']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'Carne Asada Burrito', 190, 'Grilled carne asada with rice, beans, and cheese']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'Grilled Chicken Burrito', 180, 'Grilled chicken with rice, beans, and cheese']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, "Juanberto's Special", 240, 'Our signature burrito loaded with everything']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'Carnitas Burrito', 185, 'Tender carnitas with rice, beans, and onions']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'Al Pastor Burrito', 185, 'Marinated pork al pastor with pineapple']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'Bean & Cheese Burrito', 120, 'Classic beans and melted cheese']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [1, 'Super Burrito', 210, 'Large burrito with your choice of meat and all the fixings']);
+    run(ins, [1, 'California Burrito', 230, 'Carne asada, fries, cheese, guac, and sour cream', 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, 'Carne Asada Burrito', 190, 'Grilled carne asada with rice, beans, and cheese', 'https://images.unsplash.com/photo-1584208632869-05fa2b2a5934?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, 'Grilled Chicken Burrito', 180, 'Grilled chicken with rice, beans, and cheese', 'https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, "Juanberto's Special", 240, 'Our signature burrito loaded with everything', 'https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, 'Carnitas Burrito', 185, 'Tender carnitas with rice, beans, and onions', 'https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, 'Al Pastor Burrito', 185, 'Marinated pork al pastor with pineapple', 'https://images.unsplash.com/photo-1653018556870-3c8382d5ca34?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, 'Bean & Cheese Burrito', 120, 'Classic beans and melted cheese', 'https://images.unsplash.com/photo-1573225342350-16731dd9bf83?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [1, 'Super Burrito', 210, 'Large burrito with your choice of meat and all the fixings', 'https://images.unsplash.com/photo-1624300629298-e9209820e3d5?w=600&h=400&fit=crop&auto=format']);
 
     // Tacos (category_id = 2)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [2, 'Street Tacos (3)', 150, 'Three corn tortilla tacos with your choice of meat']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [2, 'Fish Taco', 70, 'Crispy fish with cabbage and chipotle crema']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [2, 'Shrimp Taco', 80, 'Seasoned shrimp with cilantro and lime']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [2, 'Birria Taco', 75, 'Tender braised meat in our signature sauce']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [2, 'Chicken Taco', 60, 'Shredded chicken with lettuce, tomato, and cheese']);
+    run(ins, [2, 'Street Tacos (3)', 150, 'Three corn tortilla tacos with your choice of meat', 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [2, 'Fish Taco', 70, 'Crispy fish with cabbage and chipotle crema', 'https://images.unsplash.com/photo-1512838243191-e81e8f66f1fd?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [2, 'Shrimp Taco', 80, 'Seasoned shrimp with cilantro and lime', 'https://images.unsplash.com/photo-1611250188496-e966043a0629?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [2, 'Birria Taco', 75, 'Tender braised meat in our signature sauce', 'https://images.unsplash.com/photo-1640719028782-8230f1bdc539?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [2, 'Chicken Taco', 60, 'Shredded chicken with lettuce, tomato, and cheese', 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&h=400&fit=crop&auto=format']);
 
     // Quesadillas (category_id = 3)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [3, 'Cheese Quesadilla', 120, 'Grilled flour tortilla with melted cheese']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [3, 'Carne Asada Quesadilla', 170, 'Cheese and grilled carne asada']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [3, 'Chicken Quesadilla', 155, 'Shredded chicken with cheese and peppers']);
+    run(ins, [3, 'Cheese Quesadilla', 120, 'Grilled flour tortilla with melted cheese', 'https://images.unsplash.com/photo-1618449840665-9ed506d73a34?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [3, 'Carne Asada Quesadilla', 170, 'Cheese and grilled carne asada', 'https://images.unsplash.com/photo-1628191011227-522c7c3f0af5?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [3, 'Chicken Quesadilla', 155, 'Shredded chicken with cheese and peppers', 'https://images.unsplash.com/photo-1633321702518-7fecdafb94d5?w=600&h=400&fit=crop&auto=format']);
 
     // Combos (category_id = 4)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [4, 'Burrito Combo', 280, 'Burrito with rice, beans, and drink']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [4, 'Taco Combo', 220, 'Three tacos with rice, beans, and drink']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [4, 'Family Pack', 650, 'Feeds 4-5: Variety of burritos, tacos, and sides']);
+    run(ins, [4, 'Burrito Combo', 280, 'Burrito with rice, beans, and drink', 'https://images.unsplash.com/photo-1570461226513-bf67c6a0c5de?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [4, 'Taco Combo', 220, 'Three tacos with rice, beans, and drink', 'https://images.unsplash.com/photo-1504544750208-dc0358e63f7f?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [4, 'Family Pack', 650, 'Feeds 4-5: Variety of burritos, tacos, and sides', 'https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=600&h=400&fit=crop&auto=format']);
 
     // Sides (category_id = 5)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [5, 'Chips & Guac', 95, 'Warm chips with fresh guacamole']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [5, 'Rice & Beans', 60, 'Traditional rice and refried beans']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [5, 'Nachos', 140, 'Crispy chips with cheese, jalapeños, and sour cream']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [5, 'Churros', 70, 'Fried pastry with cinnamon sugar']);
+    run(ins, [5, 'Chips & Guac', 95, 'Warm chips with fresh guacamole', 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [5, 'Rice & Beans', 60, 'Traditional rice and refried beans', 'https://images.unsplash.com/photo-1536304993881-070a87b367b7?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [5, 'Nachos', 140, 'Crispy chips with cheese, jalapeños, and sour cream', 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [5, 'Churros', 70, 'Fried pastry with cinnamon sugar', 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=600&h=400&fit=crop&auto=format']);
 
     // Drinks (category_id = 6)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [6, 'Horchata', 55, 'Sweet rice milk drink']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [6, 'Jamaica', 55, 'Tart hibiscus flower drink']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [6, 'Agua Fresca', 55, 'Refreshing cantaloupe or watermelon drink']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [6, 'Soda', 40, 'Coca-Cola products']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [6, 'Water', 30, 'Bottled water']);
+    run(ins, [6, 'Horchata', 55, 'Sweet rice milk drink', 'https://images.unsplash.com/photo-1534353473418-4cfa6c56fd38?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [6, 'Jamaica', 55, 'Tart hibiscus flower drink', 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [6, 'Agua Fresca', 55, 'Refreshing cantaloupe or watermelon drink', 'https://images.unsplash.com/photo-1560526860-1f0e6a8ae5c5?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [6, 'Soda', 40, 'Coca-Cola products', 'https://images.unsplash.com/photo-1581098365948-6a5a912b7a49?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [6, 'Water', 30, 'Bottled water', 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600&h=400&fit=crop&auto=format']);
 
     // Beers (category_id = 7)
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Corona Extra', 65, 'Classic Mexican lager']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Modelo Especial', 65, 'Rich pilsner-style lager']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Negra Modelo', 70, 'Munich dunkel-style dark lager']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Pacifico', 60, 'Light pilsner from Mazatlán']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Victoria', 60, 'Vienna-style amber lager']);
-    run('INSERT INTO menu_items (category_id, name, price, description, active) VALUES (?, ?, ?, ?, 1)', [7, 'Michelada', 90, 'Beer with lime, chili, and Clamato']);
+    run(ins, [7, 'Corona Extra', 65, 'Classic Mexican lager', 'https://images.unsplash.com/photo-1613063435028-eda6f3fd9b07?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [7, 'Modelo Especial', 65, 'Rich pilsner-style lager', 'https://images.unsplash.com/photo-1572463716284-19b1b37d3124?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [7, 'Negra Modelo', 70, 'Munich dunkel-style dark lager', 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [7, 'Pacifico', 60, 'Light pilsner from Mazatlán', 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [7, 'Victoria', 60, 'Vienna-style amber lager', 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=600&h=400&fit=crop&auto=format']);
+    run(ins, [7, 'Michelada', 90, 'Beer with lime, chili, and Clamato', 'https://images.unsplash.com/photo-1596803244618-8dab55e2e8de?w=600&h=400&fit=crop&auto=format']);
 
     console.log('✓ Seeded 34 menu items');
 
@@ -451,6 +453,74 @@ import { initDb, run, exec, saveDbSync } from './db.js';
     } catch (e) {
       console.log('⚠ Loyalty tables not ready, skipping loyalty seed');
     }
+
+    // ==================== Menu Board Brands ====================
+
+    // Clear existing menu board data
+    try {
+      exec(`DELETE FROM virtual_brand_items WHERE virtual_brand_id IN (SELECT id FROM virtual_brands WHERE display_type = 'menu_board')`);
+      exec(`DELETE FROM virtual_brands WHERE display_type = 'menu_board'`);
+      exec(`DELETE FROM delivery_platforms WHERE name = 'menu_board'`);
+    } catch (e) {
+      // Tables or columns may not exist yet
+    }
+
+    // Insert a menu_board pseudo-platform (0% commission) to satisfy the FK
+    const mbPlatform = run('INSERT INTO delivery_platforms (name, display_name, commission_percent, active) VALUES (?, ?, ?, 1)',
+      ['menu_board', 'Menu Board', 0]);
+    const menuBoardPlatformId = mbPlatform.lastInsertRowid;
+
+    // Create Juanberto's brand
+    const jbBrand = run(`INSERT INTO virtual_brands (name, platform_id, description, display_type, primary_color, secondary_color, font_family, dark_bg, slug, active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      ["Juanberto's", menuBoardPlatformId, 'California-style burritos & Mexican classics',
+       'menu_board', '#dc2626', '#fbbf24', 'system-ui, -apple-system, sans-serif', '#0a0a0a', 'juanbertos']);
+    const jbBrandId = jbBrand.lastInsertRowid;
+
+    // Create Ensenada 101 brand
+    const e101Brand = run(`INSERT INTO virtual_brands (name, platform_id, description, display_type, primary_color, secondary_color, font_family, dark_bg, slug, active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      ['Ensenada 101', menuBoardPlatformId, 'Baja-style seafood & coastal flavors',
+       'menu_board', '#0d9488', '#e8c88a', "'Oswald', 'Montserrat', sans-serif", '#0f172a', 'ensenada-101']);
+    const e101BrandId = e101Brand.lastInsertRowid;
+
+    console.log('✓ Seeded 2 menu board brands');
+
+    // Assign ALL 34 menu items to Juanberto's (IDs 1-34)
+    for (let itemId = 1; itemId <= 34; itemId++) {
+      run('INSERT INTO virtual_brand_items (virtual_brand_id, menu_item_id, active) VALUES (?, ?, 1)',
+        [jbBrandId, itemId]);
+    }
+
+    console.log("✓ Assigned 34 items to Juanberto's brand");
+
+    // Assign curated seafood-focused subset to Ensenada 101
+    // Menu item IDs: Tacos 9-13, Sides 20-23, Drinks 24-28, Beers 29-34
+    const ensenada101Assignments = [
+      { itemId: 10, customName: 'Baja Fish Taco', customPrice: null },
+      { itemId: 11, customName: 'Camarón a la Diabla Taco', customPrice: 85 },
+      { itemId: 12, customName: 'Birria Taco del Puerto', customPrice: null },
+      { itemId: 9,  customName: 'Street Tacos Ensenada', customPrice: 160 },
+      { itemId: 20, customName: 'Chips & Guac Costera', customPrice: null },
+      { itemId: 22, customName: 'Nachos Baja Style', customPrice: 150 },
+      { itemId: 24, customName: null, customPrice: null },  // Horchata
+      { itemId: 25, customName: null, customPrice: null },  // Jamaica
+      { itemId: 26, customName: null, customPrice: null },  // Agua Fresca
+      { itemId: 27, customName: null, customPrice: null },  // Soda
+      { itemId: 28, customName: null, customPrice: null },  // Water
+      { itemId: 29, customName: null, customPrice: null },  // Corona
+      { itemId: 30, customName: null, customPrice: null },  // Modelo
+      { itemId: 31, customName: null, customPrice: null },  // Negra Modelo
+      { itemId: 32, customName: 'Pacífico Clara', customPrice: null },
+      { itemId: 34, customName: 'Michelada del Puerto', customPrice: 100 },
+    ];
+
+    for (const { itemId, customName, customPrice } of ensenada101Assignments) {
+      run('INSERT INTO virtual_brand_items (virtual_brand_id, menu_item_id, custom_name, custom_price, active) VALUES (?, ?, ?, ?, 1)',
+        [e101BrandId, itemId, customName, customPrice]);
+    }
+
+    console.log('✓ Assigned 16 items to Ensenada 101 brand');
 
     saveDbSync(); // Flush to disk immediately
     console.log('\n✅ Database seeding complete!');

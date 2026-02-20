@@ -120,6 +120,12 @@ const OnboardingScreen = React.lazy(() =>
   }))
 );
 
+const MenuBoardScreen = React.lazy(() =>
+  import('./screens/MenuBoardScreen').then((module) => ({
+    default: module.default || (() => <div>Menu Board</div>),
+  }))
+);
+
 /* ==================== Protected Route ==================== */
 
 interface ProtectedRouteProps {
@@ -343,6 +349,9 @@ const AppContent: React.FC = () => {
             />
           }
         />
+
+        {/* Menu Board — public, no auth */}
+        <Route path="/menu-board" element={<MenuBoardScreen />} />
 
         {/* Fallback route */}
         <Route

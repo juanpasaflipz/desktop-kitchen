@@ -27,6 +27,7 @@ import authRoutes from './routes/auth.js';
 import brandingRoutes from './routes/branding.js';
 import billingRoutes, { stripeWebhook } from './routes/billing.js';
 import deliveryIntelRoutes from './routes/delivery-intelligence.js';
+import menuBoardRoutes from './routes/menu-board.js';
 import { initAI } from './ai/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,6 +56,9 @@ app.use('/admin', adminRoutes);
 
 // Auth routes (uses master DB for registration/login, not tenant-scoped)
 app.use('/api/auth', authRoutes);
+
+// Menu board (public, no auth required)
+app.use('/api/menu-board', menuBoardRoutes);
 
 // Tenant resolution middleware — all /api routes below use the resolved tenant DB
 app.use('/api', tenantMiddleware);
