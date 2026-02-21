@@ -16,6 +16,7 @@ import {
 } from '../api';
 import { ModifierGroup, ComboDefinition, ComboSlot, MenuCategory, MenuItem } from '../types';
 import { formatPrice } from '../utils/currency';
+import BrandLogo from '../components/BrandLogo';
 
 interface ComboFormData {
   name: string;
@@ -273,7 +274,7 @@ export default function ModifierManagement() {
             </Link>
             <h1 className="text-3xl font-black tracking-tighter">{t('modifiers.title')}</h1>
           </div>
-          <img src="/logo.png" alt="Juanberto's" className="h-10" />
+          <BrandLogo className="h-10" />
         </div>
       </div>
 

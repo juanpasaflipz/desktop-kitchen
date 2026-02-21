@@ -22,6 +22,7 @@ import {
 } from '../api';
 import { DeliveryPlatform, DeliveryOrder } from '../types';
 import { formatPrice } from '../utils/currency';
+import BrandLogo from '../components/BrandLogo';
 
 type Tab = 'orders' | 'analytics' | 'markups' | 'brands' | 'recapture' | 'platforms';
 
@@ -191,7 +192,7 @@ export default function DeliveryScreen() {
             >
               <RefreshCw size={20} />
             </button>
-            <img src="/logo.png" alt="Juanberto's" className="h-10" />
+            <BrandLogo className="h-10" />
           </div>
         </div>
       </div>

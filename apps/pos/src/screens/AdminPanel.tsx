@@ -18,10 +18,12 @@ import {
   Calendar,
   Heart,
   Tv,
+  Paintbrush,
 } from 'lucide-react';
 import { getSalesReport, getLowStock } from '../api';
 import { SalesReport, InventoryItem } from '../types';
 import { formatPrice } from '../utils/currency';
+import BrandLogo from '../components/BrandLogo';
 
 export default function AdminPanel() {
   const { t } = useTranslation('admin');
@@ -64,7 +66,7 @@ export default function AdminPanel() {
             </Link>
             <h1 className="text-3xl font-black tracking-tighter">{t('panel.title')}</h1>
           </div>
-          <img src="/logo.png" alt="Juanberto's" className="h-10" />
+          <BrandLogo className="h-10" />
         </div>
       </div>
 
@@ -240,6 +242,16 @@ export default function AdminPanel() {
               </div>
               <h2 className="text-xl font-bold text-white mb-2">{t('cards.loyaltyCrm')}</h2>
               <p className="text-neutral-400 text-sm">{t('cards.loyaltyDesc')}</p>
+            </div>
+          </Link>
+
+          <Link to="/admin/branding">
+            <div className="bg-neutral-900 p-8 rounded-lg border border-neutral-800 hover:border-brand-600 transition-all cursor-pointer h-full">
+              <div className="flex items-center justify-center w-12 h-12 bg-brand-600/10 rounded-lg mb-4">
+                <Paintbrush className="text-brand-500" size={28} />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">{t('cards.branding')}</h2>
+              <p className="text-neutral-400 text-sm">{t('cards.brandingDesc')}</p>
             </div>
           </Link>
 

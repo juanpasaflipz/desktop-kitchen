@@ -34,6 +34,8 @@
     "prepForecastDesc": "Predicción de ingredientes con IA",
     "loyaltyCrm": "Lealtad y CRM",
     "loyaltyDesc": "Recompensas, tarjetas de sellos y referidos",
+    "branding": "Marca",
+    "brandingDesc": "Personalizar logo, colores y nombre del restaurante",
     "menuBoard": "Menu Board",
     "menuBoardDesc": "Gestionar marcas, colores y productos del menú digital"
   },
@@ -92,7 +94,25 @@
       "apply_discounts": "Aplicar Descuentos",
       "view_dashboard": "Ver Dashboard",
       "manage_permissions": "Gestionar Permisos",
-      "manage_purchase_orders": "Gestionar Órdenes de Compra"
+      "manage_purchase_orders": "Gestionar Órdenes de Compra",
+      "manage_branding": "Gestionar Marca"
     }
+  },
+  "branding": {
+    "title": "Marca",
+    "restaurantName": "Nombre del Restaurante",
+    "tagline": "Eslogan",
+    "logo": "Logo",
+    "chooseLogo": "Elegir Logo",
+    "logoHint": "PNG, JPG o SVG. Máximo 2MB.",
+    "primaryColor": "Color Principal",
+    "customHex": "Personalizado:",
+    "preview": "Vista Previa",
+    "previewButton": "Botón de Ejemplo",
+    "previewOutline": "Contorno",
+    "save": "Guardar Marca",
+    "saving": "Guardando...",
+    "saved": "¡Guardado!",
+    "fileTooLarge": "El archivo es demasiado grande. Máximo 2MB."
   }
 }

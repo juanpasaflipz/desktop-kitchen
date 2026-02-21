@@ -5,6 +5,7 @@ export interface BrandingConfig {
   primaryColor: string;
   logoUrl?: string;
   restaurantName?: string;
+  tagline?: string;
 }
 
 interface BrandingContextType {
@@ -12,6 +13,7 @@ interface BrandingContextType {
   palette: BrandPalette | null;
   isLoaded: boolean;
   setBranding: (config: BrandingConfig) => void;
+  refresh: () => Promise<void>;
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
@@ -31,24 +33,37 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
     applyBrandPalette(p);
   }, []);
 
+  // Fetch branding from server
+  const fetchBranding = useCallback(async () => {
+    try {
+      const res = await fetch('/api/branding');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.primaryColor) {
+          setBranding(data);
+          setIsLoaded(true);
+          return true;
+        }
+      }
+    } catch {
+      // Server unreachable
+    }
+    return false;
+  }, [setBranding]);
+
+  // Refresh branding from server (called after saving settings)
+  const refresh = useCallback(async () => {
+    await fetchBranding();
+  }, [fetchBranding]);
+
   // Fetch branding from server on mount
   useEffect(() => {
     let cancelled = false;
 
     async function loadBranding() {
-      try {
-        const res = await fetch('/api/branding');
-        if (res.ok) {
-          const data = await res.json();
-          if (!cancelled && data.primaryColor) {
-            setBranding(data);
-            setIsLoaded(true);
-            return;
-          }
-        }
-      } catch {
-        // Server unreachable — use defaults
-      }
+      const fetched = await fetchBranding();
+      if (cancelled) return;
+      if (fetched) return;
 
       // Check localStorage for cached branding
       try {
@@ -74,7 +89,7 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     loadBranding();
     return () => { cancelled = true; };
-  }, [setBranding]);
+  }, [fetchBranding, setBranding]);
 
   // Cache branding to localStorage whenever it changes
   useEffect(() => {
@@ -87,8 +102,15 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [branding]);
 
+  // Update document title with restaurant name
+  useEffect(() => {
+    if (branding?.restaurantName) {
+      document.title = `${branding.restaurantName} POS`;
+    }
+  }, [branding?.restaurantName]);
+
   return (
-    <BrandingContext.Provider value={{ branding, palette, isLoaded, setBranding }}>
+    <BrandingContext.Provider value={{ branding, palette, isLoaded, setBranding, refresh }}>
       {children}
     </BrandingContext.Provider>
   );

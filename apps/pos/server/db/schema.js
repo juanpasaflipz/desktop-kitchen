@@ -408,7 +408,8 @@ export function applySchema(database) {
       'manage_inventory', 'manage_employees', 'manage_printers', 'manage_delivery',
       'manage_modifiers', 'manage_ai', 'process_refunds', 'void_orders',
       'apply_discounts', 'view_dashboard', 'manage_permissions', 'manage_purchase_orders',
-      'manage_loyalty'
+      'manage_loyalty',
+      'manage_branding'
     ];
 
     const roleDefaults = {
@@ -436,6 +437,18 @@ export function applySchema(database) {
       const insertLoyalty = database.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_loyalty', ?)`);
       for (const [role, granted] of Object.entries(loyaltyRoles)) {
         insertLoyalty.run(role, granted);
+      }
+    }
+  } catch {}
+
+  // Backfill manage_branding
+  try {
+    const brandingPermRow = database.prepare("SELECT COUNT(*) as cnt FROM role_permissions WHERE permission = 'manage_branding'").get();
+    if ((brandingPermRow?.cnt || 0) === 0 && permTotal > 0) {
+      const brandingRoles = { admin: 1, manager: 1, cashier: 0, kitchen: 0, bar: 0 };
+      const insertBranding = database.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_branding', ?)`);
+      for (const [role, granted] of Object.entries(brandingRoles)) {
+        insertBranding.run(role, granted);
       }
     }
   } catch {}

@@ -35,6 +35,7 @@ import {
   VarianceReport,
 } from '../types';
 import { formatDate, formatDateTime } from '../utils/dateFormat';
+import BrandLogo from '../components/BrandLogo';
 
 type Tab = 'stock' | 'count' | 'variance' | 'alerts';
 type SortField = 'name' | 'quantity' | 'status';
@@ -280,7 +281,7 @@ export default function InventoryScreen() {
             </Link>
             <h1 className="text-3xl font-black tracking-tighter">{t('inventory.title')}</h1>
           </div>
-          <img src="/logo.png" alt="Juanberto's" className="h-10" />
+          <BrandLogo className="h-10" />
         </div>
       </div>
 

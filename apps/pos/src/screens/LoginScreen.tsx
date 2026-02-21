@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import BrandLogo from '../components/BrandLogo';
+import { useBranding } from '../context/BrandingContext';
 
 const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading, error } = useAuth();
   const { t } = useTranslation();
+  const { branding } = useBranding();
   const [pin, setPin] = useState('');
   const [shake, setShake] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -57,17 +60,15 @@ const LoginScreen: React.FC = () => {
     <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4">
       {/* Logo & Header */}
       <div className="text-center mb-12">
-        <img
-          src="/logo.png"
-          alt="Juanberto's"
-          className="h-28 mx-auto mb-6"
-        />
+        <BrandLogo className="h-28 mx-auto mb-6" />
         <h1 className="text-5xl font-black tracking-tighter text-white mb-2">
-          Juanberto's
+          {branding?.restaurantName || "Juanberto's"}
         </h1>
-        <p className="text-xl font-semibold text-brand-600 tracking-tight">
-          California Burritos
-        </p>
+        {(branding?.tagline || 'California Burritos') && (
+          <p className="text-xl font-semibold text-brand-600 tracking-tight">
+            {branding?.tagline || 'California Burritos'}
+          </p>
+        )}
         <p className="text-lg text-neutral-400 mt-2">{t('login.employeeLogin')}</p>
       </div>
 

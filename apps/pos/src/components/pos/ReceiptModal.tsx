@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Order } from '../../types';
 import { formatPrice, TAX_LABEL } from '../../utils/currency';
 import { formatDateTime } from '../../utils/dateFormat';
+import BrandLogo from '../BrandLogo';
+import { useBranding } from '../../context/BrandingContext';
 
 export interface ReceiptModalProps {
   order: Order;
@@ -12,14 +14,17 @@ export interface ReceiptModalProps {
 
 const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) => {
   const { t } = useTranslation('pos');
+  const { branding } = useBranding();
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-96 overflow-auto">
         <div className="p-6 text-center border-b-2 border-gray-300">
-          <img src="/logo.png" alt="Juanberto's" className="h-12 mx-auto mb-2" />
-          <h2 className="text-2xl font-black tracking-tighter text-neutral-900 mb-1">Juanberto's</h2>
-          <p className="text-neutral-600">California Burritos</p>
+          <BrandLogo className="h-12 mx-auto mb-2" />
+          <h2 className="text-2xl font-black tracking-tighter text-neutral-900 mb-1">{branding?.restaurantName || "Juanberto's"}</h2>
+          {(branding?.tagline || 'California Burritos') && (
+            <p className="text-neutral-600">{branding?.tagline || 'California Burritos'}</p>
+          )}
           <p className="text-sm text-neutral-500 mt-2">
             123 Main Street, San Francisco, CA 94102
           </p>

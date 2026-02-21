@@ -26,6 +26,7 @@ import {
 } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/currency';
+import BrandLogo from '../components/BrandLogo';
 import {
   BarChart,
   Bar,
@@ -261,7 +262,7 @@ export default function ReportsScreen() {
               <Download size={20} />
               {t('sales.exportCsv')}
             </button>
-            <img src="/logo.png" alt="Juanberto's" className="h-10" />
+            <BrandLogo className="h-10" />
           </div>
         </div>
       </div>

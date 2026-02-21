@@ -11,6 +11,7 @@ import {
   getCategories,
 } from '../api';
 import { Printer, MenuCategory } from '../types';
+import BrandLogo from '../components/BrandLogo';
 
 export default function PrinterManagement() {
   const { t } = useTranslation('inventory');
@@ -90,7 +91,7 @@ export default function PrinterManagement() {
             </Link>
             <h1 className="text-3xl font-black tracking-tighter">{t('printers.title')}</h1>
           </div>
-          <img src="/logo.png" alt="Juanberto's" className="h-10" />
+          <BrandLogo className="h-10" />
         </div>
       </div>
 

@@ -43,6 +43,9 @@ app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), stri
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
 
+// Serve uploaded files (logos, etc.)
+app.use('/uploads', express.static(path.join(__dirname, '../data/uploads')));
+
 // Health check endpoints (before tenant middleware — always accessible)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });

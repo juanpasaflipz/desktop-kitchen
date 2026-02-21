@@ -30,6 +30,7 @@ import {
 import { MenuCategory, MenuItem, ModifierGroup } from '../types';
 import { invalidateMenuCache } from '../lib/menuCache';
 import { formatPrice } from '../utils/currency';
+import BrandLogo from '../components/BrandLogo';
 
 type ModalMode = 'add' | 'edit' | null;
 type View = 'items' | 'categories';
@@ -414,7 +415,7 @@ export default function MenuManagement() {
                 {t('menu.addItem')}
               </button>
             )}
-            <img src="/logo.png" alt="Juanberto's" className="h-10" />
+            <BrandLogo className="h-10" />
           </div>
         </div>
       </div>

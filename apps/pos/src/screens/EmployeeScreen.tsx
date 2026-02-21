@@ -18,6 +18,7 @@ import {
   toggleEmployee
 } from '../api';
 import { Employee } from '../types';
+import BrandLogo from '../components/BrandLogo';
 
 type ModalMode = 'add' | 'edit' | null;
 type RoleType = 'cashier' | 'kitchen' | 'bar' | 'manager' | 'admin';
@@ -189,7 +190,7 @@ export default function EmployeeScreen() {
               <Plus size={20} />
               {t('employees.addEmployee')}
             </button>
-            <img src="/logo.png" alt="Juanberto's" className="h-10" />
+            <BrandLogo className="h-10" />
           </div>
         </div>
       </div>

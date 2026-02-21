@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { Order, OrderItem, CategoryRole } from '../types';
 import { formatTime, formatDate } from '../utils/dateFormat';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import BrandLogo from '../components/BrandLogo';
 import {
   Clock,
   ArrowLeft,
@@ -294,7 +295,7 @@ export default function KitchenDisplay() {
           >
             <Maximize size={28} />
           </button>
-          <img src="/logo.png" alt="Juanberto's" className="h-10" />
+          <BrandLogo className="h-10" />
         </div>
       </div>
 

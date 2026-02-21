@@ -34,6 +34,8 @@
     "prepForecastDesc": "AI-powered ingredient prediction",
     "loyaltyCrm": "Loyalty & CRM",
     "loyaltyDesc": "Customer rewards, stamp cards, and referrals",
+    "branding": "Branding",
+    "brandingDesc": "Customize logo, colors, and restaurant name",
     "menuBoard": "Menu Board",
     "menuBoardDesc": "Manage menu board brands, colors, and items"
   },
@@ -92,7 +94,25 @@
       "apply_discounts": "Apply Discounts",
       "view_dashboard": "View Dashboard",
       "manage_permissions": "Manage Permissions",
-      "manage_purchase_orders": "Manage Purchase Orders"
+      "manage_purchase_orders": "Manage Purchase Orders",
+      "manage_branding": "Manage Branding"
     }
+  },
+  "branding": {
+    "title": "Branding",
+    "restaurantName": "Restaurant Name",
+    "tagline": "Tagline",
+    "logo": "Logo",
+    "chooseLogo": "Choose Logo",
+    "logoHint": "PNG, JPG, or SVG. Max 2MB.",
+    "primaryColor": "Primary Color",
+    "customHex": "Custom:",
+    "preview": "Live Preview",
+    "previewButton": "Sample Button",
+    "previewOutline": "Outline",
+    "save": "Save Branding",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "fileTooLarge": "File is too large. Maximum size is 2MB."
   }
 }

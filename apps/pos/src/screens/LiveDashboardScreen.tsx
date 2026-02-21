@@ -18,6 +18,7 @@ import {
   Cell,
 } from 'recharts';
 import { ArrowLeft, Maximize, RefreshCw } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
 
 const COLORS = ['#dc2626', '#16a34a', '#2563eb', '#ca8a04'];
 
@@ -112,7 +113,7 @@ export default function LiveDashboardScreen() {
           <button onClick={handleFullscreen} className="p-2 hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-700">
             <Maximize size={20} />
           </button>
-          <img src="/logo.png" alt="Juanberto's" className="h-10" />
+          <BrandLogo className="h-10" />
         </div>
       </div>
 

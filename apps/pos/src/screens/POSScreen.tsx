@@ -37,6 +37,7 @@ import SplitPaymentModal from '../components/SplitPaymentModal';
 import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import CustomerLookupModal from '../components/CustomerLookupModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import BrandLogo from '../components/BrandLogo';
 import { UtensilsCrossed, SlidersHorizontal, Star, X, Search, ClipboardList, WifiOff, Wifi } from 'lucide-react';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { createOfflineOrder, toReceiptOrder, calculateOrderTotals } from '../lib/offlineOrderQueue';
@@ -734,7 +735,7 @@ const POSScreen: React.FC = () => {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
         <div className="text-center">
-          <img src="/logo.png" alt="Juanberto's" className="h-16 mx-auto mb-4" />
+          <BrandLogo className="h-16 mx-auto mb-4" />
           <p className="text-xl font-bold text-white">{t('actions.loadingMenu')}</p>
         </div>
       </div>
@@ -746,7 +747,7 @@ const POSScreen: React.FC = () => {
       {/* ==================== LEFT SIDEBAR - CATEGORIES ==================== */}
       <div className="w-48 bg-neutral-900 border-r border-neutral-800 flex flex-col">
         <div className="bg-neutral-950 p-4 text-center border-b border-neutral-800">
-          <img src="/logo.png" alt="Juanberto's" className="h-8 mx-auto mb-1" />
+          <BrandLogo className="h-8 mx-auto mb-1" />
           <p className="font-bold text-xs text-neutral-400 tracking-tight">{t('header.categories')}</p>
         </div>
 
