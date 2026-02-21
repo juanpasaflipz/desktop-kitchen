@@ -1,7 +1,8 @@
-import React from 'react';
-import CategorySection from './CategorySection';
+import React, { useState, useEffect, useCallback } from 'react';
 import ComboHero from './ComboHero';
+import MagazineGrid from './MagazineGrid';
 import MenuBoardClock from './MenuBoardClock';
+import { useMenuLayout } from './useMenuLayout';
 import type { ComboData } from './ComboHero';
 
 interface Badge {
@@ -51,11 +52,9 @@ interface BrandViewProps {
  * and grabbing the first image from matching brand categories.
  */
 function getComboHeroImage(combo: ComboData, categories: CategoryData[]): string | null {
-  // First try slot item images
   for (const slot of combo.slots) {
     if (slot.itemImage) return slot.itemImage;
   }
-  // Fall back to first image from the combo's category slots
   for (const slot of combo.slots) {
     if (slot.categoryId) {
       const cat = categories.find(c => c.id === slot.categoryId);
@@ -67,6 +66,21 @@ function getComboHeroImage(combo: ComboData, categories: CategoryData[]): string
     }
   }
   return null;
+}
+
+function useViewportSize() {
+  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  const handleResize = useCallback(() => {
+    setSize({ width: window.innerWidth, height: window.innerHeight });
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [handleResize]);
+
+  return size;
 }
 
 const BrandView: React.FC<BrandViewProps> = ({ brand, combos, isPortrait }) => {
@@ -90,6 +104,17 @@ const BrandView: React.FC<BrandViewProps> = ({ brand, combos, isPortrait }) => {
     c => c.name.toLowerCase() !== 'combos'
   );
 
+  const { width: vw, height: vh } = useViewportSize();
+  const hasCombos = combos.length > 0;
+
+  const layout = useMenuLayout({
+    categories: nonComboCategories,
+    viewportHeight: vh,
+    viewportWidth: vw,
+    hasCombos,
+    isPortrait,
+  });
+
   if (isPortrait) {
     return (
       <div
@@ -97,7 +122,7 @@ const BrandView: React.FC<BrandViewProps> = ({ brand, combos, isPortrait }) => {
         style={{ ...cssVars, backgroundColor: theme.darkBg, fontFamily: `var(--mb-font-body)` }}
       >
         {/* Slim top header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] shrink-0">
           <div className="flex items-center gap-3">
             <div
               className="w-1.5 h-8 rounded-full"
@@ -113,44 +138,45 @@ const BrandView: React.FC<BrandViewProps> = ({ brand, combos, isPortrait }) => {
           <MenuBoardClock />
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        {/* Content — NO scroll */}
+        <div className="flex-1 overflow-hidden px-5 py-2 flex flex-col gap-2 min-h-0">
           {/* Combo heroes */}
-          {combos.length > 0 && (
-            <div className="flex flex-col gap-3 mb-6">
+          {hasCombos && (
+            <div className="flex flex-col gap-2 shrink-0" style={{ height: layout.comboRowHeight }}>
               {combos.map(combo => (
                 <ComboHero
                   key={combo.id}
                   combo={combo}
                   isPortrait
                   heroImage={getComboHeroImage(combo, brand.categories)}
+                  height={Math.floor(layout.comboRowHeight / combos.length) - (combos.length > 1 ? 4 : 0)}
                 />
               ))}
             </div>
           )}
 
-          {/* Category sections */}
-          {nonComboCategories.map(cat => (
-            <CategorySection key={cat.id} name={cat.name} items={cat.items} isPortrait />
-          ))}
+          {/* Magazine grid fills remaining space */}
+          <div className="flex-1 min-h-0">
+            <MagazineGrid layout={layout} categories={nonComboCategories} />
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-center px-5 py-1.5 border-t border-white/[0.06] text-white/30">
+        <div className="flex items-center justify-center px-5 py-1.5 border-t border-white/[0.06] text-white/30 shrink-0">
           <span className="text-[9px] uppercase tracking-widest">Precios en MXN</span>
         </div>
       </div>
     );
   }
 
-  // Landscape: hero top + grid below, no sidebar
+  // Landscape: hero top + magazine grid below — NO scrolling
   return (
     <div
       className="w-full h-full flex flex-col overflow-hidden"
       style={{ ...cssVars, backgroundColor: theme.darkBg, fontFamily: `var(--mb-font-body)` }}
     >
       {/* Slim top bar */}
-      <div className="flex items-center justify-between px-6 py-2.5 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-6 py-2.5 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-3">
           <div
             className="w-1.5 h-7 rounded-full"
@@ -174,26 +200,27 @@ const BrandView: React.FC<BrandViewProps> = ({ brand, combos, isPortrait }) => {
         </div>
       </div>
 
-      {/* Main scrollable area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {/* Combo heroes — 2-up row */}
-        {combos.length > 0 && (
-          <div className="flex gap-4 mb-6">
+      {/* Main area — NO scroll */}
+      <div className="flex-1 overflow-hidden px-6 py-2 flex flex-col gap-2 min-h-0">
+        {/* Combo heroes — row */}
+        {hasCombos && (
+          <div className="flex gap-4 shrink-0" style={{ height: layout.comboRowHeight }}>
             {combos.map(combo => (
               <ComboHero
                 key={combo.id}
                 combo={combo}
                 isPortrait={false}
                 heroImage={getComboHeroImage(combo, brand.categories)}
+                height={layout.comboRowHeight}
               />
             ))}
           </div>
         )}
 
-        {/* Category grids */}
-        {nonComboCategories.map(cat => (
-          <CategorySection key={cat.id} name={cat.name} items={cat.items} isPortrait={false} />
-        ))}
+        {/* Magazine grid fills remaining space */}
+        <div className="flex-1 min-h-0">
+          <MagazineGrid layout={layout} categories={nonComboCategories} />
+        </div>
       </div>
     </div>
   );

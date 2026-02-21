@@ -21,15 +21,17 @@ interface ComboHeroProps {
   isPortrait: boolean;
   /** An image URL from one of the combo's category items to use as background */
   heroImage?: string | null;
+  /** When provided, uses exact pixel height instead of minHeight */
+  height?: number;
 }
 
-const ComboHero: React.FC<ComboHeroProps> = ({ combo, isPortrait, heroImage }) => {
+const ComboHero: React.FC<ComboHeroProps> = ({ combo, isPortrait, heroImage, height }) => {
   const [imgError, setImgError] = useState(false);
   const showImage = heroImage && !imgError;
 
   if (isPortrait) {
     return (
-      <div className="relative rounded-2xl overflow-hidden" style={{ minHeight: 160 }}>
+      <div className="relative rounded-2xl overflow-hidden" style={height ? { height } : { minHeight: 160 }}>
         {/* Background */}
         {showImage ? (
           <img
@@ -48,7 +50,7 @@ const ComboHero: React.FC<ComboHeroProps> = ({ combo, isPortrait, heroImage }) =
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
 
         {/* Content */}
-        <div className="relative z-10 p-5 flex flex-col justify-end h-full" style={{ minHeight: 160 }}>
+        <div className="relative z-10 p-5 flex flex-col justify-end h-full" style={height ? { minHeight: 0 } : { minHeight: 160 }}>
           <h3
             className="text-xl font-black uppercase tracking-wide text-white mb-1"
             style={{ fontFamily: 'var(--mb-font-heading)' }}
@@ -76,7 +78,7 @@ const ComboHero: React.FC<ComboHeroProps> = ({ combo, isPortrait, heroImage }) =
 
   // Landscape — wider hero card
   return (
-    <div className="relative rounded-2xl overflow-hidden flex-1" style={{ minHeight: 200 }}>
+    <div className="relative rounded-2xl overflow-hidden flex-1" style={height ? { height } : { minHeight: 200 }}>
       {/* Background image */}
       {showImage ? (
         <img
@@ -96,7 +98,7 @@ const ComboHero: React.FC<ComboHeroProps> = ({ combo, isPortrait, heroImage }) =
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
 
       {/* Content */}
-      <div className="relative z-10 p-6 flex flex-col justify-end h-full" style={{ minHeight: 200 }}>
+      <div className="relative z-10 p-6 flex flex-col justify-end h-full" style={height ? { minHeight: 0 } : { minHeight: 200 }}>
         <h3
           className="text-2xl font-black uppercase tracking-wide text-white mb-1 drop-shadow-lg"
           style={{ fontFamily: 'var(--mb-font-heading)' }}

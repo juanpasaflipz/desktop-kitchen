@@ -36,7 +36,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ name, items, isPortra
         </div>
         <div className="flex flex-col divide-y divide-white/[0.04]">
           {items.map(item => (
-            <MenuItemCard key={item.id} {...item} isPortrait />
+            <MenuItemCard key={item.id} {...item} variant="compact" />
           ))}
         </div>
       </div>
@@ -54,7 +54,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({ name, items, isPortra
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {items.map(item => (
-          <MenuItemCard key={item.id} {...item} isPortrait={false} />
+          <MenuItemCard key={item.id} {...item} variant="standard" />
         ))}
       </div>
     </div>
