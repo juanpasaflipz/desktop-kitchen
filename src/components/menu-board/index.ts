@@ -6,5 +6,6 @@ export { default as CategorySection } from './CategorySection';
 export { default as ComboHero } from './ComboHero';
 export { default as BrandView } from './BrandView';
 export { default as BrandTransition } from './BrandTransition';
+export { default as MenuListView } from './MenuListView';
 export { default as MagazineGrid } from './MagazineGrid';
 export { useMenuLayout } from './useMenuLayout';

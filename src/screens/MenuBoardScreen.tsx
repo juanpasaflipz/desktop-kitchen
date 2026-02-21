@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GrainOverlay, BrandView, BrandTransition } from '../components/menu-board';
+import { GrainOverlay, BrandView, BrandTransition, MenuListView } from '../components/menu-board';
 import type { ComboData } from '../components/menu-board/ComboHero';
 
 interface Badge {
@@ -44,22 +44,34 @@ interface MenuBoardResponse {
   lastUpdated: string;
 }
 
-const ROTATE_INTERVAL = 30_000; // 30s between brands
+// Each brand gets 2 slides: photo cards, then full list
+interface Slide {
+  brand: BrandData;
+  view: 'photo' | 'list';
+}
+
+const ROTATE_INTERVAL = 30_000; // 30s per slide
 const REFETCH_INTERVAL = 5 * 60_000; // 5 min
-const CURSOR_HIDE_DELAY = 3_000; // 3s
+const CURSOR_HIDE_DELAY = 3_000;
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const MenuBoardScreen: React.FC = () => {
   const [brands, setBrands] = useState<BrandData[]>([]);
   const [combos, setCombos] = useState<ComboData[]>([]);
-  const [activeBrandIndex, setActiveBrandIndex] = useState(0);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [isPortrait, setIsPortrait] = useState(false);
   const [cursorHidden, setCursorHidden] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const cursorTimer = useRef<number | null>(null);
   const fontsLoaded = useRef(false);
+
+  // Build slides array: for each brand, photo view then list view
+  const slides: Slide[] = brands.flatMap(brand => [
+    { brand, view: 'photo' as const },
+    { brand, view: 'list' as const },
+  ]);
 
   // Fetch menu data
   const fetchData = useCallback(async () => {
@@ -71,7 +83,6 @@ const MenuBoardScreen: React.FC = () => {
       setCombos(data.combos || []);
       setError(null);
 
-      // Load Google Fonts if Ensenada 101 is present
       if (!fontsLoaded.current && data.brands.some(b => b.slug === 'ensenada-101')) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
@@ -86,21 +97,20 @@ const MenuBoardScreen: React.FC = () => {
     }
   }, []);
 
-  // Initial fetch + periodic refetch
   useEffect(() => {
     fetchData();
     const id = setInterval(fetchData, REFETCH_INTERVAL);
     return () => clearInterval(id);
   }, [fetchData]);
 
-  // Auto-rotate brands
+  // Auto-rotate slides
   useEffect(() => {
-    if (brands.length <= 1) return;
+    if (slides.length <= 1) return;
     const id = setInterval(() => {
-      setActiveBrandIndex(prev => (prev + 1) % brands.length);
+      setActiveSlideIndex(prev => (prev + 1) % slides.length);
     }, ROTATE_INTERVAL);
     return () => clearInterval(id);
-  }, [brands.length]);
+  }, [slides.length]);
 
   // Orientation detection
   useEffect(() => {
@@ -166,22 +176,28 @@ const MenuBoardScreen: React.FC = () => {
     >
       <GrainOverlay />
 
-      {brands.map((brand, i) => (
-        <BrandTransition key={brand.id} isActive={i === activeBrandIndex}>
-          <BrandView brand={brand} combos={combos} isPortrait={isPortrait} />
+      {slides.map((slide, i) => (
+        <BrandTransition key={`${slide.brand.id}-${slide.view}`} isActive={i === activeSlideIndex}>
+          {slide.view === 'photo' ? (
+            <BrandView brand={slide.brand} combos={combos} isPortrait={isPortrait} />
+          ) : (
+            <MenuListView brand={slide.brand} combos={combos} isPortrait={isPortrait} />
+          )}
         </BrandTransition>
       ))}
 
-      {/* Brand indicator dots */}
-      {brands.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-40">
-          {brands.map((_, i) => (
+      {/* Slide indicator dots */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-40">
+          {slides.map((slide, i) => (
             <button
-              key={i}
-              onClick={() => setActiveBrandIndex(i)}
-              className={`w-2 h-2 rounded-full transition-all duration-500 ${
-                i === activeBrandIndex ? 'bg-white/60 scale-125' : 'bg-white/20'
-              }`}
+              key={`${slide.brand.id}-${slide.view}`}
+              onClick={() => setActiveSlideIndex(i)}
+              className={`transition-all duration-500 ${
+                i === activeSlideIndex
+                  ? 'bg-white/60 scale-110'
+                  : 'bg-white/20'
+              } ${slide.view === 'list' ? 'w-4 h-2 rounded-sm' : 'w-2 h-2 rounded-full'}`}
             />
           ))}
         </div>
