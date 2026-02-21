@@ -33,6 +33,23 @@ export interface MenuItem {
   active: boolean;
 }
 
+/* Virtual Brand Types */
+export interface VirtualBrand {
+  id: number;
+  name: string;
+  slug: string;
+  primary_color: string;
+  secondary_color?: string;
+  items: VirtualBrandItem[];
+}
+
+export interface VirtualBrandItem {
+  menu_item_id: number;
+  custom_name: string | null;
+  custom_price: number | null;
+  category_id: number;
+}
+
 /* Order Types */
 export interface OrderItem {
   id?: number;
@@ -44,6 +61,9 @@ export interface OrderItem {
   notes?: string;
   combo_instance_id?: string | null;
   modifiers?: OrderItemModifier[];
+  virtual_brand_id?: number | null;
+  brand_name?: string;
+  brand_color?: string;
 }
 
 export interface CartItem extends OrderItem {
@@ -51,6 +71,7 @@ export interface CartItem extends OrderItem {
   menuItem?: MenuItem;
   selectedModifierIds?: number[];
   selectedModifierNames?: string[];
+  virtual_brand_id?: number | null;
 }
 
 export interface Order {

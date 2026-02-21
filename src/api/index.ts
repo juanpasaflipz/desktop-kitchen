@@ -4,6 +4,7 @@ import {
   MenuItem,
   Order,
   OrderItem,
+  VirtualBrand,
   InventoryItem,
   PaymentIntent,
   PaymentStatus,
@@ -213,6 +214,10 @@ export async function getCategorySuggestedOrder(hour?: number): Promise<number[]
   return apiRequest<number[]>(`/menu/categories/suggested-order?hour=${h}`);
 }
 
+export async function getPosBrands(): Promise<VirtualBrand[]> {
+  return apiRequest<VirtualBrand[]>('/menu/pos-brands');
+}
+
 /* ==================== Order Endpoints ==================== */
 
 interface OrderFilters {
@@ -241,6 +246,7 @@ interface CreateOrderData {
     notes?: string;
     modifiers?: number[];
     combo_instance_id?: string | null;
+    virtual_brand_id?: number | null;
   }[];
 }
 

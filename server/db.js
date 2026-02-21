@@ -404,6 +404,8 @@ export function applySchema(database) {
   alterSafe(`ALTER TABLE virtual_brands ADD COLUMN font_family TEXT`);
   alterSafe(`ALTER TABLE virtual_brands ADD COLUMN dark_bg TEXT`);
   alterSafe(`ALTER TABLE virtual_brands ADD COLUMN slug TEXT`);
+  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN show_in_pos INTEGER DEFAULT 1`);
+  alterSafe(`ALTER TABLE order_items ADD COLUMN virtual_brand_id INTEGER DEFAULT NULL`);
 
   // Add markup-related columns to delivery_platforms
   alterSafe(`ALTER TABLE delivery_platforms ADD COLUMN default_markup_percent REAL DEFAULT 0`);

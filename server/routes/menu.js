@@ -306,4 +306,32 @@ router.put('/items/:id/toggle', requireAuth('manage_menu'), (req, res) => {
   }
 });
 
+// GET /api/menu/pos-brands - POS-visible brands with their item mappings
+router.get('/pos-brands', (req, res) => {
+  try {
+    const brands = all(`
+      SELECT id, name, slug, primary_color, secondary_color
+      FROM virtual_brands
+      WHERE active = 1 AND show_in_pos = 1
+      ORDER BY name ASC
+    `);
+
+    const result = brands.map(brand => {
+      const items = all(`
+        SELECT vbi.menu_item_id, vbi.custom_name, vbi.custom_price, mi.category_id
+        FROM virtual_brand_items vbi
+        JOIN menu_items mi ON vbi.menu_item_id = mi.id
+        WHERE vbi.virtual_brand_id = ? AND vbi.active = 1 AND mi.active = 1
+      `, [brand.id]);
+
+      return { ...brand, items };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching POS brands:', error);
+    res.status(500).json({ error: 'Failed to fetch POS brands' });
+  }
+});
+
 export default router;

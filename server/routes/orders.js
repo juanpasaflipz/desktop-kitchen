@@ -158,18 +158,35 @@ router.post('/', requireAuth('pos_access'), (req, res) => {
         }
       }
 
-      const unitPrice = menuItem.price + modifierTotal;
+      // Resolve brand-specific name/price if virtual_brand_id present
+      let itemName = menuItem.name;
+      let basePrice = menuItem.price;
+      const virtualBrandId = item.virtual_brand_id || null;
+
+      if (virtualBrandId) {
+        const brandItem = get(
+          'SELECT custom_name, custom_price FROM virtual_brand_items WHERE virtual_brand_id = ? AND menu_item_id = ?',
+          [virtualBrandId, item.menu_item_id]
+        );
+        if (brandItem) {
+          if (brandItem.custom_name) itemName = brandItem.custom_name;
+          if (brandItem.custom_price != null) basePrice = brandItem.custom_price;
+        }
+      }
+
+      const unitPrice = basePrice + modifierTotal;
       const itemTotal = unitPrice * item.quantity;
       itemsTotal += itemTotal;
 
       orderItems.push({
         menu_item_id: item.menu_item_id,
-        item_name: menuItem.name,
+        item_name: itemName,
         quantity: item.quantity,
         unit_price: unitPrice,
         notes: item.notes || null,
         combo_instance_id: item.combo_instance_id || null,
         modifiers: resolvedModifiers,
+        virtual_brand_id: virtualBrandId,
       });
     }
 
@@ -190,9 +207,9 @@ router.post('/', requireAuth('pos_access'), (req, res) => {
     // Insert order items and their modifiers
     for (const item of orderItems) {
       const itemResult = run(`
-        INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, notes, combo_instance_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, [orderId, item.menu_item_id, item.item_name, item.quantity, item.unit_price, item.notes, item.combo_instance_id]);
+        INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, unit_price, notes, combo_instance_id, virtual_brand_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [orderId, item.menu_item_id, item.item_name, item.quantity, item.unit_price, item.notes, item.combo_instance_id, item.virtual_brand_id || null]);
 
       const orderItemId = itemResult.lastInsertRowid;
 
@@ -290,9 +307,11 @@ router.get('/kitchen/active', (req, res) => {
     // Get detailed items for each order (with modifiers and combo info)
     const ordersWithItems = orders.map(order => {
       const items = all(`
-        SELECT id, item_name, quantity, notes, combo_instance_id
-        FROM order_items
-        WHERE order_id = ?
+        SELECT oi.id, oi.item_name, oi.quantity, oi.notes, oi.combo_instance_id,
+               oi.virtual_brand_id, vb.name as brand_name, vb.primary_color as brand_color
+        FROM order_items oi
+        LEFT JOIN virtual_brands vb ON oi.virtual_brand_id = vb.id
+        WHERE oi.order_id = ?
       `, [order.id]);
 
       const itemsWithModifiers = items.map(item => {

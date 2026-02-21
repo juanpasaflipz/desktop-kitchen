@@ -92,6 +92,7 @@ export class SyncEngine {
         notes: item.notes,
         modifiers: item.modifiers || [],
         combo_instance_id: item.combo_instance_id || null,
+        virtual_brand_id: item.virtual_brand_id || null,
       })),
       offline_temp_id: order.tempId,
     } as any);

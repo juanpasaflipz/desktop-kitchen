@@ -26,6 +26,7 @@ export interface OfflineOrder {
     modifiers?: number[];
     selectedModifierNames?: string[];
     combo_instance_id?: string | null;
+    virtual_brand_id?: number | null;
   }>;
   subtotal: number;
   tax: number;

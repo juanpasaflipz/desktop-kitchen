@@ -484,6 +484,9 @@ import { initDb, run, exec, saveDbSync } from './db.js';
        'menu_board', '#0d9488', '#e8c88a', "'Oswald', 'Montserrat', sans-serif", '#0f172a', 'ensenada-101']);
     const e101BrandId = e101Brand.lastInsertRowid;
 
+    // Ensure POS visibility for both brands
+    run('UPDATE virtual_brands SET show_in_pos = 1 WHERE id IN (?, ?)', [jbBrandId, e101BrandId]);
+
     console.log('✓ Seeded 2 menu board brands');
 
     // Assign ALL 34 menu items to Juanberto's (IDs 1-34)

@@ -7,8 +7,9 @@ import {
   getCategorySuggestedOrder,
   getCombos,
   getOrderTemplates,
+  getPosBrands,
 } from '../api';
-import type { MenuCategory, MenuItem, ComboDefinition, OrderTemplate } from '../types';
+import type { MenuCategory, MenuItem, ComboDefinition, OrderTemplate, VirtualBrand } from '../types';
 
 const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -58,6 +59,7 @@ export async function invalidateMenuCache(): Promise<void> {
     'combos',
     'itemsWithModifiers',
     'categorySuggestedOrder',
+    'posBrands',
   ]);
 
   // 2. Clear the Service Worker API cache so stale-while-revalidate
@@ -101,4 +103,8 @@ export function getCachedCombos(): Promise<ComboDefinition[]> {
 
 export function getCachedOrderTemplates(): Promise<OrderTemplate[]> {
   return withCache('orderTemplates', () => getOrderTemplates());
+}
+
+export function getCachedPosBrands(): Promise<VirtualBrand[]> {
+  return withCache('posBrands', () => getPosBrands());
 }

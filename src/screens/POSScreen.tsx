@@ -20,8 +20,9 @@ import {
   getCachedCategorySuggestedOrder,
   getCachedCombos,
   getCachedOrderTemplates,
+  getCachedPosBrands,
 } from '../lib/menuCache';
-import { MenuCategory, MenuItem, CartItem, Order, AISuggestion, LoyaltyCustomer, ComboDefinition, OrderTemplate } from '../types';
+import { MenuCategory, MenuItem, CartItem, Order, AISuggestion, LoyaltyCustomer, ComboDefinition, OrderTemplate, VirtualBrand } from '../types';
 import RefundModal from '../components/RefundModal';
 import { formatPrice, TAX_RATE, TAX_LABEL } from '../utils/currency';
 import { formatTime, formatDateTime } from '../utils/dateFormat';
@@ -461,6 +462,8 @@ const POSScreen: React.FC = () => {
   const [comboDefinitions, setComboDefinitions] = useState<ComboDefinition[]>([]);
   const [templates, setTemplates] = useState<OrderTemplate[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [posBrands, setPosBrands] = useState<VirtualBrand[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<number | 'all'>('all');
   const [templateName, setTemplateName] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -517,7 +520,7 @@ const POSScreen: React.FC = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [categoriesData, itemsData, modifierItemsData, popularData, categoryOrderData, combosData, templatesData] = await Promise.all([
+        const [categoriesData, itemsData, modifierItemsData, popularData, categoryOrderData, combosData, templatesData, brandsData] = await Promise.all([
           getCachedCategories(),
           getCachedMenuItems(),
           getCachedItemsWithModifiers().catch(() => ({ itemIds: [] })),
@@ -525,6 +528,7 @@ const POSScreen: React.FC = () => {
           getCachedCategorySuggestedOrder().catch(() => []),
           getCachedCombos().catch(() => []),
           getCachedOrderTemplates().catch(() => []),
+          getCachedPosBrands().catch(() => []),
         ]);
         setCategories(categoriesData);
         setMenuItems(itemsData);
@@ -538,6 +542,7 @@ const POSScreen: React.FC = () => {
         setCategorySuggestedOrder(categoryOrderData);
         setComboDefinitions(combosData);
         setTemplates(templatesData);
+        setPosBrands(brandsData);
         // Auto-select top-ranked category if we have suggestion data
         if (categoryOrderData.length > 0) {
           setSelectedCategory(categoryOrderData[0]);
@@ -698,9 +703,30 @@ const POSScreen: React.FC = () => {
     }
   }, [templateName, cart]);
 
-  // Filter items based on category and search
+  // Get the active brand object (if any)
+  const activeBrand = useMemo(() => {
+    if (selectedBrand === 'all') return null;
+    return posBrands.find(b => b.id === selectedBrand) || null;
+  }, [selectedBrand, posBrands]);
+
+  // Build a map of brand item overrides for the active brand
+  const brandItemMap = useMemo(() => {
+    if (!activeBrand) return null;
+    const map = new Map<number, { custom_name: string | null; custom_price: number | null }>();
+    for (const bi of activeBrand.items) {
+      map.set(bi.menu_item_id, { custom_name: bi.custom_name, custom_price: bi.custom_price });
+    }
+    return map;
+  }, [activeBrand]);
+
+  // Filter items based on brand, category and search
   const filteredItems = useMemo(() => {
     let items = menuItems;
+
+    // Brand filter: only show items in the brand's item list
+    if (brandItemMap) {
+      items = items.filter((item) => brandItemMap.has(item.id));
+    }
 
     if (selectedCategory !== 'all') {
       items = items.filter((item) => item.category_id === selectedCategory);
@@ -708,15 +734,33 @@ const POSScreen: React.FC = () => {
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      items = items.filter(
-        (item) =>
+      items = items.filter((item) => {
+        const displayName = brandItemMap?.get(item.id)?.custom_name || item.name;
+        return (
+          displayName.toLowerCase().includes(query) ||
           item.name.toLowerCase().includes(query) ||
           item.description?.toLowerCase().includes(query)
-      );
+        );
+      });
     }
 
     return items;
-  }, [menuItems, selectedCategory, searchQuery]);
+  }, [menuItems, selectedCategory, searchQuery, brandItemMap]);
+
+  // Categories with items in the active brand
+  const visibleCategories = useMemo(() => {
+    if (!brandItemMap) return sortedCategories;
+    const categoryIdsWithItems = new Set(
+      menuItems.filter(item => brandItemMap.has(item.id)).map(item => item.category_id)
+    );
+    return sortedCategories.filter(cat => categoryIdsWithItems.has(cat.id));
+  }, [sortedCategories, brandItemMap, menuItems]);
+
+  // Popular items filtered by brand
+  const filteredPopularItems = useMemo(() => {
+    if (!brandItemMap) return popularItems;
+    return popularItems.filter(item => brandItemMap.has(item.id));
+  }, [popularItems, brandItemMap]);
 
   // Generate unique cart ID
   const generateCartId = () => `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -739,9 +783,14 @@ const POSScreen: React.FC = () => {
   };
 
   const addItemToCartDirect = (item: MenuItem) => {
+    const brandOverride = brandItemMap?.get(item.id);
+    const displayName = brandOverride?.custom_name || item.name;
+    const displayPrice = brandOverride?.custom_price ?? item.price;
+    const brandId = selectedBrand !== 'all' ? selectedBrand : null;
+
     setCart((prev) => {
       const existing = prev.find(
-        (ci) => ci.menu_item_id === item.id && !ci.selectedModifierIds?.length && !ci.combo_instance_id
+        (ci) => ci.menu_item_id === item.id && !ci.selectedModifierIds?.length && !ci.combo_instance_id && ci.virtual_brand_id === brandId
       );
       if (existing) {
         return prev.map((ci) =>
@@ -753,28 +802,35 @@ const POSScreen: React.FC = () => {
         {
           cart_id: generateCartId(),
           menu_item_id: item.id,
-          item_name: item.name,
+          item_name: displayName,
           quantity: 1,
-          unit_price: item.price,
+          unit_price: displayPrice,
           menuItem: item,
+          virtual_brand_id: brandId,
         },
       ];
     });
   };
 
   const addItemWithModifiers = (item: MenuItem, selectedModifiers: number[], notes: string, modifierNames: string[], modifierPriceTotal: number) => {
+    const brandOverride = brandItemMap?.get(item.id);
+    const displayName = brandOverride?.custom_name || item.name;
+    const displayPrice = brandOverride?.custom_price ?? item.price;
+    const brandId = selectedBrand !== 'all' ? selectedBrand : null;
+
     setCart((prev) => [
       ...prev,
       {
         cart_id: generateCartId(),
         menu_item_id: item.id,
-        item_name: item.name,
+        item_name: displayName,
         quantity: 1,
-        unit_price: item.price + modifierPriceTotal,
+        unit_price: displayPrice + modifierPriceTotal,
         menuItem: item,
         notes: notes || undefined,
         selectedModifierIds: selectedModifiers,
         selectedModifierNames: modifierNames,
+        virtual_brand_id: brandId,
       },
     ]);
   };
@@ -874,6 +930,7 @@ const POSScreen: React.FC = () => {
           notes: item.notes,
           modifiers: item.selectedModifierIds || [],
           combo_instance_id: item.combo_instance_id || null,
+          virtual_brand_id: item.virtual_brand_id || null,
         })),
       };
 
@@ -936,6 +993,7 @@ const POSScreen: React.FC = () => {
             notes: item.notes,
             modifiers: item.selectedModifierIds || [],
             combo_instance_id: item.combo_instance_id || null,
+            virtual_brand_id: item.virtual_brand_id || null,
           })),
         };
 
@@ -981,6 +1039,7 @@ const POSScreen: React.FC = () => {
           notes: item.notes,
           modifiers: item.selectedModifierIds || [],
           combo_instance_id: item.combo_instance_id || null,
+          virtual_brand_id: item.virtual_brand_id || null,
         })),
       };
 
@@ -1025,6 +1084,7 @@ const POSScreen: React.FC = () => {
           notes: item.notes,
           modifiers: item.selectedModifierIds || [],
           combo_instance_id: item.combo_instance_id || null,
+          virtual_brand_id: item.virtual_brand_id || null,
         })),
       };
 
@@ -1074,7 +1134,7 @@ const POSScreen: React.FC = () => {
             {t('header.allItems')}
           </button>
 
-          {sortedCategories.map((cat) => (
+          {visibleCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => { setSelectedCategory(cat.id); setSearchQuery(''); }}
@@ -1153,6 +1213,40 @@ const POSScreen: React.FC = () => {
             </div>
           )}
 
+          {/* Brand Toggle Pills */}
+          {posBrands.length > 0 && (
+            <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
+              <button
+                onClick={() => { setSelectedBrand('all'); setSelectedCategory('all'); }}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                  selectedBrand === 'all'
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+                }`}
+              >
+                {t('header.allItems')}
+              </button>
+              {posBrands.map((brand) => (
+                <button
+                  key={brand.id}
+                  onClick={() => { setSelectedBrand(brand.id); setSelectedCategory('all'); }}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
+                    selectedBrand === brand.id
+                      ? 'text-white'
+                      : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
+                  }`}
+                  style={selectedBrand === brand.id ? { backgroundColor: brand.primary_color } : undefined}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: brand.primary_color }}
+                  />
+                  {brand.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
             <input
@@ -1185,14 +1279,14 @@ const POSScreen: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto p-4">
           {/* Favorites / Popular Items Row */}
-          {!searchQuery && popularItems.length > 0 && (
+          {!searchQuery && filteredPopularItems.length > 0 && (
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                 <p className="text-sm font-bold text-amber-400 uppercase tracking-wider">{t('favorites.title')}</p>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                {popularItems.map((item) => {
+                {filteredPopularItems.map((item) => {
                   const isSoldOut = soldOutItemIds.has(item.id);
                   return (
                     <button
@@ -1205,8 +1299,8 @@ const POSScreen: React.FC = () => {
                           : 'bg-neutral-900 border-amber-600/50 hover:border-amber-500 active:scale-95'
                       }`}
                     >
-                      <p className="font-bold text-white text-xs line-clamp-2">{item.name}</p>
-                      <p className="font-bold text-amber-400 text-sm mt-1">{formatPrice(item.price)}</p>
+                      <p className="font-bold text-white text-xs line-clamp-2">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
+                      <p className="font-bold text-amber-400 text-sm mt-1">{formatPrice(brandItemMap?.get(item.id)?.custom_price ?? item.price)}</p>
                     </button>
                   );
                 })}
@@ -1264,7 +1358,7 @@ const POSScreen: React.FC = () => {
                   {/* Content */}
                   <div className="p-3 flex flex-col flex-1">
                     <div className="flex items-start justify-between flex-1">
-                      <p className="font-bold text-white text-sm line-clamp-2 flex-1">{item.name}</p>
+                      <p className="font-bold text-white text-sm line-clamp-2 flex-1">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
                       <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                         {hasModifiers && <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />}
                         {isPush && <span className="w-2 h-2 bg-green-500 rounded-full" />}
@@ -1273,7 +1367,7 @@ const POSScreen: React.FC = () => {
                     <p className={`font-bold text-lg ${
                       isSoldOut ? 'text-neutral-600' : isAvoid ? 'text-neutral-500' : 'text-brand-500'
                     }`}>
-                      {formatPrice(item.price)}
+                      {formatPrice(brandItemMap?.get(item.id)?.custom_price ?? item.price)}
                     </p>
                   </div>
                 </button>
