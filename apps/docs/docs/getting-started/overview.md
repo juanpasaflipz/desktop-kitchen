@@ -6,7 +6,7 @@ title: Platform Overview
 
 # Platform Overview
 
-Desktop Kitchen is a multi-tenant restaurant POS platform built for Mexican restaurants. It combines point-of-sale operations, delivery management, inventory tracking, loyalty programs, and AI-powered intelligence in a single system.
+Desktop Kitchen is a multi-tenant POS platform built for independent quick-service restaurants (QSRs) and fast-casual operators. Whether you run a taco shop, a burger joint, a pizza place, or any counter-service concept, Desktop Kitchen combines point-of-sale operations, delivery management, inventory tracking, loyalty programs, and AI-powered intelligence in a single system.
 
 ## Key Concepts
 
@@ -20,7 +20,7 @@ A single kitchen can operate multiple **virtual brands** — different menu pres
 
 ### Delivery Platforms
 
-The system integrates with major delivery platforms in Mexico:
+The system integrates with major delivery platforms:
 - **Uber Eats**
 - **Rappi**
 - **DiDi Food**
