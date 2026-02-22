@@ -7,6 +7,7 @@ export interface Employee {
   active: boolean;
   created_at: string;
   permissions?: string[];
+  token?: string;
 }
 
 export interface RolePermission {

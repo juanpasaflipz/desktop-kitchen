@@ -55,11 +55,22 @@ import {
   OrderTemplate,
 } from '../types';
 
-// Employee ID for auth header - set after login
+// Employee ID for display/sync use - set after login
 let currentEmployeeId: number | null = null;
 
 export function setCurrentEmployeeId(id: number | null) {
   currentEmployeeId = id;
+}
+
+// Employee JWT for auth header - set after login
+let currentEmployeeToken: string | null = null;
+
+export function setCurrentEmployeeToken(token: string | null) {
+  currentEmployeeToken = token;
+}
+
+export function getCurrentEmployeeToken(): string | null {
+  return currentEmployeeToken;
 }
 
 // Capacitor native: API calls must go to the remote server (local dist/ has no backend)
@@ -114,8 +125,8 @@ async function apiRequest<T>(
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  if (currentEmployeeId) {
-    defaultHeaders['x-employee-id'] = String(currentEmployeeId);
+  if (currentEmployeeToken) {
+    defaultHeaders['Authorization'] = `Bearer ${currentEmployeeToken}`;
   }
 
   const response = await fetch(url, {

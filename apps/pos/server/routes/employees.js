@@ -1,7 +1,10 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { checkLimit } from '../planLimits.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-me';
 
 const router = Router();
 
@@ -90,6 +93,13 @@ router.post('/login', (req, res) => {
     );
     const permissions = perms.map(p => p.permission);
 
+    const tenantId = req.tenant?.id || 'default';
+    const token = jwt.sign(
+      { tenantId, employeeId: employee.id, role: employee.role, type: 'employee' },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
     res.json({
       id: employee.id,
       name: employee.name,
@@ -97,6 +107,7 @@ router.post('/login', (req, res) => {
       active: employee.active === 1,
       created_at: employee.created_at,
       permissions,
+      token,
     });
   } catch (error) {
     console.error('Error during login:', error);

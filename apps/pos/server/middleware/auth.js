@@ -1,9 +1,12 @@
-import { get, all } from '../db/index.js';
+import jwt from 'jsonwebtoken';
+import { get } from '../db/index.js';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-me';
 
 /**
  * Auth middleware factory.
- * If `permission` is provided, checks role_permissions for that employee's role.
- * Always attaches `req.employee` for downstream use.
+ * Validates employee JWT from Authorization header, cross-checks tenant,
+ * and optionally checks role_permissions for a specific permission.
  *
  * Usage:
  *   router.post('/', requireAuth('manage_menu'), handler)
@@ -11,15 +14,35 @@ import { get, all } from '../db/index.js';
  */
 export function requireAuth(permission) {
   return (req, res, next) => {
-    const employeeId = req.headers['x-employee-id'];
+    const authHeader = req.headers.authorization;
 
-    if (!employeeId) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      }
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    if (decoded.type !== 'employee') {
+      return res.status(401).json({ error: 'Invalid token type' });
+    }
+
+    // Cross-check: token tenant must match resolved tenant
+    const currentTenant = req.tenant?.id || 'default';
+    if (decoded.tenantId !== currentTenant) {
+      return res.status(403).json({ error: 'Token does not match this tenant' });
     }
 
     const employee = get(
       'SELECT id, name, role, active FROM employees WHERE id = ?',
-      [employeeId]
+      [decoded.employeeId]
     );
 
     if (!employee) {

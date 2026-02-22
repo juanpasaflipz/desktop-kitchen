@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Employee } from '../types';
-import { loginEmployee as loginEmployeeApi, setCurrentEmployeeId } from '../api';
+import { loginEmployee as loginEmployeeApi, setCurrentEmployeeId, setCurrentEmployeeToken } from '../api';
 import { offlineDb, type CachedEmployee } from '../lib/offlineDb';
 
 interface AuthContextType {
@@ -38,6 +38,7 @@ async function cacheEmployee(employee: Employee, pin: string): Promise<void> {
       active: employee.active,
       permissions: employee.permissions || [],
       pinHash,
+      token: employee.token || null,
       cachedAt: Date.now(),
     };
     await offlineDb.employees.put(cached);
@@ -59,6 +60,7 @@ async function offlineLogin(pin: string): Promise<Employee | null> {
       role: match.role,
       active: match.active,
       permissions: match.permissions,
+      token: match.token || undefined,
       created_at: '',
     };
   } catch {
@@ -81,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCurrentEmployee(employee);
       setPermissions(employee.permissions || []);
       setCurrentEmployeeId(employee.id);
+      setCurrentEmployeeToken(employee.token || null);
       // Cache for future offline use
       await cacheEmployee(employee, pin);
     } catch (err) {
@@ -90,6 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setCurrentEmployee(offlineEmployee);
         setPermissions(offlineEmployee.permissions || []);
         setCurrentEmployeeId(offlineEmployee.id);
+        setCurrentEmployeeToken(offlineEmployee.token || null);
         return; // success via offline
       }
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
@@ -104,6 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setCurrentEmployee(null);
     setPermissions([]);
     setCurrentEmployeeId(null);
+    setCurrentEmployeeToken(null);
     setError(null);
   }, []);
 

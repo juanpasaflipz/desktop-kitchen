@@ -33,7 +33,7 @@ router.post('/', requireAuth('manage_menu'), (req, res) => {
     }
 
     const items_json = JSON.stringify(items);
-    const employeeId = req.headers['x-employee-id'] || null;
+    const employeeId = req.employee?.id || null;
 
     const result = run(`
       INSERT INTO order_templates (name, description, items_json, created_by, active)

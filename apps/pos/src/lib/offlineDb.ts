@@ -56,6 +56,7 @@ export interface CachedEmployee {
   active: boolean;
   permissions: string[];
   pinHash: string;
+  token: string | null;
   cachedAt: number;
 }
 

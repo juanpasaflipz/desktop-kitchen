@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Upload, Check } from 'lucide-react';
 import { useBranding } from '../context/BrandingContext';
 import { useAuth } from '../context/AuthContext';
+import { getCurrentEmployeeToken } from '../api';
 import BrandLogo from '../components/BrandLogo';
 import { generatePalette, type BrandPalette } from '../lib/colorUtils';
 import { usePlan } from '../context/PlanContext';
@@ -85,15 +86,16 @@ export default function BrandingSettingsScreen() {
     setSaved(false);
 
     try {
+      const token = getCurrentEmployeeToken();
+
       // Upload logo if changed
       if (logoFile) {
         const formData = new FormData();
         formData.append('logo', logoFile);
-
         const logoRes = await fetch('/api/branding/logo', {
           method: 'POST',
           headers: {
-            'x-employee-id': String(currentEmployee?.id || ''),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: formData,
         });
@@ -109,7 +111,7 @@ export default function BrandingSettingsScreen() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-employee-id': String(currentEmployee?.id || ''),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ primaryColor, restaurantName, tagline }),
       });
