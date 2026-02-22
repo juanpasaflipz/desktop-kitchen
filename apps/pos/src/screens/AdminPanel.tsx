@@ -19,8 +19,11 @@ import {
   Heart,
   Tv,
   Paintbrush,
+  CreditCard,
+  Check,
+  X,
 } from 'lucide-react';
-import { getSalesReport, getLowStock } from '../api';
+import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession } from '../api';
 import { SalesReport, InventoryItem } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
@@ -35,14 +38,46 @@ export default function AdminPanel() {
   const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [billingLoading, setBillingLoading] = useState<string | null>(null);
+  const [billingError, setBillingError] = useState<string | null>(null);
+  const [showCancelledBanner, setShowCancelledBanner] = useState(false);
 
-  // Refresh plan after billing success redirect
+  const hasOwnerToken = !!localStorage.getItem('owner_token');
+
+  // Refresh plan after billing success redirect, show cancelled banner
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('billing') === 'success') {
       refreshPlan();
     }
+    if (params.get('billing') === 'cancelled') {
+      setShowCancelledBanner(true);
+    }
   }, [location.search, refreshPlan]);
+
+  const handleSubscribe = async (selectedPlan: 'starter' | 'pro') => {
+    setBillingLoading(selectedPlan);
+    setBillingError(null);
+    try {
+      const { url } = await createCheckoutSession(selectedPlan);
+      window.location.href = url;
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Failed to start checkout');
+      setBillingLoading(null);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setBillingLoading('portal');
+    setBillingError(null);
+    try {
+      const { url } = await createPortalSession();
+      window.location.href = url;
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Failed to open billing portal');
+      setBillingLoading(null);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,6 +167,101 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+
+        {/* Cancelled billing banner */}
+        {showCancelledBanner && (
+          <div className="flex items-center justify-between bg-neutral-900 border border-neutral-700 rounded-lg p-4 mb-6">
+            <p className="text-neutral-300 text-sm">Checkout was cancelled. You can subscribe anytime below.</p>
+            <button onClick={() => setShowCancelledBanner(false)} className="text-neutral-500 hover:text-neutral-300">
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* Plan & Billing */}
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <CreditCard className="text-brand-500" size={24} />
+            <h2 className="text-xl font-bold text-white">Plan & Billing</h2>
+          </div>
+
+          {billingError && (
+            <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 mb-4">
+              <p className="text-red-300 text-sm">{billingError}</p>
+            </div>
+          )}
+
+          {!hasOwnerToken ? (
+            <p className="text-neutral-400 text-sm">Sign in as account owner to manage billing.</p>
+          ) : plan === 'trial' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Starter Card */}
+              <div className="border border-neutral-700 rounded-xl p-6 space-y-4">
+                <h3 className="text-lg font-bold text-white">Starter</h3>
+                <p className="text-3xl font-black text-white">$29<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <ul className="space-y-2 text-sm text-neutral-300">
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited orders</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Up to 5 employees</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Basic reports</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Inventory management</li>
+                </ul>
+                <button
+                  onClick={() => handleSubscribe('starter')}
+                  disabled={billingLoading !== null}
+                  className="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                >
+                  {billingLoading === 'starter' ? 'Redirecting...' : 'Subscribe to Starter'}
+                </button>
+              </div>
+
+              {/* Pro Card */}
+              <div className="border border-brand-600 rounded-xl p-6 space-y-4 relative">
+                <span className="absolute -top-3 right-4 bg-brand-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</span>
+                <h3 className="text-lg font-bold text-white">Pro</h3>
+                <p className="text-3xl font-black text-white">$79<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <ul className="space-y-2 text-sm text-neutral-300">
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Everything in Starter</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited employees</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> AI intelligence & analytics</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Delivery platforms & virtual brands</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Loyalty & CRM</li>
+                </ul>
+                <button
+                  onClick={() => handleSubscribe('pro')}
+                  disabled={billingLoading !== null}
+                  className="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                >
+                  {billingLoading === 'pro' ? 'Redirecting...' : 'Subscribe to Pro'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-4">
+              <div>
+                <p className="text-neutral-400 text-sm">Current plan</p>
+                <p className="text-xl font-bold text-white capitalize">{plan} — {plan === 'starter' ? '$29' : '$79'}/mo</p>
+              </div>
+              <div className="flex gap-3 ml-auto">
+                {plan === 'starter' && (
+                  <button
+                    onClick={() => handleSubscribe('pro')}
+                    disabled={billingLoading !== null}
+                    className="px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                  >
+                    {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
+                  </button>
+                )}
+                <button
+                  onClick={handleManageBilling}
+                  disabled={billingLoading !== null}
+                  className="px-5 py-2.5 border border-neutral-600 text-neutral-200 font-medium rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                >
+                  {billingLoading === 'portal' ? 'Redirecting...' : 'Manage Subscription'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link to="/admin/menu">

@@ -25,9 +25,6 @@ export function requireOwner(req, res, next) {
     if (!tenant.active) {
       return res.status(403).json({ error: 'Account is inactive' });
     }
-    if (tenant.subscription_status === 'cancelled' || tenant.subscription_status === 'past_due') {
-      return res.status(403).json({ error: 'Subscription expired. Please update your billing.' });
-    }
 
     req.owner = {
       tenantId: decoded.tenantId,

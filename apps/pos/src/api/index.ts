@@ -1121,3 +1121,46 @@ export async function markRecaptureConverted(id: number): Promise<any> {
 export async function getMenuBoardData(): Promise<any> {
   return apiRequest('/menu-board/data');
 }
+
+/* ==================== Billing Endpoints (Owner JWT Auth) ==================== */
+
+function ownerHeaders(): Record<string, string> {
+  const token = localStorage.getItem('owner_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+export async function getBillingStatus(): Promise<{
+  plan: string;
+  subscription_status: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+}> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/billing`, { headers: ownerHeaders() });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch billing status');
+  return res.json();
+}
+
+export async function createCheckoutSession(plan: 'starter' | 'pro'): Promise<{ url: string }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/billing/checkout`, {
+    method: 'POST',
+    headers: ownerHeaders(),
+    body: JSON.stringify({ plan }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to create checkout session');
+  return res.json();
+}
+
+export async function createPortalSession(): Promise<{ url: string }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/billing/portal`, {
+    method: 'POST',
+    headers: ownerHeaders(),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to create portal session');
+  return res.json();
+}
