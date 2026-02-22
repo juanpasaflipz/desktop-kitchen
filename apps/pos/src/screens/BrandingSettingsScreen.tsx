@@ -6,6 +6,8 @@ import { useBranding } from '../context/BrandingContext';
 import { useAuth } from '../context/AuthContext';
 import BrandLogo from '../components/BrandLogo';
 import { generatePalette, type BrandPalette } from '../lib/colorUtils';
+import { usePlan } from '../context/PlanContext';
+import UpgradePrompt from '../components/UpgradePrompt';
 
 const PRESET_COLORS = [
   '#0d9488', // teal
@@ -22,6 +24,7 @@ export default function BrandingSettingsScreen() {
   const { t } = useTranslation('admin');
   const { branding, refresh } = useBranding();
   const { currentEmployee } = useAuth();
+  const { limits } = usePlan();
 
   const [restaurantName, setRestaurantName] = useState('');
   const [tagline, setTagline] = useState('');
@@ -290,9 +293,14 @@ export default function BrandingSettingsScreen() {
         </div>
 
         {/* Save Button */}
+        {!limits.branding.canRename && (
+          <div className="mb-4">
+            <UpgradePrompt message="Saving branding changes requires a paid plan." />
+          </div>
+        )}
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !limits.branding.canRename}
           className="w-full py-4 bg-brand-600 text-white font-bold text-lg rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {saving ? (

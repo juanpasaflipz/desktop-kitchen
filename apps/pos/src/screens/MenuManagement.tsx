@@ -31,6 +31,8 @@ import { MenuCategory, MenuItem, ModifierGroup } from '../types';
 import { invalidateMenuCache } from '../lib/menuCache';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
+import { usePlan } from '../context/PlanContext';
+import UpgradePrompt from '../components/UpgradePrompt';
 
 type ModalMode = 'add' | 'edit' | null;
 type View = 'items' | 'categories';
@@ -51,6 +53,7 @@ interface CategoryFormData {
 
 export default function MenuManagement() {
   const { t } = useTranslation('inventory');
+  const { limits, isAtLimit } = usePlan();
   const [view, setView] = useState<View>('items');
   const [itemSubTab, setItemSubTab] = useState<ItemSubTab>('live');
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -406,14 +409,21 @@ export default function MenuManagement() {
               </button>
             </div>
             {view === 'items' && (
-              <button
-                onClick={openAddModal}
-                disabled={!selectedCategory}
-                className="px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors flex items-center gap-2 min-h-[44px] disabled:opacity-50"
-              >
-                <Plus size={20} />
-                {t('menu.addItem')}
-              </button>
+              <div className="flex items-center gap-3">
+                {limits.menuItems !== Infinity && (
+                  <span className="text-sm text-neutral-400">
+                    {menuItems.filter(i => i.active).length} / {limits.menuItems} items
+                  </span>
+                )}
+                <button
+                  onClick={openAddModal}
+                  disabled={!selectedCategory || isAtLimit('menuItems', menuItems.filter(i => i.active).length)}
+                  className="px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors flex items-center gap-2 min-h-[44px] disabled:opacity-50"
+                >
+                  <Plus size={20} />
+                  {t('menu.addItem')}
+                </button>
+              </div>
             )}
             <BrandLogo className="h-10" />
           </div>
@@ -421,6 +431,11 @@ export default function MenuManagement() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
+        {isAtLimit('menuItems', menuItems.filter(i => i.active).length) && (
+          <div className="mb-6">
+            <UpgradePrompt message={`Menu item limit reached (${limits.menuItems}). Upgrade for unlimited items.`} />
+          </div>
+        )}
         {error && (
           <div className="bg-brand-900/30 border border-brand-800 rounded-lg p-4 mb-6 flex justify-between items-center">
             <p className="text-brand-300">{error}</p>

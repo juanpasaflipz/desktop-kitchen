@@ -5,12 +5,14 @@ import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import BrandLogo from '../components/BrandLogo';
 import { useBranding } from '../context/BrandingContext';
+import { usePlan } from '../context/PlanContext';
 
 const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading, error } = useAuth();
   const { t } = useTranslation();
   const { branding } = useBranding();
+  const { plan, ownerEmail } = usePlan();
   const [pin, setPin] = useState('');
   const [shake, setShake] = useState(false);
   const [localError, setLocalError] = useState('');
@@ -70,6 +72,9 @@ const LoginScreen: React.FC = () => {
           </p>
         )}
         <p className="text-lg text-neutral-400 mt-2">{t('login.employeeLogin')}</p>
+        {plan === 'trial' && ownerEmail && (
+          <p className="text-sm text-neutral-500 mt-1">{ownerEmail}</p>
+        )}
       </div>
 
       {/* PIN Entry Display */}

@@ -11,8 +11,26 @@ import { getGrokStats, analyzeUpsellPatterns, analyzeInventoryTrends, enhanceFor
 import { getConfigBool } from '../ai/config.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generatePrepForecast } from '../ai/suggestions/prep-forecast.js';
+import { getPlanLimits } from '../planLimits.js';
 
 const router = Router();
+
+const MOCK_ANALYSIS = {
+  upsell: {
+    patterns: [{ items: ['French Fries', 'Classic Burger'], confidence: 0.87, potential_daily_revenue: 45 }],
+    recommendation: 'Suggest French Fries with every Classic Burger order',
+  },
+  inventory: {
+    recommendation: 'Order 15% more chicken breast on Fridays based on historical demand',
+    trends: [{ item: 'Chicken Breast', day: 'Friday', increase_pct: 15 }],
+  },
+  forecast: {
+    high_demand: ['Classic Burger', 'Nachos Supreme', 'Chicken Tacos'],
+    recommendation: "Tomorrow's projected high-demand items based on day-of-week patterns",
+  },
+  mock: true,
+  timestamp: new Date().toISOString(),
+};
 
 // ==================== Suggestion Endpoints ====================
 
@@ -99,6 +117,13 @@ router.get('/config', (req, res) => {
 // PUT /api/ai/config
 router.put('/config', requireAuth('manage_ai'), (req, res) => {
   try {
+    // Only Pro plan can modify AI config
+    const plan = req.tenant?.plan || 'trial';
+    const limits = getPlanLimits(plan);
+    if (limits.ai.mode !== 'full') {
+      return res.status(403).json({ error: 'AI configuration requires the Pro plan', upgrade: true });
+    }
+
     const { entries } = req.body;
 
     if (entries && Array.isArray(entries)) {
@@ -318,6 +343,25 @@ router.get('/inventory-forecast', async (req, res) => {
 // POST /api/ai/analyze - trigger on-demand Grok analysis
 router.post('/analyze', requireAuth('manage_ai'), async (req, res) => {
   try {
+    // Plan-based AI gating
+    const plan = req.tenant?.plan || 'trial';
+    const limits = getPlanLimits(plan);
+
+    if (limits.ai.mode === 'mock') {
+      return res.json(MOCK_ANALYSIS);
+    }
+    if (limits.ai.mode === 'locked') {
+      return res.status(403).json({ error: 'AI Intelligence requires the Pro plan', upgrade: true });
+    }
+
+    // Pro plan — check monthly analysis cap
+    if (limits.ai.monthlyAnalyses > 0) {
+      const { cnt } = get(`SELECT COUNT(*) as cnt FROM ai_suggestion_events WHERE created_at >= datetime('now', 'start of month', 'localtime')`) || { cnt: 0 };
+      if (cnt >= limits.ai.monthlyAnalyses) {
+        return res.status(429).json({ error: `Monthly analysis limit reached (${limits.ai.monthlyAnalyses})`, upgrade: true });
+      }
+    }
+
     if (!getConfigBool('grok_api_enabled')) {
       return res.status(400).json({ error: 'Grok API is not enabled. Turn it on in AI Config.' });
     }

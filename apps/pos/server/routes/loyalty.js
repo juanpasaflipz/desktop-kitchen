@@ -12,6 +12,7 @@ import {
   getLoyaltyConfig,
   updateLoyaltyConfig,
 } from '../helpers/loyalty.js';
+import { getPlanLimits } from '../planLimits.js';
 
 const router = Router();
 
@@ -285,6 +286,11 @@ router.get('/config', requireAuth('manage_loyalty'), (req, res) => {
 // PUT /config — Update loyalty settings
 router.put('/config', requireAuth('manage_loyalty'), (req, res) => {
   try {
+    const plan = req.tenant?.plan || 'trial';
+    if (getPlanLimits(plan).loyalty.locked) {
+      return res.status(403).json({ error: 'Loyalty program requires a paid plan', upgrade: true });
+    }
+
     const { key, value } = req.body;
     if (!key || value === undefined) return res.status(400).json({ error: 'Key and value are required' });
 

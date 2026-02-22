@@ -36,11 +36,15 @@ import {
 } from '../types';
 import { formatPrice } from '../utils/currency';
 import { formatDateTime } from '../utils/dateFormat';
+import { usePlan } from '../context/PlanContext';
+import UpgradePrompt from '../components/UpgradePrompt';
 
 type Tab = 'dashboard' | 'upsell' | 'inventory' | 'pricing' | 'config';
 
 export default function AIConfigScreen() {
   const { t } = useTranslation('reports');
+  const { limits } = usePlan();
+  const aiMode = limits.ai.mode;
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [insights, setInsights] = useState<AIInsights | null>(null);
   const [analytics, setAnalytics] = useState<AIAnalytics | null>(null);
@@ -227,6 +231,51 @@ export default function AIConfigScreen() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
+        {/* AI Plan Gating */}
+        {aiMode === 'mock' && (
+          <div className="mb-6 space-y-4">
+            <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-4 flex items-center gap-3">
+              <Sparkles className="text-brand-500 flex-shrink-0" size={20} />
+              <span className="text-sm text-neutral-300">Sample Data</span>
+              <span className="text-xs text-neutral-500 ml-auto">Upgrade to Pro for real-time AI insights</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                <p className="text-neutral-400 text-sm">Top Upsell Pair</p>
+                <p className="text-lg font-bold text-white mt-2">French Fries + Classic Burger</p>
+                <p className="text-brand-500 text-sm mt-1">87% confidence &middot; $45/day potential</p>
+              </div>
+              <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                <p className="text-neutral-400 text-sm">Inventory Alert</p>
+                <p className="text-lg font-bold text-white mt-2">Order 15% more chicken breast on Fridays</p>
+                <p className="text-yellow-500 text-sm mt-1">Based on historical demand patterns</p>
+              </div>
+              <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                <p className="text-neutral-400 text-sm">Tomorrow's Forecast</p>
+                <p className="text-lg font-bold text-white mt-2">Classic Burger, Nachos Supreme</p>
+                <p className="text-green-500 text-sm mt-1">Projected high-demand items</p>
+              </div>
+            </div>
+            <UpgradePrompt message="Unlock real-time AI intelligence, dynamic pricing, and demand forecasting with the Pro plan." />
+          </div>
+        )}
+
+        {aiMode === 'locked' && (
+          <div className="relative min-h-[400px]">
+            <div className="opacity-30 pointer-events-none">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+                    <div className="h-20 bg-neutral-800 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <UpgradePrompt variant="overlay" message="AI Intelligence is available on the Pro plan." />
+          </div>
+        )}
+
+        {aiMode === 'full' && (<>
         {error && (
           <div className="bg-brand-900/30 border border-brand-800 rounded-lg p-4 mb-6">
             <p className="text-brand-300">{error}</p>
@@ -647,6 +696,7 @@ export default function AIConfigScreen() {
             )}
           </>
         )}
+        </>)}
       </div>
     </div>
   );

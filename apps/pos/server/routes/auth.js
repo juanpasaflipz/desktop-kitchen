@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { getMasterDb, createTenant, getTenantByEmail, openTenantDb } from '../tenants.js';
 import { applySchema } from '../db/index.js';
+import { sendPinEmail } from '../helpers/email.js';
 
 const router = Router();
 
@@ -65,10 +66,16 @@ router.post('/register', async (req, res) => {
       plan: 'trial',
     });
 
-    // Create a default admin employee in the tenant DB
+    // Generate random 4-digit PIN for the admin employee
+    const pin = String(Math.floor(1000 + Math.random() * 9000));
+
+    // Create a default admin employee in the tenant DB (use email as name)
     const tenantDb = openTenantDb(slug);
     tenantDb.prepare('INSERT INTO employees (name, pin, role, active) VALUES (?, ?, ?, 1)')
-      .run('Owner', '0000', 'admin');
+      .run(email, pin, 'admin');
+
+    // Fire-and-forget email with PIN
+    sendPinEmail(email, pin, restaurant_name).catch(() => {});
 
     // Sign JWT
     const token = signToken({
@@ -79,6 +86,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       token,
+      pin,
       tenant: {
         id: tenant.id,
         name: tenant.name,

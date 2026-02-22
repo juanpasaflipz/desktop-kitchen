@@ -85,6 +85,7 @@ export function tenantMiddleware(req, res, next) {
     plan: tenant.plan,
     subscription_status: tenant.subscription_status,
     branding: tenant.branding_json ? JSON.parse(tenant.branding_json) : null,
+    owner_email: tenant.owner_email || null,
   };
 
   // Run the rest of the request inside tenant context

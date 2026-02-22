@@ -16,6 +16,7 @@ import {
   getDeliveryPlatforms,
 } from '../api';
 import { formatPrice } from '../utils/currency';
+import { usePlan } from '../context/PlanContext';
 
 interface BrandRow {
   id: number;
@@ -112,6 +113,8 @@ const DEFAULT_FORM: FormData = {
 
 export default function MenuBoardManagement() {
   const { t } = useTranslation('admin');
+  const { limits } = usePlan();
+  const canEdit = limits.menuBoard.canRenameBrands;
 
   const [brands, setBrands] = useState<BrandRow[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItemRow[]>([]);
@@ -416,7 +419,8 @@ export default function MenuBoardManagement() {
                     </div>
                     <button
                       onClick={() => openEditor(brand)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors"
+                      disabled={!canEdit}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
                     >
                       <Pencil size={14} />
                       Edit
@@ -429,7 +433,8 @@ export default function MenuBoardManagement() {
             {/* Add brand card */}
             <button
               onClick={() => openEditor()}
-              className="bg-neutral-900 rounded-lg border-2 border-dashed border-neutral-700 hover:border-brand-600 transition-colors p-6 flex flex-col items-center justify-center gap-3 min-h-[180px]"
+              disabled={!canEdit}
+              className="bg-neutral-900 rounded-lg border-2 border-dashed border-neutral-700 hover:border-brand-600 transition-colors p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="w-12 h-12 rounded-full bg-brand-600/10 flex items-center justify-center">
                 <Plus className="text-brand-500" size={24} />

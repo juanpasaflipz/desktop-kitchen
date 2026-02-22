@@ -29,6 +29,7 @@ const OnboardingScreen: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [generatedPin, setGeneratedPin] = useState('');
   const [data, setData] = useState<OnboardingData>({
     restaurant_name: '',
     email: '',
@@ -80,7 +81,8 @@ const OnboardingScreen: React.FC = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Registration failed');
 
-      // Store JWT and tenant info
+      // Store generated PIN and JWT + tenant info
+      if (result.pin) setGeneratedPin(result.pin);
       localStorage.setItem('owner_token', result.token);
       localStorage.setItem('tenant_id', result.tenant.id);
       localStorage.setItem('tenant_name', result.tenant.name);
@@ -286,9 +288,13 @@ const OnboardingScreen: React.FC = () => {
               <Check className="w-8 h-8 text-green-500" />
             </div>
             <h1 className="text-2xl font-bold text-white">You're all set!</h1>
-            <p className="text-neutral-400">
-              Your POS system is ready. Log in with PIN <span className="font-mono text-white">0000</span> to get started.
-            </p>
+            <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 space-y-3">
+              <p className="text-neutral-400 text-sm">Your admin login PIN</p>
+              <p className="text-4xl font-mono font-bold text-white tracking-[0.3em]">{generatedPin}</p>
+              <p className="text-neutral-500 text-sm">
+                A copy has been sent to <span className="text-neutral-300">{data.email}</span>
+              </p>
+            </div>
             <button
               onClick={handleGoToPOS}
               className="px-8 py-3 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors"

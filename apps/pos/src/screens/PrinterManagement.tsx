@@ -12,6 +12,7 @@ import {
 } from '../api';
 import { Printer, MenuCategory } from '../types';
 import BrandLogo from '../components/BrandLogo';
+import FeatureGate from '../components/FeatureGate';
 
 export default function PrinterManagement() {
   const { t } = useTranslation('inventory');
@@ -82,6 +83,7 @@ export default function PrinterManagement() {
   };
 
   return (
+    <FeatureGate feature="printers" featureLabel="Printer Management">
     <div className="min-h-screen bg-neutral-950">
       <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
         <div className="flex items-center justify-between">
@@ -203,5 +205,6 @@ export default function PrinterManagement() {
         )}
       </div>
     </div>
+    </FeatureGate>
   );
 }

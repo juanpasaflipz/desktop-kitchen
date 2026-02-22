@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { checkLimit } from '../planLimits.js';
 
 const router = Router();
 
@@ -79,6 +80,14 @@ router.post('/groups', requireAuth('manage_modifiers'), (req, res) => {
   try {
     const { name, selection_type = 'single', required = false, min_selections = 0, max_selections = 1, sort_order = 0 } = req.body;
     if (!name) return res.status(400).json({ error: 'Missing name' });
+
+    // Plan limit check
+    const plan = req.tenant?.plan || 'trial';
+    const { cnt } = get('SELECT COUNT(*) as cnt FROM modifier_groups WHERE active = 1') || { cnt: 0 };
+    const check = checkLimit(plan, 'modifierGroups', cnt);
+    if (!check.allowed) {
+      return res.status(403).json({ error: `Modifier group limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
+    }
 
     const result = run(`
       INSERT INTO modifier_groups (name, selection_type, required, min_selections, max_selections, sort_order, active)

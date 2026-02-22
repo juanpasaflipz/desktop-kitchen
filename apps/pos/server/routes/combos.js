@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { all, get, run } from '../db/index.js';
+import { checkLimit } from '../planLimits.js';
 
 const router = Router();
 
@@ -61,6 +62,14 @@ router.post('/', (req, res) => {
   try {
     const { name, description, combo_price, slots = [] } = req.body;
     if (!name || combo_price === undefined) return res.status(400).json({ error: 'Missing name or combo_price' });
+
+    // Plan limit check
+    const plan = req.tenant?.plan || 'trial';
+    const { cnt } = get('SELECT COUNT(*) as cnt FROM combo_definitions WHERE active = 1') || { cnt: 0 };
+    const check = checkLimit(plan, 'combos', cnt);
+    if (!check.allowed) {
+      return res.status(403).json({ error: `Combo limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
+    }
 
     const result = run(`
       INSERT INTO combo_definitions (name, description, combo_price, active)

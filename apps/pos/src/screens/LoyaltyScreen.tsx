@@ -20,6 +20,7 @@ import { formatDate } from '../utils/dateFormat';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import FeatureGate from '../components/FeatureGate';
 
 type Tab = 'customers' | 'analytics' | 'referrals' | 'settings';
 
@@ -35,46 +36,48 @@ export default function LoyaltyScreen() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-950">
-      {/* Header */}
-      <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
-        <div className="flex items-center gap-4">
-          <Link to="/admin" className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
-            <ArrowLeft size={24} />
-          </Link>
-          <Heart className="text-purple-500" size={28} />
-          <h1 className="text-3xl font-black tracking-tighter">{t('loyalty.title')}</h1>
+    <FeatureGate feature="loyalty" featureLabel="Loyalty Program">
+      <div className="min-h-screen bg-neutral-950">
+        {/* Header */}
+        <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
+          <div className="flex items-center gap-4">
+            <Link to="/admin" className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
+              <ArrowLeft size={24} />
+            </Link>
+            <Heart className="text-purple-500" size={28} />
+            <h1 className="text-3xl font-black tracking-tighter">{t('loyalty.title')}</h1>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-neutral-900 border-b border-neutral-800 px-6">
+          <div className="flex gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm rounded-t-lg transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-neutral-950 text-purple-400 border-t-2 border-purple-500'
+                    : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="max-w-7xl mx-auto p-6">
+          {activeTab === 'customers' && <CustomersTab />}
+          {activeTab === 'analytics' && <AnalyticsTab />}
+          {activeTab === 'referrals' && <ReferralsTab />}
+          {activeTab === 'settings' && <SettingsTab />}
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="bg-neutral-900 border-b border-neutral-800 px-6">
-        <div className="flex gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-5 py-3 font-semibold text-sm rounded-t-lg transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-neutral-950 text-purple-400 border-t-2 border-purple-500'
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {activeTab === 'customers' && <CustomersTab />}
-        {activeTab === 'analytics' && <AnalyticsTab />}
-        {activeTab === 'referrals' && <ReferralsTab />}
-        {activeTab === 'settings' && <SettingsTab />}
-      </div>
-    </div>
+    </FeatureGate>
   );
 }
 

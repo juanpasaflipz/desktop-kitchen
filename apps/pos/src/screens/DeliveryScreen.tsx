@@ -23,6 +23,7 @@ import {
 import { DeliveryPlatform, DeliveryOrder } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
+import FeatureGate from '../components/FeatureGate';
 
 type Tab = 'orders' | 'analytics' | 'markups' | 'brands' | 'recapture' | 'platforms';
 
@@ -176,6 +177,7 @@ export default function DeliveryScreen() {
   ];
 
   return (
+    <FeatureGate feature="delivery" featureLabel="Delivery Management">
     <div className="min-h-screen bg-neutral-950">
       <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
         <div className="flex items-center justify-between">
@@ -571,5 +573,6 @@ export default function DeliveryScreen() {
         )}
       </div>
     </div>
+    </FeatureGate>
   );
 }

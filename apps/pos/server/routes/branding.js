@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { requireOwner } from '../middleware/ownerAuth.js';
 import { requireAuth } from '../middleware/auth.js';
 import { updateTenant, getTenant } from '../tenants.js';
+import { getPlanLimits } from '../planLimits.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../data/uploads');
@@ -62,11 +63,15 @@ router.get('/', (req, res) => {
   }
 
   const branding = tenant.branding || {};
+  const plan = tenant.plan || 'trial';
   res.json({
     primaryColor: branding.primaryColor || '#0d9488',
     logoUrl: branding.logoUrl || null,
     restaurantName: tenant.name || 'Restaurant',
     tagline: branding.tagline || '',
+    plan,
+    limits: getPlanLimits(plan),
+    ownerEmail: tenant.owner_email || null,
   });
 });
 
@@ -111,6 +116,12 @@ router.put('/', requireOwner, (req, res) => {
  */
 router.put('/settings', requireAuth('manage_branding'), (req, res) => {
   try {
+    // Plan check — trial can preview but not save
+    const plan = req.tenant?.plan || 'trial';
+    if (!getPlanLimits(plan).branding.canRename) {
+      return res.status(403).json({ error: 'Branding customization requires a paid plan', upgrade: true });
+    }
+
     const { primaryColor, restaurantName, tagline } = req.body;
     const tenantId = req.tenant?.id;
 

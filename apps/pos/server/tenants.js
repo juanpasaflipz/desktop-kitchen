@@ -71,6 +71,22 @@ export function openTenantDb(tenantId) {
 
   if (isNew) {
     applySchema(tenantDb);
+
+    // Seed generic virtual brands for menu board
+    try {
+      tenantDb.prepare(`
+        INSERT OR IGNORE INTO virtual_brands (name, slug, description, primary_color, show_in_pos, display_type, active)
+        VALUES (?, ?, ?, ?, 1, 'menu_board', 1)
+      `).run('Brand 1', 'brand-1', 'Your first brand', '#0d9488');
+      tenantDb.prepare(`
+        INSERT OR IGNORE INTO virtual_brands (name, slug, description, primary_color, show_in_pos, display_type, active)
+        VALUES (?, ?, ?, ?, 1, 'menu_board', 1)
+      `).run('Brand 2', 'brand-2', 'Your second brand', '#3b82f6');
+    } catch (err) {
+      // virtual_brands table may not exist if schema doesn't include it yet
+      console.log(`[Tenants] Could not seed virtual brands for ${tenantId}:`, err.message);
+    }
+
     console.log(`[Tenants] Initialized new tenant DB: ${tenantId}`);
   }
 

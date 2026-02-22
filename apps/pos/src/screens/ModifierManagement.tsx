@@ -17,6 +17,8 @@ import {
 import { ModifierGroup, ComboDefinition, ComboSlot, MenuCategory, MenuItem } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
+import { usePlan } from '../context/PlanContext';
+import UpgradePrompt from '../components/UpgradePrompt';
 
 interface ComboFormData {
   name: string;
@@ -48,6 +50,7 @@ const emptyComboForm = (): ComboFormData => ({
 
 export default function ModifierManagement() {
   const { t } = useTranslation('inventory');
+  const { limits, isAtLimit } = usePlan();
   const [groups, setGroups] = useState<ModifierGroup[]>([]);
   const [combos, setCombos] = useState<ComboDefinition[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -307,12 +310,23 @@ export default function ModifierManagement() {
           </div>
         ) : tab === 'modifiers' ? (
           <div className="space-y-4">
-            <button
-              onClick={() => setShowAddGroup(true)}
-              className="flex items-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors"
-            >
-              <Plus size={20} /> {t('modifiers.addGroup')}
-            </button>
+            {isAtLimit('modifierGroups', groups.filter(g => g.active !== false).length) && (
+              <UpgradePrompt message={`Modifier group limit reached (${limits.modifierGroups}). Upgrade for more.`} />
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAddGroup(true)}
+                disabled={isAtLimit('modifierGroups', groups.filter(g => g.active !== false).length)}
+                className="flex items-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
+              >
+                <Plus size={20} /> {t('modifiers.addGroup')}
+              </button>
+              {limits.modifierGroups !== Infinity && (
+                <span className="text-sm text-neutral-400">
+                  {groups.filter(g => g.active !== false).length} / {limits.modifierGroups} groups
+                </span>
+              )}
+            </div>
 
             {showAddGroup && (
               <div className="bg-neutral-900 p-4 rounded-lg border border-neutral-800 space-y-3">
@@ -415,12 +429,23 @@ export default function ModifierManagement() {
         ) : (
           /* ==================== Combos Tab ==================== */
           <div className="space-y-4">
-            <button
-              onClick={openCreateCombo}
-              className="flex items-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors"
-            >
-              <Plus size={20} /> {t('modifiers.combos.createCombo')}
-            </button>
+            {isAtLimit('combos', combos.filter(c => c.active !== false).length) && (
+              <UpgradePrompt message={`Combo limit reached (${limits.combos}). Upgrade for more.`} />
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={openCreateCombo}
+                disabled={isAtLimit('combos', combos.filter(c => c.active !== false).length)}
+                className="flex items-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors disabled:opacity-50"
+              >
+                <Plus size={20} /> {t('modifiers.combos.createCombo')}
+              </button>
+              {limits.combos !== Infinity && (
+                <span className="text-sm text-neutral-400">
+                  {combos.filter(c => c.active !== false).length} / {limits.combos} combos
+                </span>
+              )}
+            </div>
 
             {/* Combo Create/Edit Form */}
             {showComboForm && (

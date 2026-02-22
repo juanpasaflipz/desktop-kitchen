@@ -19,6 +19,8 @@ import {
 } from '../api';
 import { Employee } from '../types';
 import BrandLogo from '../components/BrandLogo';
+import { usePlan } from '../context/PlanContext';
+import UpgradePrompt from '../components/UpgradePrompt';
 
 type ModalMode = 'add' | 'edit' | null;
 type RoleType = 'cashier' | 'kitchen' | 'bar' | 'manager' | 'admin';
@@ -31,6 +33,7 @@ interface FormData {
 
 export default function EmployeeScreen() {
   const { t } = useTranslation('admin');
+  const { limits, isAtLimit } = usePlan();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -183,9 +186,15 @@ export default function EmployeeScreen() {
             <h1 className="text-3xl font-black tracking-tighter">{t('employees.title')}</h1>
           </div>
           <div className="flex items-center gap-4">
+            {limits.employees !== Infinity && (
+              <span className="text-sm text-neutral-400">
+                {employees.filter(e => e.active).length} / {limits.employees} employees
+              </span>
+            )}
             <button
               onClick={openAddModal}
-              className="px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors flex items-center gap-2 min-h-[44px]"
+              disabled={isAtLimit('employees', employees.filter(e => e.active).length)}
+              className="px-6 py-3 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors flex items-center gap-2 min-h-[44px] disabled:opacity-50"
             >
               <Plus size={20} />
               {t('employees.addEmployee')}
@@ -196,6 +205,11 @@ export default function EmployeeScreen() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
+        {isAtLimit('employees', employees.filter(e => e.active).length) && (
+          <div className="mb-6">
+            <UpgradePrompt message={`Employee limit reached (${limits.employees}). Upgrade for unlimited employees.`} />
+          </div>
+        )}
         {error && (
           <div className="bg-brand-900/30 border border-brand-800 rounded-lg p-4 mb-6 flex justify-between items-center">
             <p className="text-brand-300">{error}</p>

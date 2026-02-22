@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { getPlanLimits } from '../planLimits.js';
 
 const router = Router();
 
@@ -18,6 +19,11 @@ router.get('/', (req, res) => {
 // POST /api/printers - create printer
 router.post('/', requireAuth('manage_printers'), (req, res) => {
   try {
+    const plan = req.tenant?.plan || 'trial';
+    if (!getPlanLimits(plan).printers.functional) {
+      return res.status(403).json({ error: 'Printer management requires a paid plan', upgrade: true });
+    }
+
     const { name, printer_type, address } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
 

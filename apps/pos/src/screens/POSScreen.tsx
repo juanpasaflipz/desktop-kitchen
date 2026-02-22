@@ -38,7 +38,9 @@ import CryptoPaymentModal from '../components/CryptoPaymentModal';
 import CustomerLookupModal from '../components/CustomerLookupModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import BrandLogo from '../components/BrandLogo';
-import { UtensilsCrossed, SlidersHorizontal, Star, X, Search, ClipboardList, WifiOff, Wifi } from 'lucide-react';
+import MenuItemImage from '../components/MenuItemImage';
+import { usePlan } from '../context/PlanContext';
+import { SlidersHorizontal, Star, X, Search, ClipboardList, WifiOff, Wifi } from 'lucide-react';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { createOfflineOrder, toReceiptOrder, calculateOrderTotals } from '../lib/offlineOrderQueue';
 import { offlineDb } from '../lib/offlineDb';
@@ -58,6 +60,7 @@ const POSScreen: React.FC = () => {
   const { currentEmployee, logout, hasPermission } = useAuth();
   const { t } = useTranslation('pos');
   const { isOnline, pendingSyncCount } = useNetworkStatus();
+  const { plan, ownerEmail } = usePlan();
 
   // State Management
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -797,6 +800,9 @@ const POSScreen: React.FC = () => {
             <div className="flex-1">
               <p className="text-xs text-neutral-500">{t('header.operator')}</p>
               <p className="text-lg font-bold text-white">{currentEmployee?.name}</p>
+              {plan === 'trial' && ownerEmail && (
+                <p className="text-xs text-neutral-500 truncate max-w-[180px]">{ownerEmail}</p>
+              )}
             </div>
             <div className="text-center flex-1">
               <p className="text-xs text-neutral-500">{t('header.time')}</p>
@@ -966,11 +972,7 @@ const POSScreen: React.FC = () => {
                 >
                   {/* Image or placeholder */}
                   <div className="h-28 w-full bg-neutral-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <UtensilsCrossed className="w-8 h-8 text-neutral-600" />
-                    )}
+                    <MenuItemImage src={item.image_url} alt={item.name} />
                   </div>
 
                   {/* Sold out overlay */}

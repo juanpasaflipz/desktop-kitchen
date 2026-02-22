@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
+import { usePlan } from '../context/PlanContext';
 import {
   BarChart,
   Bar,
@@ -64,6 +65,7 @@ const COLORS = ['#0d9488', '#16a34a', '#2563eb', '#ca8a04', '#7c3aed', '#ea580c'
 export default function ReportsScreen() {
   const { t } = useTranslation('reports');
   const { currentEmployee } = useAuth();
+  const { limits } = usePlan();
   const [period, setPeriod] = useState<Period>('today');
   const [tab, setTab] = useState<Tab>('overview');
   const [salesData, setSalesData] = useState<SalesReport | null>(null);
@@ -87,7 +89,7 @@ export default function ReportsScreen() {
   const [savingActual, setSavingActual] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const canEditFinancials = currentEmployee && ['admin', 'manager'].includes(currentEmployee.role);
+  const canEditFinancials = currentEmployee && ['admin', 'manager'].includes(currentEmployee.role) && limits.reports.editVariables;
 
   useEffect(() => {
     fetchReportData();

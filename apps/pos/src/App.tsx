@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SyncProvider } from './context/SyncContext';
 import { BrandingProvider } from './context/BrandingContext';
+import { PlanProvider } from './context/PlanContext';
 
 // Screens - these will be created as separate components
 // For now, we'll create placeholder components
@@ -403,11 +404,13 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <BrandingProvider>
-      <AuthProvider>
-        <SyncProvider>
-          <AppContent />
-        </SyncProvider>
-      </AuthProvider>
+      <PlanProvider>
+        <AuthProvider>
+          <SyncProvider>
+            <AppContent />
+          </SyncProvider>
+        </AuthProvider>
+      </PlanProvider>
     </BrandingProvider>
   );
 }

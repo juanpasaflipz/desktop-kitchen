@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { checkLimit } from '../planLimits.js';
 
 const router = Router();
 
@@ -210,6 +211,14 @@ router.post('/items', requireAuth('manage_menu'), (req, res) => {
 
     if (!category_id || !name || price === undefined) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Plan limit check
+    const plan = req.tenant?.plan || 'trial';
+    const { cnt } = get('SELECT COUNT(*) as cnt FROM menu_items WHERE active = 1') || { cnt: 0 };
+    const check = checkLimit(plan, 'menuItems', cnt);
+    if (!check.allowed) {
+      return res.status(403).json({ error: `Menu item limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
     }
 
     const result = run(`

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getChargeFees } from '../stripe.js';
+import { getPlanLimits } from '../planLimits.js';
 
 const router = Router();
 
@@ -858,6 +859,13 @@ router.get('/financial-projection', requireAuth('view_reports'), async (req, res
 // PUT /api/reports/financial-targets
 router.put('/financial-targets', requireAuth('view_reports'), (req, res) => {
   try {
+    // Plan check — trial cannot edit variables
+    const plan = req.tenant?.plan || 'trial';
+    const limits = getPlanLimits(plan);
+    if (!limits.reports.editVariables) {
+      return res.status(403).json({ error: 'Editing financial targets requires a paid plan', upgrade: true });
+    }
+
     const employee = req.employee;
     if (!['admin', 'manager'].includes(employee.role)) {
       return res.status(403).json({ error: 'Only admin or manager can edit targets' });
@@ -887,6 +895,13 @@ router.put('/financial-targets', requireAuth('view_reports'), (req, res) => {
 // PUT /api/reports/financial-actuals
 router.put('/financial-actuals', requireAuth('view_reports'), (req, res) => {
   try {
+    // Plan check — trial cannot edit variables
+    const plan = req.tenant?.plan || 'trial';
+    const limits = getPlanLimits(plan);
+    if (!limits.reports.editVariables) {
+      return res.status(403).json({ error: 'Editing financial actuals requires a paid plan', upgrade: true });
+    }
+
     const employee = req.employee;
     if (!['admin', 'manager'].includes(employee.role)) {
       return res.status(403).json({ error: 'Only admin or manager can edit actuals' });

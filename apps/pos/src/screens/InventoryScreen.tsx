@@ -36,12 +36,14 @@ import {
 } from '../types';
 import { formatDate, formatDateTime } from '../utils/dateFormat';
 import BrandLogo from '../components/BrandLogo';
+import { usePlan } from '../context/PlanContext';
 
 type Tab = 'stock' | 'count' | 'variance' | 'alerts';
 type SortField = 'name' | 'quantity' | 'status';
 
 export default function InventoryScreen() {
   const { t } = useTranslation('inventory');
+  const { limits } = usePlan();
   const [activeTab, setActiveTab] = useState<Tab>('stock');
 
   // Stock tab state
@@ -280,6 +282,11 @@ export default function InventoryScreen() {
               <ArrowLeft size={24} />
             </Link>
             <h1 className="text-3xl font-black tracking-tighter">{t('inventory.title')}</h1>
+            {limits.inventoryItems !== Infinity && (
+              <span className="text-sm text-neutral-400 ml-3">
+                {items.length} / {limits.inventoryItems} items
+              </span>
+            )}
           </div>
           <BrandLogo className="h-10" />
         </div>

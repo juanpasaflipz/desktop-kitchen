@@ -135,7 +135,7 @@ function PricingCard({
         ))}
       </ul>
       <a
-        href="https://pos.desktop.kitchen"
+        href="https://pos.desktop.kitchen/#/onboarding"
         className={`mt-8 block text-center py-3 px-6 rounded text-sm font-semibold uppercase tracking-wider transition-all duration-200 ${
           highlighted
             ? "bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98]"
@@ -245,7 +245,7 @@ const Home: NextPage = () => {
             className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <a
-              href="https://pos.desktop.kitchen"
+              href="https://pos.desktop.kitchen/#/onboarding"
               className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
             >
               {t.heroCta}
@@ -408,7 +408,7 @@ const Home: NextPage = () => {
             </FadeIn>
             <FadeIn delay={0.2}>
               <a
-                href="https://pos.desktop.kitchen"
+                href="https://pos.desktop.kitchen/#/onboarding"
                 className="mt-10 inline-block bg-white text-teal-700 font-semibold px-10 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-white/90 active:scale-[0.98]"
               >
                 {t.ctaButton}
@@ -436,7 +436,7 @@ const Home: NextPage = () => {
             </a>
             <span className="text-white/10">|</span>
             <a
-              href="https://pos.desktop.kitchen"
+              href="https://pos.desktop.kitchen/#/onboarding"
               className="hover:text-teal-500 transition-colors duration-200"
             >
               {t.footerDemo}

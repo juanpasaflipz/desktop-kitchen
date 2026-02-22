@@ -24,13 +24,25 @@ import { getSalesReport, getLowStock } from '../api';
 import { SalesReport, InventoryItem } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
+import { usePlan } from '../context/PlanContext';
+import { useLocation } from 'react-router-dom';
 
 export default function AdminPanel() {
   const { t } = useTranslation('admin');
+  const { plan, refresh: refreshPlan } = usePlan();
+  const location = useLocation();
   const [dailyStats, setDailyStats] = useState<SalesReport | null>(null);
   const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Refresh plan after billing success redirect
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('billing') === 'success') {
+      refreshPlan();
+    }
+  }, [location.search, refreshPlan]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +77,13 @@ export default function AdminPanel() {
               <ArrowLeft size={24} />
             </Link>
             <h1 className="text-3xl font-black tracking-tighter">{t('panel.title')}</h1>
+            <span className={`ml-3 px-2.5 py-1 text-xs font-semibold rounded-full uppercase ${
+              plan === 'pro' ? 'bg-brand-600/20 text-brand-400' :
+              plan === 'starter' ? 'bg-blue-600/20 text-blue-400' :
+              'bg-neutral-700/50 text-neutral-400'
+            }`}>
+              {plan}
+            </span>
           </div>
           <BrandLogo className="h-10" />
         </div>

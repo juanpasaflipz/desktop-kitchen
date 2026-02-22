@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Calendar, AlertTriangle, CheckCircle, Package } from 'lucide-react';
 import { getPrepForecast } from '../api';
 import { PrepForecast } from '../types';
+import FeatureGate from '../components/FeatureGate';
 
 export default function PrepForecastScreen() {
   const { t } = useTranslation('inventory');
@@ -44,8 +45,9 @@ export default function PrepForecastScreen() {
   const prepExtraCount = forecast?.items.filter((i) => i.prep_action === 'prep_extra').length || 0;
 
   return (
-    <div className="min-h-screen bg-neutral-950">
-      <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
+    <FeatureGate feature="prepForecast" featureLabel="Prep Forecast">
+      <div className="min-h-screen bg-neutral-950">
+        <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
         <div className="flex items-center gap-4">
           <Link to="/admin" className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
             <ArrowLeft size={24} />
@@ -151,6 +153,7 @@ export default function PrepForecastScreen() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </FeatureGate>
   );
 }
