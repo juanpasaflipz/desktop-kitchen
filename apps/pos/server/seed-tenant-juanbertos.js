@@ -18,6 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { applySchema } from './db/schema.js';
+import { initMigrations, runMigrationsSync } from './db/migrate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '../data');
@@ -69,6 +70,7 @@ masterDb.exec(`
 
 (async () => {
   try {
+    await initMigrations();
     const passwordHash = await bcrypt.hash(OWNER_PASSWORD, 10);
 
     // Upsert the tenant in master DB
@@ -97,9 +99,10 @@ masterDb.exec(`
     tenantDb.pragma('journal_mode = WAL');
     tenantDb.pragma('foreign_keys = ON');
 
-    // Apply the full POS schema
+    // Apply the full POS schema + migrations
     applySchema(tenantDb);
-    console.log('Applied POS schema to tenant DB');
+    runMigrationsSync(tenantDb, 'seed:juanbertos');
+    console.log('Applied POS schema + migrations to tenant DB');
 
     // Helper
     const run = (sql, params = []) => tenantDb.prepare(sql).run(...params);

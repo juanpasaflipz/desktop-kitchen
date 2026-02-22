@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { applySchema } from './schema.js';
+import { runMigrationsSync } from './migrate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '../../data');
@@ -44,6 +45,7 @@ export async function initDb() {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   applySchema(db);
+  runMigrationsSync(db, 'default');
 
   return db;
 }

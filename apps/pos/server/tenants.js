@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { applySchema, createDbHelpers } from './db/index.js';
+import { runMigrationsSync } from './db/migrate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '../data');
@@ -89,6 +90,9 @@ export function openTenantDb(tenantId) {
 
     console.log(`[Tenants] Initialized new tenant DB: ${tenantId}`);
   }
+
+  // Always run migrations — catches up existing tenants that missed alterSafe columns
+  runMigrationsSync(tenantDb, `tenant:${tenantId}`);
 
   tenantPool.set(tenantId, tenantDb);
   return tenantDb;

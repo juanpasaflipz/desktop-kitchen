@@ -4,6 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb } from './db/index.js';
+import { initMigrations } from './db/migrate.js';
 import { initMasterDb } from './tenants.js';
 import { tenantMiddleware } from './middleware/tenant.js';
 
@@ -126,6 +127,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 // Start server (async IIFE to handle initDb)
 (async () => {
   try {
+    await initMigrations();
     await initDb();
     initMasterDb();
     initAI();

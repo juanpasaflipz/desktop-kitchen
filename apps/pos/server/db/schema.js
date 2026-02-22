@@ -19,7 +19,8 @@ export function applySchema(database) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       sort_order INTEGER,
-      active INTEGER DEFAULT 1
+      active INTEGER DEFAULT 1,
+      printer_target TEXT DEFAULT 'kitchen'
     )
   `);
 
@@ -49,7 +50,13 @@ export function applySchema(database) {
       payment_status TEXT DEFAULT 'unpaid',
       created_at TEXT DEFAULT (datetime('now','localtime')),
       completed_at TEXT,
-      offline_temp_id TEXT
+      offline_temp_id TEXT,
+      payment_method TEXT DEFAULT NULL,
+      source TEXT DEFAULT 'pos',
+      delivery_order_id INTEGER DEFAULT NULL,
+      refund_total REAL DEFAULT 0,
+      crypto_payment_id INTEGER DEFAULT NULL,
+      loyalty_customer_id INTEGER DEFAULT NULL
     )
   `);
 
@@ -61,7 +68,10 @@ export function applySchema(database) {
       item_name TEXT NOT NULL,
       quantity INTEGER NOT NULL,
       unit_price REAL NOT NULL,
-      notes TEXT
+      notes TEXT,
+      was_ai_suggested INTEGER DEFAULT 0,
+      combo_instance_id TEXT DEFAULT NULL,
+      virtual_brand_id INTEGER DEFAULT NULL
     )
   `);
 
@@ -72,7 +82,9 @@ export function applySchema(database) {
       quantity REAL NOT NULL,
       unit TEXT,
       low_stock_threshold REAL,
-      category TEXT
+      category TEXT,
+      cost_price REAL DEFAULT 0,
+      last_counted_at TEXT
     )
   `);
 
@@ -173,15 +185,6 @@ export function applySchema(database) {
     )
   `);
 
-  // Column migrations (safe try/catch for existing DBs)
-  const alterSafe = (sql) => { try { database.exec(sql); } catch {} };
-
-  alterSafe(`ALTER TABLE order_items ADD COLUMN was_ai_suggested INTEGER DEFAULT 0`);
-  alterSafe(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT NULL`);
-  alterSafe(`ALTER TABLE inventory_items ADD COLUMN cost_price REAL DEFAULT 0`);
-  alterSafe(`ALTER TABLE orders ADD COLUMN source TEXT DEFAULT 'pos'`);
-  alterSafe(`ALTER TABLE menu_categories ADD COLUMN printer_target TEXT DEFAULT 'kitchen'`);
-
   // Modifier groups
   database.exec(`
     CREATE TABLE IF NOT EXISTS modifier_groups (
@@ -225,8 +228,6 @@ export function applySchema(database) {
       price_adjustment REAL DEFAULT 0
     )
   `);
-
-  alterSafe(`ALTER TABLE order_items ADD COLUMN combo_instance_id TEXT DEFAULT NULL`);
 
   database.exec(`
     CREATE TABLE IF NOT EXISTS combo_definitions (
@@ -296,7 +297,10 @@ export function applySchema(database) {
       display_name TEXT NOT NULL,
       webhook_secret TEXT,
       commission_percent REAL DEFAULT 0,
-      active INTEGER DEFAULT 1
+      active INTEGER DEFAULT 1,
+      default_markup_percent REAL DEFAULT 0,
+      avg_delivery_time_min INTEGER DEFAULT 30,
+      notes TEXT DEFAULT ''
     )
   `);
 
@@ -315,8 +319,6 @@ export function applySchema(database) {
       created_at TEXT DEFAULT (datetime('now','localtime'))
     )
   `);
-
-  alterSafe(`ALTER TABLE orders ADD COLUMN delivery_order_id INTEGER DEFAULT NULL`);
 
   // Delivery intelligence — markup rules per platform per item
   database.exec(`
@@ -342,7 +344,14 @@ export function applySchema(database) {
       description TEXT,
       logo_url TEXT,
       active INTEGER DEFAULT 1,
-      created_at TEXT DEFAULT (datetime('now','localtime'))
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      display_type TEXT DEFAULT 'delivery',
+      primary_color TEXT,
+      secondary_color TEXT,
+      font_family TEXT,
+      dark_bg TEXT,
+      slug TEXT,
+      show_in_pos INTEGER DEFAULT 1
     )
   `);
 
@@ -372,21 +381,6 @@ export function applySchema(database) {
       created_at TEXT DEFAULT (datetime('now','localtime'))
     )
   `);
-
-  // Menu board columns on virtual_brands
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN display_type TEXT DEFAULT 'delivery'`);
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN primary_color TEXT`);
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN secondary_color TEXT`);
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN font_family TEXT`);
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN dark_bg TEXT`);
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN slug TEXT`);
-  alterSafe(`ALTER TABLE virtual_brands ADD COLUMN show_in_pos INTEGER DEFAULT 1`);
-  alterSafe(`ALTER TABLE order_items ADD COLUMN virtual_brand_id INTEGER DEFAULT NULL`);
-
-  // Add markup-related columns to delivery_platforms
-  alterSafe(`ALTER TABLE delivery_platforms ADD COLUMN default_markup_percent REAL DEFAULT 0`);
-  alterSafe(`ALTER TABLE delivery_platforms ADD COLUMN avg_delivery_time_min INTEGER DEFAULT 30`);
-  alterSafe(`ALTER TABLE delivery_platforms ADD COLUMN notes TEXT DEFAULT ''`);
 
   // Role-Based Permissions
   database.exec(`
@@ -429,30 +423,6 @@ export function applySchema(database) {
     }
   }
 
-  // Backfill manage_loyalty
-  try {
-    const loyaltyPermRow = database.prepare("SELECT COUNT(*) as cnt FROM role_permissions WHERE permission = 'manage_loyalty'").get();
-    if ((loyaltyPermRow?.cnt || 0) === 0 && permTotal > 0) {
-      const loyaltyRoles = { admin: 1, manager: 1, cashier: 0, kitchen: 0, bar: 0 };
-      const insertLoyalty = database.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_loyalty', ?)`);
-      for (const [role, granted] of Object.entries(loyaltyRoles)) {
-        insertLoyalty.run(role, granted);
-      }
-    }
-  } catch {}
-
-  // Backfill manage_branding
-  try {
-    const brandingPermRow = database.prepare("SELECT COUNT(*) as cnt FROM role_permissions WHERE permission = 'manage_branding'").get();
-    if ((brandingPermRow?.cnt || 0) === 0 && permTotal > 0) {
-      const brandingRoles = { admin: 1, manager: 1, cashier: 0, kitchen: 0, bar: 0 };
-      const insertBranding = database.prepare(`INSERT OR IGNORE INTO role_permissions (role, permission, granted) VALUES (?, 'manage_branding', ?)`);
-      for (const [role, granted] of Object.entries(brandingRoles)) {
-        insertBranding.run(role, granted);
-      }
-    }
-  } catch {}
-
   // Refunds
   database.exec(`
     CREATE TABLE IF NOT EXISTS refunds (
@@ -468,8 +438,6 @@ export function applySchema(database) {
       created_at TEXT DEFAULT (datetime('now','localtime'))
     )
   `);
-
-  alterSafe(`ALTER TABLE orders ADD COLUMN refund_total REAL DEFAULT 0`);
 
   // Crypto Payments
   database.exec(`
@@ -490,8 +458,6 @@ export function applySchema(database) {
       updated_at TEXT DEFAULT (datetime('now','localtime'))
     )
   `);
-
-  alterSafe(`ALTER TABLE orders ADD COLUMN crypto_payment_id INTEGER DEFAULT NULL`);
 
   // Advanced Inventory
   database.exec(`
@@ -574,8 +540,6 @@ export function applySchema(database) {
       line_total REAL DEFAULT 0
     )
   `);
-
-  alterSafe(`ALTER TABLE inventory_items ADD COLUMN last_counted_at TEXT`);
 
   // Financial Projections
   database.exec(`
@@ -697,9 +661,6 @@ export function applySchema(database) {
       created_at TEXT DEFAULT (datetime('now','localtime'))
     )
   `);
-
-  alterSafe(`ALTER TABLE orders ADD COLUMN loyalty_customer_id INTEGER DEFAULT NULL`);
-  alterSafe(`ALTER TABLE orders ADD COLUMN offline_temp_id TEXT`);
 
   // Seed financial targets defaults
   const ftRow = database.prepare("SELECT COUNT(*) as cnt FROM financial_targets").get();
