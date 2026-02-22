@@ -116,12 +116,6 @@ router.put('/', requireOwner, (req, res) => {
  */
 router.put('/settings', requireAuth('manage_branding'), (req, res) => {
   try {
-    // Plan check — trial can preview but not save
-    const plan = req.tenant?.plan || 'trial';
-    if (!getPlanLimits(plan).branding.canRename) {
-      return res.status(403).json({ error: 'Branding customization requires a paid plan', upgrade: true });
-    }
-
     const { primaryColor, restaurantName, tagline } = req.body;
     const tenantId = req.tenant?.id;
 
@@ -147,6 +141,12 @@ router.put('/settings', requireAuth('manage_branding'), (req, res) => {
         restaurantName: updated.restaurantName || 'My Restaurant',
         tagline: updated.tagline || '',
       });
+    }
+
+    // Plan check — trial tenants can preview but not save
+    const plan = req.tenant?.plan || 'trial';
+    if (!getPlanLimits(plan).branding.canRename) {
+      return res.status(403).json({ error: 'Branding customization requires a paid plan', upgrade: true });
     }
 
     const tenant = getTenant(tenantId);
