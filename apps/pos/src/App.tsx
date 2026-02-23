@@ -11,6 +11,7 @@ import { SyncProvider } from './context/SyncContext';
 import { BrandingProvider } from './context/BrandingContext';
 import { PlanProvider } from './context/PlanContext';
 import { resolveTenant, type TenantInfo } from './lib/tenantResolver';
+import { useDeviceType } from './hooks/useDeviceType';
 
 // Screens - these will be created as separate components
 // For now, we'll create placeholder components
@@ -158,6 +159,36 @@ const AccountScreen = React.lazy(() =>
   }))
 );
 
+const MobileShell = React.lazy(() =>
+  import('./components/mobile/MobileShell').then((module) => ({
+    default: module.default,
+  }))
+);
+
+const MobileOrdersScreen = React.lazy(() =>
+  import('./screens/mobile/MobileOrdersScreen').then((module) => ({
+    default: module.default,
+  }))
+);
+
+const MobileKitchenScreen = React.lazy(() =>
+  import('./screens/mobile/MobileKitchenScreen').then((module) => ({
+    default: module.default,
+  }))
+);
+
+const MobileScannerScreen = React.lazy(() =>
+  import('./screens/mobile/MobileScannerScreen').then((module) => ({
+    default: module.default,
+  }))
+);
+
+const MobileProfileScreen = React.lazy(() =>
+  import('./screens/mobile/MobileProfileScreen').then((module) => ({
+    default: module.default,
+  }))
+);
+
 /* ==================== Tenant Context ==================== */
 
 const TenantContext = React.createContext<TenantInfo>({
@@ -218,6 +249,30 @@ const PlatformRoutes: React.FC = () => (
 
 const TenantRoutes: React.FC = () => {
   const { currentEmployee } = useAuth();
+  const { deviceType } = useDeviceType();
+
+  // Phone + authenticated → mobile companion mode
+  if (deviceType === 'phone' && currentEmployee) {
+    return (
+      <MobileShell>
+        <Routes>
+          <Route path="/m/orders" element={<MobileOrdersScreen />} />
+          <Route path="/m/kitchen" element={<MobileKitchenScreen />} />
+          <Route
+            path="/m/scan"
+            element={
+              <ProtectedRoute
+                element={<MobileScannerScreen />}
+                requiredRole={['manager', 'admin']}
+              />
+            }
+          />
+          <Route path="/m/profile" element={<MobileProfileScreen />} />
+          <Route path="*" element={<Navigate to="/m/orders" replace />} />
+        </Routes>
+      </MobileShell>
+    );
+  }
 
   return (
     <Routes>

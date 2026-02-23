@@ -40,10 +40,14 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import BrandLogo from '../components/BrandLogo';
 import MenuItemImage from '../components/MenuItemImage';
 import { usePlan } from '../context/PlanContext';
-import { SlidersHorizontal, Star, X, Search, ClipboardList, WifiOff, Wifi } from 'lucide-react';
+import { SlidersHorizontal, Star, X, Search, ClipboardList, WifiOff, Wifi, Menu } from 'lucide-react';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { useDeviceType } from '../hooks/useDeviceType';
 import { createOfflineOrder, toReceiptOrder, calculateOrderTotals } from '../lib/offlineOrderQueue';
 import { offlineDb } from '../lib/offlineDb';
+import CategoryBar from '../components/CategoryBar';
+import CartDrawer from '../components/CartDrawer';
+import MiniCartButton from '../components/MiniCartButton';
 
 /* ==================== Toast Notification ==================== */
 
@@ -60,6 +64,8 @@ const POSScreen: React.FC = () => {
   const { currentEmployee, logout, hasPermission } = useAuth();
   const { t } = useTranslation('pos');
   const { isOnline, pendingSyncCount } = useNetworkStatus();
+  const { isTablet, isPortrait } = useDeviceType();
+  const showDrawerCart = isTablet && isPortrait;
   const { plan, ownerEmail } = usePlan();
 
   // State Management
@@ -96,6 +102,8 @@ const POSScreen: React.FC = () => {
   const [selectedBrand, setSelectedBrand] = useState<number | 'all'>('all');
   const [templateName, setTemplateName] = useState('');
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [showNavMenu, setShowNavMenu] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // AI Suggestions
@@ -748,7 +756,7 @@ const POSScreen: React.FC = () => {
   return (
     <div className="flex h-screen bg-neutral-950 overflow-hidden">
       {/* ==================== LEFT SIDEBAR - CATEGORIES ==================== */}
-      <div className="w-48 bg-neutral-900 border-r border-neutral-800 flex flex-col">
+      <div className="hidden lg:flex w-48 bg-neutral-900 border-r border-neutral-800 flex-col">
         <div className="bg-neutral-950 p-4 text-center border-b border-neutral-800">
           <BrandLogo className="h-8 mx-auto mb-1" />
           <p className="font-bold text-xs text-neutral-400 tracking-tight">{t('header.categories')}</p>
@@ -794,22 +802,31 @@ const POSScreen: React.FC = () => {
       </div>
 
       {/* ==================== CENTER PANEL - MENU ITEMS ==================== */}
-      <div className="flex-1 flex flex-col bg-neutral-950">
-        <div className="bg-neutral-900 text-white p-4 border-b border-neutral-800">
-          <div className="flex justify-between items-center mb-4">
+      <div className="flex-1 flex flex-col bg-neutral-950 min-w-0">
+        {/* Horizontal CategoryBar for tablet portrait */}
+        {showDrawerCart && (
+          <CategoryBar
+            categories={visibleCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(id) => { setSelectedCategory(id); setSearchQuery(''); }}
+          />
+        )}
+
+        <div className="bg-neutral-900 text-white p-3 lg:p-4 border-b border-neutral-800">
+          <div className="flex justify-between items-center mb-3 lg:mb-4">
             <div className="flex-1">
               <p className="text-xs text-neutral-500">{t('header.operator')}</p>
-              <p className="text-lg font-bold text-white">{currentEmployee?.name}</p>
+              <p className="text-base lg:text-lg font-bold text-white">{currentEmployee?.name}</p>
               {plan === 'trial' && ownerEmail && (
                 <p className="text-xs text-neutral-500 truncate max-w-[180px]">{ownerEmail}</p>
               )}
             </div>
             <div className="text-center flex-1">
               <p className="text-xs text-neutral-500">{t('header.time')}</p>
-              <p className="text-lg font-bold text-white">{formatTime(currentTime)}</p>
+              <p className="text-base lg:text-lg font-bold text-white">{formatTime(currentTime)}</p>
             </div>
-            <div className="text-right flex-1 flex items-center justify-end gap-3">
-              <div>
+            <div className="text-right flex-1 flex items-center justify-end gap-2 lg:gap-3">
+              <div className="hidden lg:block">
                 <p className="text-xs text-neutral-500">{t('header.ordersToday')}</p>
                 <p className="text-lg font-bold text-white">{todayOrderCount}</p>
               </div>
@@ -819,6 +836,42 @@ const POSScreen: React.FC = () => {
                 <WifiOff className="w-5 h-5 text-brand-500 animate-pulse" />
               )}
               <LanguageSwitcher variant="nav" />
+              {/* Hamburger nav for tablet portrait */}
+              {showDrawerCart && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNavMenu(!showNavMenu)}
+                    className="p-2 bg-neutral-800 rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-all"
+                  >
+                    <Menu className="w-5 h-5 text-neutral-300" />
+                  </button>
+                  {showNavMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowNavMenu(false)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl py-1 min-w-[140px]">
+                        <button
+                          onClick={() => { navigate('/admin'); setShowNavMenu(false); }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-neutral-300 hover:bg-neutral-700 font-semibold"
+                        >
+                          {t('common:buttons.admin')}
+                        </button>
+                        <button
+                          onClick={() => { navigate('/kitchen'); setShowNavMenu(false); }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-neutral-300 hover:bg-neutral-700 font-semibold"
+                        >
+                          {t('common:buttons.kitchen')}
+                        </button>
+                        <button
+                          onClick={() => { handleLogout(); setShowNavMenu(false); }}
+                          className="w-full text-left px-4 py-2.5 text-sm text-neutral-400 hover:bg-neutral-700 font-semibold border-t border-neutral-700"
+                        >
+                          {t('common:buttons.logout')}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -941,7 +994,7 @@ const POSScreen: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             {filteredItems.map((item) => {
               const isPush = pushItemIds.has(item.id);
               const isAvoid = avoidItemIds.has(item.id);
@@ -958,7 +1011,7 @@ const POSScreen: React.FC = () => {
                     }
                   }}
                   disabled={isSoldOut}
-                  className={`rounded-lg hover:shadow-lg active:scale-95 transition-all touch-manipulation flex flex-col h-52 overflow-hidden relative ${
+                  className={`rounded-lg hover:shadow-lg active:scale-95 transition-all touch-manipulation flex flex-col h-44 lg:h-52 overflow-hidden relative ${
                     isSoldOut
                       ? 'bg-neutral-900/40 border border-neutral-700 grayscale cursor-not-allowed'
                       : isLowStock
@@ -1012,7 +1065,7 @@ const POSScreen: React.FC = () => {
       </div>
 
       {/* ==================== RIGHT SIDEBAR - CART ==================== */}
-      <div className="w-96 bg-neutral-900 border-l border-neutral-800 flex flex-col">
+      <div className="hidden lg:flex w-96 bg-neutral-900 border-l border-neutral-800 flex-col">
         <div className="bg-brand-600 text-white p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -1219,6 +1272,35 @@ const POSScreen: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* ==================== TABLET PORTRAIT: CART DRAWER + MINI BUTTON ==================== */}
+      {showDrawerCart && (
+        <>
+          <MiniCartButton count={cart.length} total={total} onClick={() => setIsCartOpen(true)} />
+          <CartDrawer
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            cart={cart}
+            linkedCustomer={linkedCustomer}
+            onUnlinkCustomer={() => setLinkedCustomer(null)}
+            onRemoveFromCart={removeFromCart}
+            onUpdateQuantity={updateQuantity}
+            onSetNotesItem={setNotesItem}
+            onShowPaymentModal={() => setShowPaymentModal(true)}
+            onShowCustomerLookup={() => setShowCustomerLookup(true)}
+            onShowTemplates={() => setShowTemplates(true)}
+            onShowComboBuilder={() => setShowComboBuilder(true)}
+            onShowSplitPayment={() => setShowSplitPayment(true)}
+            onClearCart={clearCart}
+            onLogout={handleLogout}
+            comboSuggestion={comboSuggestion}
+            onConvertToCombo={convertToCombo}
+            total={total}
+            subtotal={subtotal}
+            tax={tax}
+          />
+        </>
+      )}
 
       {/* ==================== MODALS ==================== */}
 
