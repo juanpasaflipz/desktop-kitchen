@@ -87,11 +87,14 @@ const BRANDING = {
       } catch (e) { /* table may not exist */ }
     }
 
-    // ==================== Employees ====================
+    // ==================== Employees (hash PINs with bcrypt) ====================
 
-    await adminSql`INSERT INTO employees (name, pin, role, active, tenant_id) VALUES ('Manager', '1234', 'admin', true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO employees (name, pin, role, active, tenant_id) VALUES ('Maria', '5678', 'cashier', true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO employees (name, pin, role, active, tenant_id) VALUES ('Carlos', '9012', 'cashier', true, ${TENANT_ID})`;
+    const pin1234 = await bcrypt.hash('1234', 12);
+    const pin5678 = await bcrypt.hash('5678', 12);
+    const pin9012 = await bcrypt.hash('9012', 12);
+    await adminSql`INSERT INTO employees (name, pin, role, active, tenant_id) VALUES ('Manager', ${pin1234}, 'admin', true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO employees (name, pin, role, active, tenant_id) VALUES ('Maria', ${pin5678}, 'cashier', true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO employees (name, pin, role, active, tenant_id) VALUES ('Carlos', ${pin9012}, 'cashier', true, ${TENANT_ID})`;
     console.log('Seeded 3 employees');
 
     // ==================== Menu Categories ====================

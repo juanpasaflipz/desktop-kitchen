@@ -8,7 +8,7 @@ import {
   detectShrinkagePatterns,
 } from './data-pipeline.js';
 import { registerJob, startScheduler, stopScheduler, getSchedulerStatus } from './scheduler.js';
-import { adminSql } from '../db/index.js';
+import { adminSql, tenantContext } from '../db/index.js';
 
 let initialized = false;
 
@@ -27,11 +27,20 @@ export async function initAI() {
   try {
     const tenants = await adminSql`SELECT id FROM tenants WHERE active = true`;
     for (const tenant of tenants) {
-      await adminSql`SELECT set_config('app.tenant_id', ${tenant.id}, false)`;
-      await seedDefaults();
+      try {
+        await adminSql.begin(async (tx) => {
+          await tx`SELECT set_config('app.tenant_id', ${tenant.id}, true)`;
+          await new Promise((resolve, reject) => {
+            tenantContext.run({ conn: tx }, async () => {
+              try { await seedDefaults(); resolve(); }
+              catch (e) { reject(e); }
+            });
+          });
+        });
+      } catch (err) {
+        console.error(`[AI] Config seed failed for tenant ${tenant.id}:`, err.message);
+      }
     }
-    // Reset tenant context
-    await adminSql`SELECT set_config('app.tenant_id', '', false)`;
   } catch (err) {
     // No tenants yet or table doesn't exist — skip seeding
     console.log('[AI] Skipping config seed (no tenants yet)');

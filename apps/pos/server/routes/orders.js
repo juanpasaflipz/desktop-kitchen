@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { all, get, run } from '../db/index.js';
+import { all, get, run, getConn } from '../db/index.js';
 import { recordOrderItemPairs } from '../ai/data-pipeline.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -8,20 +8,18 @@ const router = Router();
 const TAX_RATE = 0.16; // 16% IVA (Mexico) — prices already include tax
 
 async function generateOrderNumber() {
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const conn = getConn();
+  const dateStr = new Date().toISOString().split('T')[0];
+  const dateNum = parseInt(dateStr.replace(/-/g, '')) * 1000;
 
-  // Get today's order count
-  const lastOrder = await get(`
-    SELECT MAX(order_number) as max_order
+  const [row] = await conn.unsafe(`
+    SELECT pg_advisory_xact_lock(hashtext($1::text)),
+           COALESCE(MAX(order_number), $2::int) + 1 AS order_number
     FROM orders
     WHERE created_at::date = $1::date
-  `, [dateStr]);
+  `, [dateStr, dateNum]);
 
-  const lastNum = lastOrder?.max_order || 0;
-  const dayNum = lastNum % 1000;
-
-  return parseInt(dateStr.replace(/-/g, '')) * 1000 + dayNum + 1;
+  return row.order_number;
 }
 
 // GET /api/orders - list orders (optional ?status, ?date filters)

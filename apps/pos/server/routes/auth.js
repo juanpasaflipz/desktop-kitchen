@@ -93,11 +93,12 @@ router.post('/register', registerLimiter, async (req, res) => {
 
     // Generate random 4-digit PIN for the admin employee
     const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const hashedPin = await bcrypt.hash(pin, BCRYPT_ROUNDS);
 
     // Create a default admin employee in the tenant DB (use adminSql with tenant_id)
     await adminSql`
       INSERT INTO employees (tenant_id, name, pin, role, active)
-      VALUES (${slug}, ${email}, ${pin}, 'admin', true)
+      VALUES (${slug}, ${email}, ${hashedPin}, 'admin', true)
     `;
 
     // Fire-and-forget email with PIN

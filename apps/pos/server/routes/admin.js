@@ -284,10 +284,11 @@ router.post('/tenants', async (req, res) => {
 
     // Generate random 4-digit PIN for the admin employee
     const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const hashedPin = await bcrypt.hash(pin, BCRYPT_ROUNDS);
 
     await adminSql`
       INSERT INTO employees (tenant_id, name, pin, role, active)
-      VALUES (${id}, ${owner_email}, ${pin}, 'admin', true)
+      VALUES (${id}, ${owner_email}, ${hashedPin}, 'admin', true)
     `;
 
     // Fire-and-forget email with PIN
@@ -544,9 +545,10 @@ router.post('/tenants/:id/seed', async (req, res) => {
     if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
 
     // Seed a default admin employee (uses adminSql since we need to specify tenant_id)
+    const seedPin = await bcrypt.hash('1234', BCRYPT_ROUNDS);
     await adminSql`
       INSERT INTO employees (tenant_id, name, pin, role, active)
-      VALUES (${tenant.id}, 'Manager', '1234', 'admin', true)
+      VALUES (${tenant.id}, 'Manager', ${seedPin}, 'admin', true)
       ON CONFLICT DO NOTHING
     `;
 

@@ -1,5 +1,8 @@
 import 'dotenv/config';
+import bcrypt from 'bcrypt';
 import { adminSql, initDb } from './db/index.js';
+
+const BCRYPT_ROUNDS = 12;
 
 /**
  * Seed script for Postgres. Uses adminSql with set_config for tenant context.
@@ -56,10 +59,13 @@ const tenantId = process.argv[2] || 'default';
     // We'll use adminSql tagged templates for safety
     const s = adminSql;
 
-    // Seed employees
-    await s`INSERT INTO employees (tenant_id, name, pin, role, active) VALUES (${tenantId}, 'Manager', '1234', 'admin', true)`;
-    await s`INSERT INTO employees (tenant_id, name, pin, role, active) VALUES (${tenantId}, 'Maria', '5678', 'cashier', true)`;
-    await s`INSERT INTO employees (tenant_id, name, pin, role, active) VALUES (${tenantId}, 'Carlos', '9012', 'cashier', true)`;
+    // Seed employees (hash PINs with bcrypt)
+    const pin1234 = await bcrypt.hash('1234', BCRYPT_ROUNDS);
+    const pin5678 = await bcrypt.hash('5678', BCRYPT_ROUNDS);
+    const pin9012 = await bcrypt.hash('9012', BCRYPT_ROUNDS);
+    await s`INSERT INTO employees (tenant_id, name, pin, role, active) VALUES (${tenantId}, 'Manager', ${pin1234}, 'admin', true)`;
+    await s`INSERT INTO employees (tenant_id, name, pin, role, active) VALUES (${tenantId}, 'Maria', ${pin5678}, 'cashier', true)`;
+    await s`INSERT INTO employees (tenant_id, name, pin, role, active) VALUES (${tenantId}, 'Carlos', ${pin9012}, 'cashier', true)`;
     console.log('Seeded 3 employees');
 
     // Seed menu categories

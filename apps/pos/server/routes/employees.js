@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { checkLimit } from '../planLimits.js';
+
+const BCRYPT_ROUNDS = 12;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-me';
 
@@ -46,10 +49,12 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ error: `Employee limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
     }
 
+    const hashedPin = await bcrypt.hash(pin, BCRYPT_ROUNDS);
+
     const result = await run(`
       INSERT INTO employees (name, pin, role, active)
       VALUES ($1, $2, $3, true)
-    `, [name, pin, role]);
+    `, [name, hashedPin, role]);
 
     res.status(201).json({
       id: result.lastInsertRowid,
@@ -72,18 +77,24 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'PIN required' });
     }
 
-    const employee = await get(`
+    // Fetch all active employees and compare PIN with bcrypt
+    const employees = await all(`
       SELECT id, name, pin, role, active, created_at
       FROM employees
-      WHERE pin = $1
-    `, [pin]);
+      WHERE active = true
+    `);
+
+    let employee = null;
+    for (const emp of employees) {
+      const match = await bcrypt.compare(pin, emp.pin);
+      if (match) {
+        employee = emp;
+        break;
+      }
+    }
 
     if (!employee) {
       return res.status(401).json({ error: 'Invalid PIN' });
-    }
-
-    if (employee.active === false) {
-      return res.status(401).json({ error: 'Employee account is inactive' });
     }
 
     // Fetch permissions for this role
@@ -193,8 +204,9 @@ router.put('/:id', async (req, res) => {
       values.push(name);
     }
     if (pin !== undefined) {
+      const hashedPin = await bcrypt.hash(pin, BCRYPT_ROUNDS);
       updates.push(`pin = $${values.length + 1}`);
-      values.push(pin);
+      values.push(hashedPin);
     }
     if (role !== undefined) {
       const validRoles = ['admin', 'cashier', 'manager', 'kitchen', 'bar'];

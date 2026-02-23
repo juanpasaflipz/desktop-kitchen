@@ -48,6 +48,10 @@ export const tenantSql = postgres(buildTenantUrl(), {
 /**
  * Convert SQLite-style `?` placeholders to Postgres `$1, $2, ...` placeholders.
  * Handles quoted strings (single and double) so `?` inside strings are not replaced.
+ *
+ * WARNING: This replaces ALL unquoted `?` characters. JSONB operators (`?`, `?|`, `?&`)
+ * will be incorrectly rewritten. For queries using JSONB operators, use the tagged
+ * template `adminSql` or `tenantSql` directly instead of the `run/get/all` helpers.
  */
 export function convertParams(sql) {
   let idx = 0;

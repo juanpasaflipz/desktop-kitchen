@@ -26,6 +26,13 @@ export async function requireOwner(req, res, next) {
       return res.status(403).json({ error: 'Account is inactive' });
     }
 
+    // Block owners whose subscription has been cancelled or is unpaid.
+    // Allow null (trial without Stripe), 'active', 'trialing', and 'past_due' (grace period).
+    const blockedStatuses = ['cancelled', 'unpaid'];
+    if (tenant.subscription_status && blockedStatuses.includes(tenant.subscription_status)) {
+      return res.status(403).json({ error: 'Subscription expired. Please renew your plan.' });
+    }
+
     req.owner = {
       tenantId: decoded.tenantId,
       email: decoded.email,
