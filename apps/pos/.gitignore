@@ -1,7 +1,9 @@
 node_modules/
 dist/
 dist2/
-data/
+data/*.db
+data/*.sqlite
+data/uploads/
 .env
 .env.ios
 *.timestamp-*.mjs
