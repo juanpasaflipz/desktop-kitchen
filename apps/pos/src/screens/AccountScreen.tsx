@@ -1,0 +1,405 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowLeft, User, BarChart3, CreditCard, Settings, Lock,
+  Check, AlertCircle, Crown,
+} from 'lucide-react';
+import { getAccount, updateAccount, changePassword, createCheckoutSession, createPortalSession } from '../api';
+
+interface AccountData {
+  id: string;
+  name: string;
+  email: string;
+  plan: string;
+  subscription_status: string | null;
+  created_at: string;
+  usage: {
+    employees: { current: number; limit: number };
+    menu_items: { current: number; limit: number };
+  };
+}
+
+function PlanBadge({ plan }: { plan: string }) {
+  const styles: Record<string, string> = {
+    trial: 'bg-neutral-700/50 text-neutral-400',
+    starter: 'bg-blue-600/20 text-blue-400',
+    pro: 'bg-teal-600/20 text-teal-400',
+  };
+  return (
+    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase ${styles[plan] || styles.trial}`}>
+      {plan}
+    </span>
+  );
+}
+
+function UsageBar({ label, current, limit }: { label: string; current: number; limit: number }) {
+  const isUnlimited = !isFinite(limit);
+  const pct = isUnlimited ? 0 : Math.min((current / limit) * 100, 100);
+  const color = pct > 90 ? '#ef4444' : pct > 70 ? '#f59e0b' : '#0d9488';
+
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1.5">
+        <span className="text-neutral-400">{label}</span>
+        <span className="text-white font-medium">
+          {current} / {isUnlimited ? 'Unlimited' : limit}
+        </span>
+      </div>
+      {isUnlimited ? (
+        <div className="w-full bg-neutral-800 rounded-full h-2.5">
+          <div className="h-2.5 rounded-full bg-teal-600/30 w-full" />
+        </div>
+      ) : (
+        <div className="w-full bg-neutral-800 rounded-full h-2.5">
+          <div
+            className="h-2.5 rounded-full transition-all"
+            style={{ width: `${pct}%`, backgroundColor: color }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AccountScreen() {
+  const [account, setAccount] = useState<AccountData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Settings form
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
+
+  // Password form
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Billing
+  const [billingLoading, setBillingLoading] = useState<string | null>(null);
+
+  const hasOwnerToken = !!localStorage.getItem('owner_token');
+
+  useEffect(() => {
+    if (!hasOwnerToken) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getAccount()
+      .then(data => {
+        setAccount(data);
+        setEditName(data.name);
+        setEditEmail(data.email);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [hasOwnerToken]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMsg('');
+    try {
+      const result = await updateAccount({
+        name: editName !== account?.name ? editName : undefined,
+        email: editEmail !== account?.email ? editEmail : undefined,
+      });
+      setAccount(prev => prev ? { ...prev, name: result.name, email: result.email } : prev);
+      setSaveMsg('Saved successfully');
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (err: any) {
+      setSaveMsg(err.message || 'Failed to save');
+    }
+    setSaving(false);
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwMsg(null);
+    if (newPw !== confirmPw) {
+      setPwMsg({ type: 'error', text: 'Passwords do not match' });
+      return;
+    }
+    if (newPw.length < 8) {
+      setPwMsg({ type: 'error', text: 'Password must be at least 8 characters' });
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await changePassword(currentPw, newPw);
+      setPwMsg({ type: 'success', text: 'Password updated successfully' });
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+    } catch (err: any) {
+      setPwMsg({ type: 'error', text: err.message || 'Failed to change password' });
+    }
+    setPwSaving(false);
+  };
+
+  const handleSubscribe = async (plan: 'starter' | 'pro') => {
+    setBillingLoading(plan);
+    try {
+      const { url } = await createCheckoutSession(plan);
+      window.location.href = url;
+    } catch {
+      setBillingLoading(null);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setBillingLoading('portal');
+    try {
+      const { url } = await createPortalSession();
+      window.location.href = url;
+    } catch {
+      setBillingLoading(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-950">
+      {/* Header */}
+      <div className="bg-neutral-900 text-white p-6 border-b border-neutral-800">
+        <div className="flex items-center gap-4">
+          <Link to="/admin" className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <h1 className="text-3xl font-black tracking-tighter">Account</h1>
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto p-6 space-y-6">
+        {!hasOwnerToken ? (
+          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-8 text-center">
+            <Lock className="mx-auto text-neutral-600 mb-3" size={40} />
+            <h2 className="text-white text-lg font-bold mb-2">Owner Authentication Required</h2>
+            <p className="text-neutral-400 text-sm">
+              Sign in as the account owner to manage your restaurant account, billing, and settings.
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 animate-pulse">
+                <div className="h-24 bg-neutral-800 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
+            <p className="text-red-300">{error}</p>
+          </div>
+        ) : account && (
+          <>
+            {/* Account Overview */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <User className="text-brand-500" size={22} />
+                <h2 className="text-lg font-bold text-white">Account Overview</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-neutral-500 text-xs uppercase tracking-wider">Restaurant</p>
+                  <p className="text-white font-medium mt-0.5">{account.name}</p>
+                </div>
+                <div>
+                  <p className="text-neutral-500 text-xs uppercase tracking-wider">Email</p>
+                  <p className="text-white font-medium mt-0.5">{account.email}</p>
+                </div>
+                <div>
+                  <p className="text-neutral-500 text-xs uppercase tracking-wider">Plan</p>
+                  <div className="mt-1"><PlanBadge plan={account.plan} /></div>
+                </div>
+                <div>
+                  <p className="text-neutral-500 text-xs uppercase tracking-wider">Member Since</p>
+                  <p className="text-white font-medium mt-0.5">
+                    {new Date(account.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Usage Summary */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <BarChart3 className="text-brand-500" size={22} />
+                <h2 className="text-lg font-bold text-white">Usage Summary</h2>
+              </div>
+              <div className="space-y-4">
+                <UsageBar
+                  label="Employees"
+                  current={account.usage.employees.current}
+                  limit={account.usage.employees.limit}
+                />
+                <UsageBar
+                  label="Menu Items"
+                  current={account.usage.menu_items.current}
+                  limit={account.usage.menu_items.limit}
+                />
+              </div>
+            </div>
+
+            {/* Billing */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <CreditCard className="text-brand-500" size={22} />
+                <h2 className="text-lg font-bold text-white">Billing</h2>
+              </div>
+              {account.plan === 'trial' ? (
+                <div className="space-y-3">
+                  <p className="text-neutral-400 text-sm">You are on the free trial. Upgrade to unlock more features.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleSubscribe('starter')}
+                      disabled={billingLoading !== null}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {billingLoading === 'starter' ? 'Redirecting...' : 'Starter — $29/mo'}
+                    </button>
+                    <button
+                      onClick={() => handleSubscribe('pro')}
+                      disabled={billingLoading !== null}
+                      className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
+                    >
+                      {billingLoading === 'pro' ? 'Redirecting...' : 'Pro — $79/mo'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-4">
+                  <div>
+                    <p className="text-neutral-400 text-sm">Current plan</p>
+                    <p className="text-white font-bold capitalize flex items-center gap-2">
+                      <Crown size={16} className="text-teal-500" />
+                      {account.plan} — {account.plan === 'starter' ? '$29' : '$79'}/mo
+                    </p>
+                  </div>
+                  <div className="flex gap-3 ml-auto">
+                    {account.plan === 'starter' && (
+                      <button
+                        onClick={() => handleSubscribe('pro')}
+                        disabled={billingLoading !== null}
+                        className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
+                      >
+                        {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
+                      </button>
+                    )}
+                    <button
+                      onClick={handleManageBilling}
+                      disabled={billingLoading !== null}
+                      className="px-4 py-2 border border-neutral-600 text-neutral-200 text-sm font-medium rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                    >
+                      {billingLoading === 'portal' ? 'Redirecting...' : 'Manage Subscription'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Settings */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Settings className="text-brand-500" size={22} />
+                <h2 className="text-lg font-bold text-white">Settings</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-neutral-400 text-sm mb-1">Restaurant Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-neutral-400 text-sm mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={e => setEditEmail(e.target.value)}
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving || (editName === account.name && editEmail === account.email)}
+                    className="px-5 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  {saveMsg && (
+                    <span className="text-sm text-teal-400 flex items-center gap-1">
+                      <Check size={14} /> {saveMsg}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Change Password */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Lock className="text-brand-500" size={22} />
+                <h2 className="text-lg font-bold text-white">Change Password</h2>
+              </div>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label className="block text-neutral-400 text-sm mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPw}
+                    onChange={e => setCurrentPw(e.target.value)}
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-neutral-400 text-sm mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={newPw}
+                    onChange={e => setNewPw(e.target.value)}
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-500"
+                    required
+                    minLength={8}
+                  />
+                </div>
+                <div>
+                  <label className="block text-neutral-400 text-sm mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPw}
+                    onChange={e => setConfirmPw(e.target.value)}
+                    className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-brand-500"
+                    required
+                    minLength={8}
+                  />
+                </div>
+                {pwMsg && (
+                  <div className={`flex items-center gap-2 text-sm ${pwMsg.type === 'success' ? 'text-teal-400' : 'text-red-400'}`}>
+                    {pwMsg.type === 'success' ? <Check size={14} /> : <AlertCircle size={14} />}
+                    {pwMsg.text}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+                  className="px-5 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                >
+                  {pwSaving ? 'Updating...' : 'Update Password'}
+                </button>
+              </form>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

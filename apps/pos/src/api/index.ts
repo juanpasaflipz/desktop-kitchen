@@ -1175,3 +1175,33 @@ export async function createPortalSession(): Promise<{ url: string }> {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to create portal session');
   return res.json();
 }
+
+/* ==================== Account Endpoints (Owner JWT Auth) ==================== */
+
+export async function getAccount(): Promise<any> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/account`, { headers: ownerHeaders() });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch account');
+  return res.json();
+}
+
+export async function updateAccount(data: { name?: string; email?: string }): Promise<{ name: string; email: string }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/account`, {
+    method: 'PUT',
+    headers: ownerHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to update account');
+  return res.json();
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/account/password`, {
+    method: 'PUT',
+    headers: ownerHeaders(),
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to change password');
+}

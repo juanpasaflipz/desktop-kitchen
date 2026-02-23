@@ -139,6 +139,18 @@ const BrandingSettingsScreen = React.lazy(() =>
   }))
 );
 
+const SuperAdminDashboard = React.lazy(() =>
+  import('./screens/SuperAdminDashboard').then((module) => ({
+    default: module.default || (() => <div>Super Admin</div>),
+  }))
+);
+
+const AccountScreen = React.lazy(() =>
+  import('./screens/AccountScreen').then((module) => ({
+    default: module.default || (() => <div>Account</div>),
+  }))
+);
+
 /* ==================== Protected Route ==================== */
 
 interface ProtectedRouteProps {
@@ -384,6 +396,20 @@ const AppContent: React.FC = () => {
             />
           }
         />
+
+        {/* Account — owner portal */}
+        <Route
+          path="/admin/account"
+          element={
+            <ProtectedRoute
+              element={<AccountScreen />}
+              requiredRole={['manager', 'admin']}
+            />
+          }
+        />
+
+        {/* Super Admin — self-contained auth */}
+        <Route path="/super-admin" element={<SuperAdminDashboard />} />
 
         {/* Menu Board — public, no auth */}
         <Route path="/menu-board" element={<MenuBoardScreen />} />

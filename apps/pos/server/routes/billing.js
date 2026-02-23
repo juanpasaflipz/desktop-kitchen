@@ -171,6 +171,7 @@ export async function stripeWebhook(req, res) {
             plan: 'trial',
             subscription_status: 'cancelled',
             stripe_subscription_id: null,
+            subscription_cancelled_at: new Date().toISOString(),
           });
           console.log(`[Billing] Tenant ${tenant.id} subscription cancelled`);
         }
