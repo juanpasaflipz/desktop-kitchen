@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { generatePalette, applyBrandPalette, resetBrandPalette, type BrandPalette } from '../lib/colorUtils';
+import { resolveTenant } from '../lib/tenantResolver';
 
 export interface BrandingConfig {
   primaryColor: string;
@@ -59,12 +60,18 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
     await fetchBranding();
   }, [fetchBranding]);
 
-  // Fetch branding from server on mount
+  // Fetch branding from server on mount (skip on platform/local mode — keep teal defaults)
   useEffect(() => {
     let cancelled = false;
 
     // Ensure teal defaults are applied immediately (clears any stale CSS variables)
     resetBrandPalette();
+
+    const { mode } = resolveTenant();
+    if (mode === 'platform' || mode === 'local') {
+      setIsLoaded(true);
+      return;
+    }
 
     async function loadBranding() {
       const fetched = await fetchBranding();
@@ -110,7 +117,10 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Update document title with restaurant name
   useEffect(() => {
-    if (branding?.restaurantName) {
+    const { mode } = resolveTenant();
+    if (mode === 'platform' || mode === 'local') {
+      document.title = 'Desktop Kitchen';
+    } else if (branding?.restaurantName) {
       document.title = `${branding.restaurantName} POS`;
     }
   }, [branding?.restaurantName]);
