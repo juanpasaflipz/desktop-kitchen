@@ -78,7 +78,7 @@ export async function sendMessage(prompt, { systemPrompt, maxTokens = 1024, useC
     }
   }
 
-  const model = (await getConfig('grok_model')) || 'grok-3-mini';
+  const model = (await getConfig('grok_model')) || 'grok-4-1-fast-reasoning';
 
   const messages = [];
   if (systemPrompt) {
@@ -213,6 +213,6 @@ export async function getGrokStats() {
     callsThisHour,
     maxCallsPerHour: (await getConfigNumber('grok_max_calls_per_hour')) || 10,
     cacheSize: promptCache.size,
-    model: (await getConfig('grok_model')) || 'grok-3-mini',
+    model: (await getConfig('grok_model')) || 'grok-4-1-fast-reasoning',
   };
 }

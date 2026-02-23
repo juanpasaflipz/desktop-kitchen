@@ -14,7 +14,7 @@ const DEFAULT_CONFIG = {
   dynamic_pricing_enabled: '0',
   grok_api_enabled: '0',
   grok_max_calls_per_hour: '10',
-  grok_model: 'grok-3-mini',
+  grok_model: 'grok-4-1-fast-reasoning',
   suggestion_cache_ttl_minutes: '5',
   inventory_push_threshold_multiplier: '1.5',
 };

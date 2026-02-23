@@ -205,7 +205,7 @@ const tenantId = process.argv[2] || 'default';
       ['dynamic_pricing_enabled', '0', 'Enable dynamic pricing'],
       ['grok_api_enabled', '0', 'Enable Grok API for enhanced analysis'],
       ['grok_max_calls_per_hour', '10', 'Max Grok API calls per hour'],
-      ['grok_model', 'grok-3-mini', 'Grok model to use'],
+      ['grok_model', 'grok-4-1-fast-reasoning', 'Grok model to use'],
       ['suggestion_cache_ttl_minutes', '5', 'Cache TTL for suggestion data'],
       ['inventory_push_threshold_multiplier', '1.5', 'Multiplier for low stock threshold'],
     ];
