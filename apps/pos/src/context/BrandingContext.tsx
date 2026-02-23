@@ -63,6 +63,9 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     let cancelled = false;
 
+    // Ensure teal defaults are applied immediately (clears any stale CSS variables)
+    resetBrandPalette();
+
     async function loadBranding() {
       const fetched = await fetchBranding();
       if (cancelled) return;

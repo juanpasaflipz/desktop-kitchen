@@ -57,7 +57,7 @@ router.get('/', (req, res) => {
     return res.json({
       primaryColor: saved.primaryColor || '#0d9488',
       logoUrl: saved.logoUrl || null,
-      restaurantName: saved.restaurantName || 'My Restaurant',
+      restaurantName: saved.restaurantName || 'Desktop Kitchen',
       tagline: saved.tagline || '',
     });
   }
@@ -67,7 +67,7 @@ router.get('/', (req, res) => {
   res.json({
     primaryColor: branding.primaryColor || '#0d9488',
     logoUrl: branding.logoUrl || null,
-    restaurantName: tenant.name || 'Restaurant',
+    restaurantName: tenant.name || 'Desktop Kitchen',
     tagline: branding.tagline || '',
     plan,
     limits: getPlanLimits(plan),
@@ -138,7 +138,7 @@ router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
       return res.json({
         primaryColor: updated.primaryColor || '#0d9488',
         logoUrl: updated.logoUrl || null,
-        restaurantName: updated.restaurantName || 'My Restaurant',
+        restaurantName: updated.restaurantName || 'Desktop Kitchen',
         tagline: updated.tagline || '',
       });
     }
@@ -222,7 +222,7 @@ router.post('/logo', requireAuth('manage_branding'), (req, res) => {
         return res.json({
           logoUrl,
           primaryColor: existing.primaryColor || '#0d9488',
-          restaurantName: existing.restaurantName || 'My Restaurant',
+          restaurantName: existing.restaurantName || 'Desktop Kitchen',
           tagline: existing.tagline || '',
         });
       }

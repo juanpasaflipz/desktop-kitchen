@@ -101,8 +101,8 @@ router.post('/register', registerLimiter, async (req, res) => {
       VALUES (${slug}, ${email}, ${hashedPin}, 'admin', true)
     `;
 
-    // Fire-and-forget email with PIN
-    sendPinEmail(email, pin, restaurant_name).catch(() => {});
+    // Fire-and-forget email with PIN (include tenant subdomain for login URL)
+    sendPinEmail(email, pin, restaurant_name, slug).catch(() => {});
 
     // Sign JWT
     const token = signToken({

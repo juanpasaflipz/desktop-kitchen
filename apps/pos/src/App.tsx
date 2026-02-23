@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   HashRouter as Router,
   Routes,
@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SyncProvider } from './context/SyncContext';
 import { BrandingProvider } from './context/BrandingContext';
 import { PlanProvider } from './context/PlanContext';
+import { resolveTenant, type TenantInfo } from './lib/tenantResolver';
 
 // Screens - these will be created as separate components
 // For now, we'll create placeholder components
@@ -145,11 +146,27 @@ const SuperAdminDashboard = React.lazy(() =>
   }))
 );
 
+const PlatformGateway = React.lazy(() =>
+  import('./screens/PlatformGateway').then((module) => ({
+    default: module.default || (() => <div>Platform Gateway</div>),
+  }))
+);
+
 const AccountScreen = React.lazy(() =>
   import('./screens/AccountScreen').then((module) => ({
     default: module.default || (() => <div>Account</div>),
   }))
 );
+
+/* ==================== Tenant Context ==================== */
+
+const TenantContext = React.createContext<TenantInfo>({
+  mode: 'local',
+  tenantSlug: null,
+  isPlatformHost: false,
+});
+
+export const useTenant = () => React.useContext(TenantContext);
 
 /* ==================== Protected Route ==================== */
 
@@ -186,244 +203,270 @@ const LoadingFallback: React.FC = () => {
   );
 };
 
-const AppContent: React.FC = () => {
+/* ==================== Platform Routes (pos.desktop.kitchen) ==================== */
+
+const PlatformRoutes: React.FC = () => (
+  <Routes>
+    <Route path="/" element={<PlatformGateway />} />
+    <Route path="/onboarding" element={<OnboardingScreen />} />
+    <Route path="/super-admin" element={<SuperAdminDashboard />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+);
+
+/* ==================== Tenant Routes ({slug}.desktop.kitchen / localhost) ==================== */
+
+const TenantRoutes: React.FC = () => {
   const { currentEmployee } = useAuth();
 
   return (
-    <Router>
-      <React.Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        {/* Login Route - accessible to everyone */}
-        <Route path="/" element={<LoginScreen />} />
+    <Routes>
+      {/* Login Route - accessible to everyone */}
+      <Route path="/" element={<LoginScreen />} />
 
-        {/* Onboarding - new restaurant setup */}
-        <Route path="/onboarding" element={<OnboardingScreen />} />
+      {/* Onboarding - new restaurant setup */}
+      <Route path="/onboarding" element={<OnboardingScreen />} />
 
-        {/* POS Screen - requires authentication */}
-        <Route
-          path="/pos"
-          element={
-            <ProtectedRoute
-              element={<POSScreen />}
-              requiredRole={['cashier', 'manager', 'admin']}
-            />
-          }
-        />
+      {/* POS Screen - requires authentication */}
+      <Route
+        path="/pos"
+        element={
+          <ProtectedRoute
+            element={<POSScreen />}
+            requiredRole={['cashier', 'manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Kitchen Display - requires authentication */}
-        <Route
-          path="/kitchen"
-          element={
-            <ProtectedRoute
-              element={<KitchenDisplay />}
-              requiredRole={['kitchen', 'bar', 'manager', 'admin']}
-            />
-          }
-        />
+      {/* Kitchen Display - requires authentication */}
+      <Route
+        path="/kitchen"
+        element={
+          <ProtectedRoute
+            element={<KitchenDisplay />}
+            requiredRole={['kitchen', 'bar', 'manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Admin Panel - requires manager/admin role */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute
-              element={<AdminPanel />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Admin Panel - requires manager/admin role */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute
+            element={<AdminPanel />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Inventory Management - requires manager/admin role */}
-        <Route
-          path="/admin/inventory"
-          element={
-            <ProtectedRoute
-              element={<InventoryScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Inventory Management - requires manager/admin role */}
+      <Route
+        path="/admin/inventory"
+        element={
+          <ProtectedRoute
+            element={<InventoryScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Employee Management - requires admin role */}
-        <Route
-          path="/admin/employees"
-          element={
-            <ProtectedRoute
-              element={<EmployeeScreen />}
-              requiredRole={['admin']}
-            />
-          }
-        />
+      {/* Employee Management - requires admin role */}
+      <Route
+        path="/admin/employees"
+        element={
+          <ProtectedRoute
+            element={<EmployeeScreen />}
+            requiredRole={['admin']}
+          />
+        }
+      />
 
-        {/* Reports - requires manager/admin role */}
-        <Route
-          path="/admin/reports"
-          element={
-            <ProtectedRoute
-              element={<ReportsScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Reports - requires manager/admin role */}
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute
+            element={<ReportsScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Menu Management - requires manager/admin role */}
-        <Route
-          path="/admin/menu"
-          element={
-            <ProtectedRoute
-              element={<MenuManagement />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Menu Management - requires manager/admin role */}
+      <Route
+        path="/admin/menu"
+        element={
+          <ProtectedRoute
+            element={<MenuManagement />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* AI Intelligence - requires manager/admin role */}
-        <Route
-          path="/admin/ai"
-          element={
-            <ProtectedRoute
-              element={<AIConfigScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* AI Intelligence - requires manager/admin role */}
+      <Route
+        path="/admin/ai"
+        element={
+          <ProtectedRoute
+            element={<AIConfigScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Live Dashboard */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute
-              element={<LiveDashboardScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Live Dashboard */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute
+            element={<LiveDashboardScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Modifier Management */}
-        <Route
-          path="/admin/modifiers"
-          element={
-            <ProtectedRoute
-              element={<ModifierManagement />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Modifier Management */}
+      <Route
+        path="/admin/modifiers"
+        element={
+          <ProtectedRoute
+            element={<ModifierManagement />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Printer Management */}
-        <Route
-          path="/admin/printers"
-          element={
-            <ProtectedRoute
-              element={<PrinterManagement />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Printer Management */}
+      <Route
+        path="/admin/printers"
+        element={
+          <ProtectedRoute
+            element={<PrinterManagement />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Delivery Management */}
-        <Route
-          path="/admin/delivery"
-          element={
-            <ProtectedRoute
-              element={<DeliveryScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Delivery Management */}
+      <Route
+        path="/admin/delivery"
+        element={
+          <ProtectedRoute
+            element={<DeliveryScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Permissions - admin only */}
-        <Route
-          path="/admin/permissions"
-          element={
-            <ProtectedRoute
-              element={<PermissionsScreen />}
-              requiredRole={['admin']}
-            />
-          }
-        />
+      {/* Permissions - admin only */}
+      <Route
+        path="/admin/permissions"
+        element={
+          <ProtectedRoute
+            element={<PermissionsScreen />}
+            requiredRole={['admin']}
+          />
+        }
+      />
 
-        {/* Purchase Orders */}
-        <Route
-          path="/admin/purchase-orders"
-          element={
-            <ProtectedRoute
-              element={<PurchaseOrderScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Purchase Orders */}
+      <Route
+        path="/admin/purchase-orders"
+        element={
+          <ProtectedRoute
+            element={<PurchaseOrderScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Prep Forecast */}
-        <Route
-          path="/admin/prep-forecast"
-          element={
-            <ProtectedRoute
-              element={<PrepForecastScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Prep Forecast */}
+      <Route
+        path="/admin/prep-forecast"
+        element={
+          <ProtectedRoute
+            element={<PrepForecastScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Loyalty & CRM */}
-        <Route
-          path="/admin/loyalty"
-          element={
-            <ProtectedRoute
-              element={<LoyaltyScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Loyalty & CRM */}
+      <Route
+        path="/admin/loyalty"
+        element={
+          <ProtectedRoute
+            element={<LoyaltyScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Branding Settings — manager/admin */}
-        <Route
-          path="/admin/branding"
-          element={
-            <ProtectedRoute
-              element={<BrandingSettingsScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Branding Settings — manager/admin */}
+      <Route
+        path="/admin/branding"
+        element={
+          <ProtectedRoute
+            element={<BrandingSettingsScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Menu Board Management — manager/admin */}
-        <Route
-          path="/admin/menu-board"
-          element={
-            <ProtectedRoute
-              element={<MenuBoardManagement />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Menu Board Management — manager/admin */}
+      <Route
+        path="/admin/menu-board"
+        element={
+          <ProtectedRoute
+            element={<MenuBoardManagement />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Account — owner portal */}
-        <Route
-          path="/admin/account"
-          element={
-            <ProtectedRoute
-              element={<AccountScreen />}
-              requiredRole={['manager', 'admin']}
-            />
-          }
-        />
+      {/* Account — owner portal */}
+      <Route
+        path="/admin/account"
+        element={
+          <ProtectedRoute
+            element={<AccountScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
 
-        {/* Super Admin — self-contained auth */}
-        <Route path="/super-admin" element={<SuperAdminDashboard />} />
+      {/* Super Admin — self-contained auth */}
+      <Route path="/super-admin" element={<SuperAdminDashboard />} />
 
-        {/* Menu Board — public, no auth */}
-        <Route path="/menu-board" element={<MenuBoardScreen />} />
+      {/* Menu Board — public, no auth */}
+      <Route path="/menu-board" element={<MenuBoardScreen />} />
 
-        {/* Fallback route */}
-        <Route
-          path="*"
-          element={
-            <Navigate to={currentEmployee ? '/pos' : '/'} replace />
-          }
-        />
-      </Routes>
-      </React.Suspense>
-    </Router>
+      {/* Fallback route */}
+      <Route
+        path="*"
+        element={
+          <Navigate to={currentEmployee ? '/pos' : '/'} replace />
+        }
+      />
+    </Routes>
+  );
+};
+
+/* ==================== App Content ==================== */
+
+const AppContent: React.FC = () => {
+  const tenantInfo = useMemo(() => resolveTenant(), []);
+  const isPlatformMode = tenantInfo.mode === 'platform' || tenantInfo.mode === 'local';
+
+  return (
+    <TenantContext.Provider value={tenantInfo}>
+      <Router>
+        <React.Suspense fallback={<LoadingFallback />}>
+          {isPlatformMode ? <PlatformRoutes /> : <TenantRoutes />}
+        </React.Suspense>
+      </Router>
+    </TenantContext.Provider>
   );
 };
 

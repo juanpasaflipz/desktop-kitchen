@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Check, Store, Palette, CreditCard } from 'lucide-react';
+import { useBranding } from '../context/BrandingContext';
+import { redirectToTenant, tenantUrl } from '../lib/tenantResolver';
 
 const API_BASE = '/api';
 
@@ -26,10 +28,12 @@ const COLOR_PRESETS = [
 
 const OnboardingScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { refresh: refreshBranding } = useBranding();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [generatedPin, setGeneratedPin] = useState('');
+  const [tenantSubdomain, setTenantSubdomain] = useState('');
   const [data, setData] = useState<OnboardingData>({
     restaurant_name: '',
     email: '',
@@ -85,11 +89,15 @@ const OnboardingScreen: React.FC = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Registration failed');
 
-      // Store generated PIN and JWT + tenant info
+      // Store generated PIN, subdomain, and JWT + tenant info
       if (result.pin) setGeneratedPin(result.pin);
+      if (result.tenant.subdomain) setTenantSubdomain(result.tenant.subdomain);
       localStorage.setItem('owner_token', result.token);
       localStorage.setItem('tenant_id', result.tenant.id);
       localStorage.setItem('tenant_name', result.tenant.name);
+
+      // Re-fetch branding with the new tenant ID so colors/name update
+      await refreshBranding();
 
       // Done — redirect to POS login
       setStep(4);
@@ -101,7 +109,11 @@ const OnboardingScreen: React.FC = () => {
   };
 
   const handleGoToPOS = () => {
-    navigate('/');
+    if (tenantSubdomain) {
+      redirectToTenant(tenantSubdomain);
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -284,11 +296,17 @@ const OnboardingScreen: React.FC = () => {
                 A copy has been sent to <span className="text-neutral-300">{data.email}</span>
               </p>
             </div>
+            {tenantSubdomain && (
+              <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-4">
+                <p className="text-neutral-400 text-sm mb-1">Your POS is live at</p>
+                <p className="text-brand-400 font-semibold">{tenantUrl(tenantSubdomain).replace('https://', '')}</p>
+              </div>
+            )}
             <button
               onClick={handleGoToPOS}
               className="px-8 py-3 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors"
             >
-              Go to POS Login
+              Go to Your POS
             </button>
           </div>
         )}

@@ -79,7 +79,16 @@ export function getCurrentEmployeeToken(): string | null {
 
 // Capacitor native: API calls must go to the remote server (local dist/ has no backend)
 const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
-const API_BASE_URL = import.meta.env.VITE_API_URL || (isCapacitor ? 'https://pos.desktop.kitchen/api' : '/api');
+
+function getCapacitorApiBase(): string {
+  const tenantSlug = localStorage.getItem('tenant_id');
+  if (tenantSlug) {
+    return `https://${tenantSlug}.desktop.kitchen/api`;
+  }
+  return 'https://pos.desktop.kitchen/api';
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || (isCapacitor ? getCapacitorApiBase() : '/api');
 
 // For iOS: try multiple LAN IPs when the primary fails
 const IOS_FALLBACK_URLS = (import.meta.env.VITE_API_URL_FALLBACKS || '')
