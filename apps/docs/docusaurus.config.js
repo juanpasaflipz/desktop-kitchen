@@ -1,5 +1,7 @@
 // @ts-check
 
+import { themes as prismThemes } from 'prism-react-renderer';
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Desktop Kitchen Docs',
@@ -15,6 +17,24 @@ const config = {
       onBrokenMarkdownLinks: 'warn',
     },
   },
+
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+    },
+    {
+      tagName: 'link',
+      attributes: { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      },
+    },
+  ],
 
   i18n: {
     defaultLocale: 'en',
@@ -62,6 +82,7 @@ const config = {
             href: 'https://pos.desktop.kitchen',
             label: 'Open POS',
             position: 'right',
+            className: 'navbar__item--pos',
           },
         ],
       },
@@ -74,6 +95,7 @@ const config = {
               { label: 'Getting Started', to: '/getting-started/overview' },
               { label: 'Feature Guides', to: '/feature-guides/pos-operations' },
               { label: 'Admin Guide', to: '/admin-guide/billing' },
+              { label: 'Tenant Management', to: '/admin-guide/tenant-management' },
             ],
           },
           {
@@ -84,12 +106,15 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Desktop Kitchen. Built with Docusaurus.`,
+        copyright: `© ${new Date().getFullYear()} Desktop Kitchen`,
       },
       colorMode: {
-        defaultMode: 'light',
-        disableSwitch: false,
-        respectPrefersColorScheme: true,
+        defaultMode: 'dark',
+        disableSwitch: true,
+        respectPrefersColorScheme: false,
+      },
+      prism: {
+        theme: prismThemes.vsDark,
       },
     }),
 };

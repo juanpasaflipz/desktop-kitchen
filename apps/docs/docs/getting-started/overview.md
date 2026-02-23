@@ -12,7 +12,9 @@ Desktop Kitchen is a multi-tenant POS platform built for independent quick-servi
 
 ### Tenants
 
-Each restaurant (or restaurant group) operates as a **tenant** with its own isolated database. Tenants get their own subdomain (e.g., `yourrestaurant.desktop.kitchen`), branding, menu, employees, and data — completely separated from other tenants.
+Each restaurant (or restaurant group) operates as a **tenant** within a single shared Neon Postgres database, isolated by Row Level Security (RLS). Tenants get their own subdomain (e.g., `yourrestaurant.desktop.kitchen`), branding, menu, employees, and data — completely separated from other tenants at the database level.
+
+Every tenant-scoped table contains a `tenant_id` column, and RLS policies ensure that queries from one tenant can never see another tenant's data.
 
 ### Brands (Virtual Brands)
 
@@ -61,11 +63,20 @@ Access is controlled through role-based permissions:
                     │   Backend   │
                     └──────┬──────┘
                            │
-                    ┌──────┴──────┐
-                    │   SQLite    │
-                    │  (per tenant)│
-                    └─────────────┘
+               ┌───────────┴───────────┐
+               │    Neon Postgres      │
+               │  (shared DB + RLS)    │
+               ├───────────────────────┤
+               │ adminSql (neondb_owner│
+               │  — bypasses RLS)      │
+               │ tenantSql (app_user   │
+               │  — enforces RLS)      │
+               └───────────────────────┘
 ```
+
+:::info Two connection pools
+The backend maintains two database pools. The **admin pool** (`neondb_owner`) bypasses RLS for authentication, super admin operations, and AI background jobs. The **tenant pool** (`app_user`) enforces RLS for all tenant-scoped API routes — the current tenant is set via `set_config('app.tenant_id', ...)` per connection.
+:::
 
 ## What's Next?
 

@@ -36,6 +36,7 @@ const sidebars = {
         'admin-guide/billing',
         'admin-guide/branding',
         'admin-guide/multi-brand',
+        'admin-guide/tenant-management',
         'admin-guide/api-overview',
       ],
     },

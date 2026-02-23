@@ -112,13 +112,46 @@ All endpoints return JSON:
 }
 ```
 
+## Admin (Super Admin) API
+
+These endpoints are mounted **before** tenant middleware and protected by the `ADMIN_SECRET` header. They use the admin connection pool (`neondb_owner`) which bypasses RLS.
+
+:::info
+Admin routes are not tenant-scoped. They operate across all tenants and require `x-admin-secret` header authentication instead of employee PIN or owner JWT.
+:::
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/admin/analytics/overview` | Platform-wide KPIs (tenants, MRR, churn) |
+| `GET` | `/admin/analytics/signups` | Signup trends over time |
+| `GET` | `/admin/analytics/revenue` | Revenue breakdown by plan |
+| `GET` | `/admin/analytics/health` | System health metrics |
+| `GET` | `/admin/tenants` | List all tenants |
+| `POST` | `/admin/tenants` | Create a new tenant |
+| `PATCH` | `/admin/tenants/:id` | Update tenant details |
+| `DELETE` | `/admin/tenants/:id` | Delete tenant and all data |
+| `POST` | `/admin/tenants/:id/seed` | Seed tenant with demo data |
+| `POST` | `/admin/tenants/:id/reset-password` | Reset tenant owner password |
+| `GET` | `/admin/tenants/:id/export` | Export all tenant data as JSON |
+| `GET` | `/admin/tenants/:id/activity` | Recent tenant activity |
+| `GET` | `/admin/config` | Platform configuration |
+| `PUT` | `/admin/config` | Update platform configuration |
+| `GET` | `/admin/audit-log` | Admin action audit trail |
+| `POST` | `/admin/impersonate/:id` | Impersonate a tenant (debug) |
+
 ## Multi-Tenancy
+
+All tenants share a single Neon Postgres database, isolated by **Row Level Security (RLS)**. Every tenant-scoped table has a `tenant_id` column with RLS policies that filter rows based on `current_setting('app.tenant_id')`.
 
 Tenant resolution happens automatically via:
 1. `X-Tenant-ID` header (highest priority)
 2. Subdomain (e.g., `yourrestaurant.desktop.kitchen`)
 3. `DEFAULT_TENANT_ID` environment variable
-4. Default database fallback
+4. Default fallback
+
+The backend maintains two connection pools:
+- **`adminSql`** (`neondb_owner`) — bypasses RLS, used for auth routes, admin API, and AI background jobs
+- **`tenantSql`** (`app_user`) — enforces RLS, used for all tenant-scoped `/api/*` routes
 
 ## Tax
 

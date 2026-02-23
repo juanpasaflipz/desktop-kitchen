@@ -59,10 +59,11 @@ The system operates in two modes:
 - Covers all four suggestion types
 
 ### Grok AI Mode (Optional)
-- Enhanced suggestions using the Grok API
+- Enhanced suggestions using the Grok API (currently `grok-4-1-fast-reasoning`)
 - Requires `XAI_API_KEY` environment variable
 - Provides more nuanced, natural-language suggestions
 - Falls back to heuristic mode if the API is unavailable
+- The model is configurable via **Settings** > **AI Configuration** without a code change
 
 ## Configuration
 

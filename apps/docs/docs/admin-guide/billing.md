@@ -65,3 +65,28 @@ The system handles these billing events automatically:
 ## Invoices
 
 Access your complete billing history and download invoices from the Stripe Customer Portal.
+
+## Stripe Webhook
+
+The billing system relies on a Stripe webhook to stay in sync with subscription changes.
+
+**Webhook URL:** `https://pos.desktop.kitchen/api/billing/webhook`
+
+### Handled Events
+
+| Event | Action |
+|-------|--------|
+| `checkout.session.completed` | Activates the plan, links Stripe customer to tenant |
+| `customer.subscription.updated` | Updates plan level (starter/pro) |
+| `customer.subscription.deleted` | Reverts tenant to trial plan |
+| `invoice.payment_failed` | Logs failure, begins grace period |
+
+### Configuration
+
+1. In the [Stripe Dashboard](https://dashboard.stripe.com/webhooks), create an endpoint pointing to `https://pos.desktop.kitchen/api/billing/webhook`
+2. Select the four events listed above
+3. Copy the signing secret and set it as the `STRIPE_WEBHOOK_SECRET` environment variable
+
+:::caution Raw body required
+The webhook route is mounted **before** `express.json()` middleware so that Stripe can verify the raw request body signature. If you add global body-parsing middleware, ensure the webhook route is excluded.
+:::

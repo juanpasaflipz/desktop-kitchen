@@ -47,6 +47,7 @@ Manage billing, branding, and configuration.
 
 - [Billing & Subscriptions](./admin-guide/billing)
 - [Branding Customization](./admin-guide/branding)
+- [Tenant Management](./admin-guide/tenant-management)
 - [Multi-Brand Setup](./admin-guide/multi-brand)
 - [API Overview](./admin-guide/api-overview)
 
