@@ -123,7 +123,7 @@ const OnboardingScreen: React.FC = () => {
         <div className="flex items-center gap-2 mb-8">
           {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex-1">
-              <div className={`h-1.5 rounded-full transition-colors ${s <= step ? 'bg-brand-600' : 'bg-neutral-800'}`} />
+              <div className={`h-1.5 rounded-full transition-colors ${s <= step ? 'bg-teal-600' : 'bg-neutral-800'}`} />
             </div>
           ))}
         </div>
@@ -132,7 +132,7 @@ const OnboardingScreen: React.FC = () => {
         {step === 1 && (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <Store className="w-12 h-12 text-brand-600 mx-auto mb-3" />
+              <Store className="w-12 h-12 text-teal-600 mx-auto mb-3" />
               <h1 className="text-2xl font-bold text-white">Set up your restaurant</h1>
               <p className="text-neutral-400 mt-1">Create your POS account in minutes</p>
             </div>
@@ -144,7 +144,7 @@ const OnboardingScreen: React.FC = () => {
                 value={data.restaurant_name}
                 onChange={e => update('restaurant_name', e.target.value)}
                 placeholder="e.g. Tacos El Rey"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-brand-600"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
               />
             </div>
 
@@ -155,7 +155,7 @@ const OnboardingScreen: React.FC = () => {
                 value={data.email}
                 onChange={e => update('email', e.target.value)}
                 placeholder="you@restaurant.com"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-brand-600"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
               />
             </div>
 
@@ -166,7 +166,7 @@ const OnboardingScreen: React.FC = () => {
                 value={data.password}
                 onChange={e => update('password', e.target.value)}
                 placeholder="At least 8 characters"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-brand-600"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
               />
             </div>
 
@@ -177,7 +177,7 @@ const OnboardingScreen: React.FC = () => {
                 value={data.confirmPassword}
                 onChange={e => update('confirmPassword', e.target.value)}
                 placeholder="Repeat password"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-brand-600"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
               />
             </div>
           </div>
@@ -187,7 +187,7 @@ const OnboardingScreen: React.FC = () => {
         {step === 2 && (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <Palette className="w-12 h-12 text-brand-600 mx-auto mb-3" />
+              <Palette className="w-12 h-12 text-teal-600 mx-auto mb-3" />
               <h1 className="text-2xl font-bold text-white">Brand your POS</h1>
               <p className="text-neutral-400 mt-1">Pick your primary color and upload a logo</p>
             </div>
@@ -225,7 +225,7 @@ const OnboardingScreen: React.FC = () => {
                 value={data.logo_url}
                 onChange={e => update('logo_url', e.target.value)}
                 placeholder="https://example.com/logo.png"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-brand-600"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
               />
               {data.logo_url && (
                 <div className="mt-3 flex justify-center">
@@ -252,7 +252,7 @@ const OnboardingScreen: React.FC = () => {
         {step === 3 && (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <CreditCard className="w-12 h-12 text-brand-600 mx-auto mb-3" />
+              <CreditCard className="w-12 h-12 text-teal-600 mx-auto mb-3" />
               <h1 className="text-2xl font-bold text-white">Choose your plan</h1>
               <p className="text-neutral-400 mt-1">Start free, upgrade anytime</p>
             </div>
@@ -264,7 +264,7 @@ const OnboardingScreen: React.FC = () => {
                   onClick={() => update('plan', plan.id)}
                   className={`w-full p-4 rounded-lg border text-left transition-all ${
                     data.plan === plan.id
-                      ? 'border-brand-600 bg-brand-600/10'
+                      ? 'border-teal-600 bg-teal-600/10'
                       : 'border-neutral-700 bg-neutral-900 hover:border-neutral-600'
                   }`}
                 >
@@ -273,7 +273,7 @@ const OnboardingScreen: React.FC = () => {
                       <span className="text-white font-semibold">{plan.name}</span>
                       <span className="text-neutral-400 ml-2 text-sm">{plan.price}</span>
                     </div>
-                    {data.plan === plan.id && <Check className="w-5 h-5 text-brand-500" />}
+                    {data.plan === plan.id && <Check className="w-5 h-5 text-teal-500" />}
                   </div>
                   <p className="text-sm text-neutral-400 mt-1">{plan.description}</p>
                 </button>
@@ -299,12 +299,12 @@ const OnboardingScreen: React.FC = () => {
             {tenantSubdomain && (
               <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-4">
                 <p className="text-neutral-400 text-sm mb-1">Your POS is live at</p>
-                <p className="text-brand-400 font-semibold">{tenantUrl(tenantSubdomain).replace('https://', '')}</p>
+                <p className="text-teal-400 font-semibold">{tenantUrl(tenantSubdomain).replace('https://', '')}</p>
               </div>
             )}
             <button
               onClick={handleGoToPOS}
-              className="px-8 py-3 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors"
+              className="px-8 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors"
             >
               Go to Your POS
             </button>
@@ -313,7 +313,7 @@ const OnboardingScreen: React.FC = () => {
 
         {/* Error */}
         {error && (
-          <div className="mt-4 p-3 rounded-lg bg-brand-900/30 border border-brand-800 text-brand-400 text-sm">
+          <div className="mt-4 p-3 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-sm">
             {error}
           </div>
         )}
@@ -332,7 +332,7 @@ const OnboardingScreen: React.FC = () => {
             {step < 3 ? (
               <button
                 onClick={handleNext}
-                className="flex items-center gap-1 px-6 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors"
+                className="flex items-center gap-1 px-6 py-2.5 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors"
               >
                 Next <ChevronRight className="w-4 h-4" />
               </button>
@@ -340,7 +340,7 @@ const OnboardingScreen: React.FC = () => {
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex items-center gap-1 px-6 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-6 py-2.5 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? 'Creating...' : 'Create Account'}
               </button>
@@ -352,7 +352,7 @@ const OnboardingScreen: React.FC = () => {
         {step === 1 && (
           <p className="text-center text-neutral-500 text-sm mt-6">
             Already have an account?{' '}
-            <button onClick={() => navigate('/')} className="text-brand-500 hover:text-brand-400">
+            <button onClick={() => navigate('/')} className="text-teal-500 hover:text-teal-400">
               Log in
             </button>
           </p>
