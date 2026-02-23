@@ -89,6 +89,8 @@ export interface Order {
   payment_status: 'unpaid' | 'processing' | 'paid' | 'completed' | 'failed' | 'refunded';
   payment_method?: 'card' | 'cash' | 'split' | 'crypto' | null;
   source?: 'pos' | 'uber_eats' | 'rappi' | 'didi_food';
+  invoice_token?: string;
+  cfdi_invoice_id?: number;
   created_at: string;
   completed_at?: string;
   items?: OrderItem[];
@@ -851,6 +853,73 @@ export interface OrderTemplate {
   active: boolean;
   sort_order: number;
   created_at: string;
+}
+
+/* Waste Types (already above, but ensure WasteReport is present) */
+
+/* CFDI / Electronic Invoicing Types */
+export interface CfdiConfig {
+  id: number;
+  facturapi_org_id: string | null;
+  rfc: string | null;
+  legal_name: string | null;
+  tax_regime: string | null;
+  postal_code: string | null;
+  csd_uploaded: boolean;
+  csd_valid_until: string | null;
+  default_uso_cfdi: string;
+  invoice_series: string;
+  invoice_link_expiry_hours: number;
+  active: boolean;
+}
+
+export interface CfdiInvoice {
+  id: number;
+  order_id: number;
+  facturapi_invoice_id: string;
+  uuid_fiscal: string;
+  series: string;
+  folio: string;
+  receptor_rfc: string;
+  receptor_name: string;
+  receptor_uso_cfdi: string;
+  subtotal: number;
+  tax_total: number;
+  total: number;
+  forma_pago: string;
+  status: 'valid' | 'cancelled' | 'cancellation_pending';
+  cancellation_reason: string | null;
+  requested_by: 'staff' | 'customer';
+  issued_at: string;
+  xml_url: string;
+  pdf_url: string;
+  order_number?: string;
+}
+
+export interface CfdiInvoiceToken {
+  token: string;
+  url: string;
+  expires_at: string;
+}
+
+export interface CfdiReceptor {
+  rfc: string;
+  name: string;
+  tax_regime: string;
+  postal_code: string;
+  uso_cfdi: string;
+}
+
+export interface SatCatalogItem {
+  code: string;
+  name: string;
+}
+
+export interface CfdiCatalogs {
+  taxRegimes: SatCatalogItem[];
+  usoCfdi: SatCatalogItem[];
+  formaPago: SatCatalogItem[];
+  cancellationMotives: SatCatalogItem[];
 }
 
 /* API Response Types */

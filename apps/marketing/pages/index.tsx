@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 
 import en from "../messages/en.json";
@@ -87,64 +87,202 @@ function IconAI() {
 
 const featureIcons = [IconPOS, IconKitchen, IconDelivery, IconInventory, IconLoyalty, IconAI];
 
+/* ── Pricing helpers ── */
+
+const MXN_RATE = 19.5;
+
+function formatMXN(usd: number) {
+  if (usd === 0) return "Gratis";
+  return `${Math.round(usd * MXN_RATE).toLocaleString("es-MX")} MXN`;
+}
+
+function formatUSD(usd: number) {
+  if (usd === 0) return "Free";
+  return `$${usd} USD`;
+}
+
 /* ── Pricing Card ── */
 
 function PricingCard({
   name,
-  price,
-  period,
+  tagline,
+  monthlyUsd,
+  limits,
   features,
+  missing,
   cta,
+  ctaLink,
   badge,
   highlighted,
+  currency,
 }: {
   name: string;
-  price: string;
-  period: string;
+  tagline: string;
+  monthlyUsd: number;
+  limits: string;
   features: string[];
+  missing: string[];
   cta: string;
+  ctaLink: string;
   badge?: string;
   highlighted?: boolean;
+  currency: string;
 }) {
   return (
     <div
-      className={`relative rounded-lg p-8 flex flex-col ${
+      className={`relative rounded-2xl border p-6 flex flex-col ${
         highlighted
-          ? "bg-teal-600/10 border-2 border-teal-500/40 ring-1 ring-teal-500/20"
-          : "bg-white/[0.03] border border-white/10"
+          ? "bg-teal-600/10 border-teal-500 ring-1 ring-teal-500/40"
+          : "bg-white/[0.03] border-white/10"
       }`}
     >
       {badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal-600 text-white text-xs font-semibold px-4 py-1 rounded-full uppercase tracking-wider">
-          {badge}
-        </span>
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span className="bg-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+            {badge}
+          </span>
+        </div>
       )}
-      <h3 className="text-lg font-bold text-white">{name}</h3>
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-4xl font-black text-white">{price}</span>
-        <span className="text-sm text-white/40">{period}</span>
+
+      <div className="mb-6">
+        <h3 className="text-white font-bold text-lg">{name}</h3>
+        <p className="text-white/40 text-sm mt-1">{tagline}</p>
       </div>
-      <ul className="mt-8 space-y-3 flex-1">
-        {features.map((f) => (
-          <li key={f} className="flex items-start gap-3 text-sm text-white/60">
-            <svg className="w-4 h-4 text-teal-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            {f}
-          </li>
-        ))}
-      </ul>
+
+      <div className="mb-2">
+        <span className="text-4xl font-extrabold text-white">
+          {currency === "USD" ? formatUSD(monthlyUsd) : formatMXN(monthlyUsd)}
+        </span>
+        {monthlyUsd > 0 && (
+          <span className="text-white/30 text-sm ml-1">/mo</span>
+        )}
+      </div>
+
+      {monthlyUsd > 0 && (
+        <p className="text-white/30 text-xs mb-4">
+          {currency === "USD"
+            ? `≈ ${formatMXN(monthlyUsd)}/mes`
+            : `≈ ${formatUSD(monthlyUsd)}/mo`}
+        </p>
+      )}
+
+      <div className="mb-6">
+        <span className="text-xs text-teal-400 bg-teal-400/10 border border-teal-400/20 px-3 py-1 rounded-full">
+          {limits}
+        </span>
+      </div>
+
       <a
-        href="https://pos.desktop.kitchen/#/onboarding"
-        className={`mt-8 block text-center py-3 px-6 rounded text-sm font-semibold uppercase tracking-wider transition-all duration-200 ${
+        href={ctaLink}
+        className={`block text-center font-semibold py-3 rounded-xl mb-6 transition-colors ${
           highlighted
-            ? "bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98]"
-            : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
+            ? "bg-teal-600 hover:bg-teal-700 text-white"
+            : monthlyUsd === 0
+            ? "bg-white/5 hover:bg-white/10 text-white"
+            : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
         }`}
       >
         {cta}
       </a>
+
+      <ul className="space-y-3 flex-1">
+        {features.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-sm">
+            <svg className="w-4 h-4 text-teal-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span className="text-white/60">{f}</span>
+          </li>
+        ))}
+        {missing.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-sm">
+            <span className="text-white/10 mt-0.5 shrink-0">✗</span>
+            <span className="text-white/20">{f}</span>
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+}
+
+/* ── Pricing Section ── */
+
+const pricingPlans = [
+  { key: "free", usd: 0, highlight: false, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
+  { key: "starter", usd: 29, highlight: false, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
+  { key: "pro", usd: 79, highlight: true, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
+  { key: "ghost", usd: 129, highlight: false, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
+] as const;
+
+function PricingSection({ t }: { t: typeof en }) {
+  const [currency, setCurrency] = useState("USD");
+
+  return (
+    <section id="pricing" className="py-24 md:py-40 px-6 bg-neutral-950">
+      <div className="max-w-7xl mx-auto">
+        <FadeIn>
+          <div className="text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-teal-500/60 font-mono mb-6">
+              {t.pricingLabel}
+            </p>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
+              {t.pricingHeadline}
+            </h2>
+            <p className="mt-6 text-lg text-white/40 max-w-xl mx-auto">
+              {t.pricingSub}
+            </p>
+
+            <div className="mt-8 inline-flex items-center bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                onClick={() => setCurrency("USD")}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  currency === "USD"
+                    ? "bg-teal-600 text-white"
+                    : "text-white/40 hover:text-white"
+                }`}
+              >
+                USD
+              </button>
+              <button
+                onClick={() => setCurrency("MXN")}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  currency === "MXN"
+                    ? "bg-teal-600 text-white"
+                    : "text-white/40 hover:text-white"
+                }`}
+              >
+                MXN
+              </button>
+            </div>
+          </div>
+        </FadeIn>
+
+        <div className="mt-16 md:mt-20 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {pricingPlans.map((plan, i) => (
+            <FadeIn key={plan.key} delay={i * 0.1}>
+              <PricingCard
+                name={t[`pricing_${plan.key}_name` as keyof typeof t] as string}
+                tagline={t[`pricing_${plan.key}_tagline` as keyof typeof t] as string}
+                monthlyUsd={plan.usd}
+                limits={t[`pricing_${plan.key}_limits` as keyof typeof t] as string}
+                features={t[`pricing_${plan.key}_features` as keyof typeof t] as string[]}
+                missing={t[`pricing_${plan.key}_missing` as keyof typeof t] as string[]}
+                cta={t[`pricing_${plan.key}_cta` as keyof typeof t] as string}
+                ctaLink={plan.ctaLink}
+                badge={t[`pricing_${plan.key}_badge` as keyof typeof t] as string | undefined}
+                highlighted={plan.highlight}
+                currency={currency}
+              />
+            </FadeIn>
+          ))}
+        </div>
+
+        <div className="mt-12 text-center text-white/30 text-sm space-y-1">
+          <p>{t.pricingFooter1}</p>
+          <p>{t.pricingFooter2}</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -425,55 +563,7 @@ const Home: NextPage = () => {
         </section>
 
         {/* ─── PRICING ─── */}
-        <section id="pricing" className="py-24 md:py-40 px-6 bg-neutral-950">
-          <div className="max-w-5xl mx-auto">
-            <FadeIn>
-              <div className="text-center">
-                <p className="text-xs uppercase tracking-[0.3em] text-teal-500/60 font-mono mb-6">
-                  {t.pricingLabel}
-                </p>
-                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
-                  {t.pricingHeadline}
-                </h2>
-                <p className="mt-6 text-lg text-white/40 max-w-xl mx-auto">
-                  {t.pricingSub}
-                </p>
-              </div>
-            </FadeIn>
-
-            <div className="mt-16 md:mt-20 grid md:grid-cols-3 gap-6">
-              <FadeIn delay={0}>
-                <PricingCard
-                  name={t.pricingTrial}
-                  price={t.pricingTrialPrice}
-                  period={t.pricingTrialPeriod}
-                  features={t.pricingTrialFeatures}
-                  cta={t.pricingTrialCta}
-                />
-              </FadeIn>
-              <FadeIn delay={0.1}>
-                <PricingCard
-                  name={t.pricingStarter}
-                  price={t.pricingStarterPrice}
-                  period={t.pricingStarterPeriod}
-                  features={t.pricingStarterFeatures}
-                  cta={t.pricingStarterCta}
-                  badge={t.pricingStarterBadge}
-                  highlighted
-                />
-              </FadeIn>
-              <FadeIn delay={0.2}>
-                <PricingCard
-                  name={t.pricingPro}
-                  price={t.pricingProPrice}
-                  period={t.pricingProPeriod}
-                  features={t.pricingProFeatures}
-                  cta={t.pricingProCta}
-                />
-              </FadeIn>
-            </div>
-          </div>
-        </section>
+        <PricingSection t={t} />
 
         {/* ─── FINAL CTA ─── */}
         <section className="py-24 md:py-32 px-6 bg-teal-600">

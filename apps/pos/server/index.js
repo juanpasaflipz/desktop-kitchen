@@ -28,8 +28,10 @@ import brandingRoutes from './routes/branding.js';
 import billingRoutes, { stripeWebhook } from './routes/billing.js';
 import deliveryIntelRoutes from './routes/delivery-intelligence.js';
 import menuBoardRoutes from './routes/menu-board.js';
+import cfdiPublicRoutes from './routes/cfdi-public.js';
 import accountRoutes from './routes/account.js';
 import wasteRoutes from './routes/waste.js';
+import cfdiRoutes from './routes/cfdi.js';
 import { initAI } from './ai/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -86,6 +88,9 @@ app.use('/api/auth', authRoutes);
 // Menu board (public, no auth required)
 app.use('/api/menu-board', menuBoardRoutes);
 
+// CFDI public self-service (token-based, no auth)
+app.use('/api/cfdi-public', cfdiPublicRoutes);
+
 // Tenant resolution middleware — all /api routes below use the resolved tenant DB
 app.use('/api', tenantMiddleware);
 
@@ -109,6 +114,7 @@ app.use('/api/branding', brandingRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/account', accountRoutes);
 app.use('/api/delivery', deliveryIntelRoutes);
+app.use('/api/cfdi', cfdiRoutes);
 
 // Serve index.html for all other routes (SPA)
 app.get('*', (req, res) => {

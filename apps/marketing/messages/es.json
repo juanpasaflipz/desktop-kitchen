@@ -41,26 +41,91 @@
   "howStep3Desc": "Toma pedidos, rastrea inventario y crece tu negocio desde el día uno. Funciona en cualquier dispositivo con navegador.",
 
   "pricingLabel": "Precios",
-  "pricingHeadline": "PRECIOS SIMPLES Y HONESTOS.",
-  "pricingSub": "Sin cuotas ocultas. Sin contratos. Cancela cuando quieras.",
-  "pricingTrial": "Prueba",
-  "pricingTrialPrice": "Gratis",
-  "pricingTrialPeriod": "14 días",
-  "pricingTrialFeatures": ["Sistema POS completo", "Hasta 20 productos", "1 cuenta de empleado", "Soporte comunitario"],
-  "pricingTrialCta": "Empezar Gratis",
+  "pricingHeadline": "PRECIOS SIMPLES Y TRANSPARENTES.",
+  "pricingSub": "Sin cuotas ocultas. Sin cobros por transacción. Cancela cuando quieras.",
 
-  "pricingStarter": "Starter",
-  "pricingStarterPrice": "$29",
-  "pricingStarterPeriod": "/mes",
-  "pricingStarterBadge": "Más Popular",
-  "pricingStarterFeatures": ["Productos ilimitados", "Hasta 10 empleados", "Pantalla de cocina", "Gestión de inventario", "Reportes básicos", "Soporte por email"],
-  "pricingStarterCta": "Comenzar",
+  "pricing_free_name": "Gratis",
+  "pricing_free_tagline": "Pruébalo con tu primera marca",
+  "pricing_free_limits": "50 transacciones/día · 1 marca",
+  "pricing_free_cta": "Empezar Gratis",
+  "pricing_free_features": [
+    "1 marca virtual",
+    "POS esencial (pedidos, pagos, recibos)",
+    "Gestión básica de menú",
+    "Hasta 50 transacciones por día",
+    "Soporte por email"
+  ],
+  "pricing_free_missing": [
+    "Integración con plataformas de delivery",
+    "Seguimiento de comisiones",
+    "Upselling con IA",
+    "Recaptura de clientes por SMS",
+    "P&L multi-marca"
+  ],
 
-  "pricingPro": "Pro",
-  "pricingProPrice": "$79",
-  "pricingProPeriod": "/mes",
-  "pricingProFeatures": ["Todo en Starter", "Empleados ilimitados", "Inteligencia de delivery", "Lealtad y CRM", "Sugerencias IA", "Soporte prioritario"],
-  "pricingProCta": "Ir a Pro",
+  "pricing_starter_name": "Starter",
+  "pricing_starter_tagline": "Para operadores de una sola marca con delivery",
+  "pricing_starter_limits": "Transacciones ilimitadas · 1 marca",
+  "pricing_starter_cta": "Comenzar",
+  "pricing_starter_features": [
+    "1 marca virtual",
+    "POS completo con transacciones ilimitadas",
+    "Integración con Rappi, Uber Eats y DiDi Food",
+    "Seguimiento de comisiones por plataforma",
+    "Reportes básicos de P&L de delivery",
+    "Gestión de inventario",
+    "Gestión de empleados y PINs",
+    "Soporte por email y chat"
+  ],
+  "pricing_starter_missing": [
+    "Múltiples marcas virtuales",
+    "Upselling y precios dinámicos con IA",
+    "Recaptura de clientes por SMS",
+    "P&L multi-marca"
+  ],
+
+  "pricing_pro_name": "Pro",
+  "pricing_pro_tagline": "Para operadores delivery-first listos para escalar",
+  "pricing_pro_badge": "Más Popular",
+  "pricing_pro_limits": "Transacciones ilimitadas · 3 marcas",
+  "pricing_pro_cta": "Comenzar Pro",
+  "pricing_pro_features": [
+    "Hasta 3 marcas virtuales",
+    "Todo lo de Starter",
+    "Motor de upselling con IA",
+    "Sugerencias de precios dinámicos",
+    "Campañas de recaptura por SMS",
+    "P&L completo multi-marca por plataforma",
+    "Pronóstico de inventario",
+    "Programas de lealtad y tarjetas de sellos",
+    "Soporte prioritario"
+  ],
+  "pricing_pro_missing": [
+    "Marcas ilimitadas",
+    "Gestión multi-sucursal",
+    "Onboarding dedicado"
+  ],
+
+  "pricing_ghost_name": "Ghost Kitchen",
+  "pricing_ghost_tagline": "Para operadores multi-sucursal y multi-marca",
+  "pricing_ghost_limits": "Transacciones ilimitadas · Marcas ilimitadas",
+  "pricing_ghost_cta": "Contáctanos",
+  "pricing_ghost_features": [
+    "Marcas virtuales ilimitadas",
+    "Sucursales ilimitadas",
+    "Todo lo de Pro",
+    "Dashboard multi-sucursal",
+    "Inventario compartido entre marcas",
+    "Benchmarking de rendimiento por marca",
+    "Reglas de markup personalizadas por marca",
+    "Onboarding y configuración dedicados",
+    "Integración con WhatsApp Business",
+    "Soporte prioritario por teléfono y WhatsApp"
+  ],
+  "pricing_ghost_missing": [],
+
+  "pricingFooter1": "Todos los planes se cobran mensualmente. Sin contratos. Cancela cuando quieras.",
+  "pricingFooter2": "Precios en MXN son aproximados según el tipo de cambio actual. Pagos procesados en USD vía Stripe.",
 
   "comparisonLabel": "Por Qué Operadores Cambian",
   "comparisonHeadline": "LA MAYORÍA DE LOS POS NO FUERON HECHOS PARA ESTO.",

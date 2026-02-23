@@ -41,26 +41,91 @@
   "howStep3Desc": "Take orders, track inventory, and grow your business from day one. Works on any device with a browser.",
 
   "pricingLabel": "Pricing",
-  "pricingHeadline": "SIMPLE, HONEST PRICING.",
-  "pricingSub": "No hidden fees. No long-term contracts. Cancel anytime.",
-  "pricingTrial": "Trial",
-  "pricingTrialPrice": "Free",
-  "pricingTrialPeriod": "14 days",
-  "pricingTrialFeatures": ["Full POS system", "Up to 20 menu items", "1 employee account", "Community support"],
-  "pricingTrialCta": "Start Free",
+  "pricingHeadline": "SIMPLE, TRANSPARENT PRICING.",
+  "pricingSub": "No hidden fees. No per-transaction cuts. Cancel anytime.",
 
-  "pricingStarter": "Starter",
-  "pricingStarterPrice": "$29",
-  "pricingStarterPeriod": "/month",
-  "pricingStarterBadge": "Most Popular",
-  "pricingStarterFeatures": ["Unlimited menu items", "Up to 10 employees", "Kitchen display system", "Inventory management", "Basic reports", "Email support"],
-  "pricingStarterCta": "Get Started",
+  "pricing_free_name": "Free",
+  "pricing_free_tagline": "Try it with your first brand",
+  "pricing_free_limits": "50 transactions/day · 1 brand",
+  "pricing_free_cta": "Start Free",
+  "pricing_free_features": [
+    "1 virtual brand",
+    "Core POS (orders, payments, receipts)",
+    "Basic menu management",
+    "Up to 50 transactions per day",
+    "Email support"
+  ],
+  "pricing_free_missing": [
+    "Delivery platform integration",
+    "Commission tracking",
+    "AI upselling",
+    "SMS customer recapture",
+    "Multi-brand P&L"
+  ],
 
-  "pricingPro": "Pro",
-  "pricingProPrice": "$79",
-  "pricingProPeriod": "/month",
-  "pricingProFeatures": ["Everything in Starter", "Unlimited employees", "Delivery intelligence", "Loyalty & CRM", "AI suggestions", "Priority support"],
-  "pricingProCta": "Go Pro",
+  "pricing_starter_name": "Starter",
+  "pricing_starter_tagline": "For single-brand delivery operators",
+  "pricing_starter_limits": "Unlimited transactions · 1 brand",
+  "pricing_starter_cta": "Get Started",
+  "pricing_starter_features": [
+    "1 virtual brand",
+    "Full POS with unlimited transactions",
+    "Rappi, Uber Eats & DiDi Food integration",
+    "Commission tracking per platform",
+    "Basic delivery P&L reports",
+    "Inventory management",
+    "Employee management & PINs",
+    "Email & chat support"
+  ],
+  "pricing_starter_missing": [
+    "Multiple virtual brands",
+    "AI upselling & dynamic pricing",
+    "SMS customer recapture",
+    "Multi-brand P&L"
+  ],
+
+  "pricing_pro_name": "Pro",
+  "pricing_pro_tagline": "For delivery-first operators ready to scale",
+  "pricing_pro_badge": "Most Popular",
+  "pricing_pro_limits": "Unlimited transactions · 3 brands",
+  "pricing_pro_cta": "Start Pro",
+  "pricing_pro_features": [
+    "Up to 3 virtual brands",
+    "Everything in Starter",
+    "AI-powered upselling engine",
+    "Dynamic pricing suggestions",
+    "SMS customer recapture campaigns",
+    "Full multi-brand P&L by platform",
+    "Inventory forecasting",
+    "Loyalty & stamp card programs",
+    "Priority support"
+  ],
+  "pricing_pro_missing": [
+    "Unlimited brands",
+    "Multi-location management",
+    "Dedicated onboarding"
+  ],
+
+  "pricing_ghost_name": "Ghost Kitchen",
+  "pricing_ghost_tagline": "For multi-location, multi-brand operators",
+  "pricing_ghost_limits": "Unlimited transactions · Unlimited brands",
+  "pricing_ghost_cta": "Talk to Us",
+  "pricing_ghost_features": [
+    "Unlimited virtual brands",
+    "Unlimited locations",
+    "Everything in Pro",
+    "Multi-location dashboard",
+    "Cross-brand inventory pooling",
+    "Brand performance benchmarking",
+    "Custom delivery markup rules per brand",
+    "Dedicated onboarding & setup",
+    "WhatsApp Business integration",
+    "Priority phone & WhatsApp support"
+  ],
+  "pricing_ghost_missing": [],
+
+  "pricingFooter1": "All plans billed monthly. No contracts. Cancel anytime.",
+  "pricingFooter2": "MXN prices are approximate based on current exchange rate. Payments processed in USD via Stripe.",
 
   "comparisonLabel": "Why Operators Switch",
   "comparisonHeadline": "MOST POS SYSTEMS WEREN'T BUILT FOR THIS.",
