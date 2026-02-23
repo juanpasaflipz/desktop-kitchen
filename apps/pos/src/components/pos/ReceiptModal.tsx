@@ -21,9 +21,9 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-96 overflow-auto">
         <div className="p-6 text-center border-b-2 border-gray-300">
           <BrandLogo className="h-12 mx-auto mb-2" />
-          <h2 className="text-2xl font-black tracking-tighter text-neutral-900 mb-1">{branding?.restaurantName || "Juanberto's"}</h2>
+          <h2 className="text-2xl font-black tracking-tighter text-neutral-900 mb-1">{branding?.restaurantName || 'Desktop Kitchen'}</h2>
           {(branding?.tagline || 'California Burritos') && (
-            <p className="text-neutral-600">{branding?.tagline || 'California Burritos'}</p>
+            <p className="text-neutral-600">{branding?.tagline || ''}</p>
           )}
           <p className="text-sm text-neutral-500 mt-2">
             123 Main Street, San Francisco, CA 94102

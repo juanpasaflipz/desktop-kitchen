@@ -1,7 +1,7 @@
 import { all, get, run } from '../db/index.js';
 
 const DEFAULT_CONFIG = {
-  restaurant_name: 'Juanberto\'s California Burritos',
+  restaurant_name: 'Desktop Kitchen',
   currency: 'MXN',
   tax_rate: '0.16',
   rush_hours: '11-14,18-21',
