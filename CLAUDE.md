@@ -86,7 +86,7 @@ npm run serve            # Serve production build locally
 
 ## POS Architecture
 
-React + TypeScript frontend, Express.js backend, better-sqlite3 (native C++ SQLite) database with WAL mode.
+React + TypeScript frontend, Express.js backend, Neon Postgres database (shared multi-tenant, RLS-enforced).
 
 **Frontend** (Vite on :5173) proxies `/api` requests to the **backend** (Express on :3001). In production, Express serves the built frontend from `/dist` with SPA fallback routing.
 
@@ -104,6 +104,8 @@ React + TypeScript frontend, Express.js backend, better-sqlite3 (native C++ SQLi
 - Screens in `src/screens/`, reusable components in `src/components/`
 - POS modal components: `src/components/pos/` — NotesModal, PaymentModal, ReceiptModal
 - Menu board components: `src/components/menu-board/`
+- Admin components: `src/components/admin/` — CreateTenantModal, EditTenantModal, ResetPasswordModal, DeleteTenantModal
+- Super Admin API client: `src/api/superAdmin.ts` — analytics, tenant CRUD, onboarding/offboarding functions
 - Offline support: IndexedDB via Dexie.js for menu caching, offline orders, cart persistence
 - Branding: CSS variable theming via `BrandingContext` — all colors use `brand-*` Tailwind classes backed by `var(--brand-N, #fallback)`
 
@@ -111,10 +113,9 @@ React + TypeScript frontend, Express.js backend, better-sqlite3 (native C++ SQLi
 
 - **Express.js with ES modules** (`"type": "module"` in package.json)
 - Entry: `server/index.js` — mounts all route files under `/api/*`
-- Database: `server/db/index.js` — better-sqlite3 connection, helpers (`run`, `get`, `all`, `exec`), tenant context via AsyncLocalStorage
-- Schema: `server/db/schema.js` — all CREATE TABLE statements, `applySchema()` + `alterSafe()` migrations
-- Multi-tenancy: `AsyncLocalStorage` in `server/db/index.js` — `getDb()` auto-resolves to tenant DB per request
-- Tenant registry: `server/tenants.js` — master DB at `data/master.db`, tenant DBs at `data/tenants/{id}.db`
+- Database: `server/db/index.js` — two Postgres connection pools (`adminSql` as neondb_owner, `tenantSql` as app_user with RLS), helpers (`run`, `get`, `all`, `exec`), tenant context via AsyncLocalStorage
+- Multi-tenancy: `AsyncLocalStorage` in `server/db/index.js` — tenant middleware reserves a connection with `set_config('app.tenant_id', ...)` for RLS
+- Tenant registry: `server/tenants.js` — all tenants in single `tenants` table in Neon Postgres, CRUD via `adminSql`
 - Tenant middleware: `server/middleware/tenant.js` — resolves via X-Tenant-ID header → subdomain → DEFAULT_TENANT_ID env → default DB
 - Owner auth: `server/middleware/ownerAuth.js` — JWT validation for tenant owners (separate from employee PIN auth)
 - Routes: 18 files in `server/routes/` (menu, orders, payments, inventory, employees, reports, modifiers, combos, printers, delivery, delivery-intelligence, ai, auth, admin, branding, billing, loyalty, order-templates)
@@ -124,13 +125,13 @@ React + TypeScript frontend, Express.js backend, better-sqlite3 (native C++ SQLi
 
 ### Multi-Tenancy
 
-- One SQLite file per tenant at `data/tenants/{tenant_id}.db`
-- Master registry at `data/master.db` (tenants table with billing, branding, auth fields)
-- `AsyncLocalStorage` makes multi-tenancy transparent — all existing route files use `run/get/all/exec` from `db/index.js` which auto-resolves to the correct tenant DB
-- `applySchema(database)` in `db/schema.js`, reused for both default DB and new tenant initialization
-- Tenant resolution order: `X-Tenant-ID` header → subdomain → `DEFAULT_TENANT_ID` env → default DB (backward compatible)
-- Auth routes (`/api/auth/*`) and admin routes (`/admin/*`) are mounted BEFORE tenant middleware (they use master DB)
-- AI scheduled jobs run outside request context and use the default DB
+- Single Neon Postgres database — all tenant data in shared tables with `tenant_id` column
+- Row Level Security (RLS) enforced via `app_user` role; policies use `current_setting('app.tenant_id')`
+- `adminSql` pool (neondb_owner) bypasses RLS for admin routes, auth, AI scheduler, tenant CRUD
+- `tenantSql` pool (app_user) enforces RLS for all tenant-scoped `/api/*` routes
+- Tenant resolution order: `X-Tenant-ID` header → subdomain → `DEFAULT_TENANT_ID` env → default (backward compatible)
+- Auth routes (`/api/auth/*`) and admin routes (`/admin/*`) are mounted BEFORE tenant middleware (they use `adminSql`)
+- AI scheduled jobs run outside request context and use `adminSql`
 
 ### Branding System
 
@@ -142,9 +143,11 @@ React + TypeScript frontend, Express.js backend, better-sqlite3 (native C++ SQLi
 ### Stripe Billing
 
 - `server/routes/billing.js` — checkout sessions, customer portal, webhook handler
+- Webhook URL: `https://pos.desktop.kitchen/api/billing/webhook`
 - Webhook mounted BEFORE `express.json()` for raw body signature verification
 - Handles: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
 - Tenant fields: `plan` (trial/starter/pro), `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`
+- Stripe account: `acct_1T1TerFNBtYtIvy1` (juan@injupe.com, MX, MXN, currently test mode)
 
 ### Delivery Intelligence (`server/routes/delivery-intelligence.js`)
 
@@ -155,7 +158,17 @@ React + TypeScript frontend, Express.js backend, better-sqlite3 (native C++ SQLi
 
 ### AI Intelligence Layer (`server/ai/`)
 
-Background scheduler runs 6 jobs (suggestion cache refresh, hourly snapshots, item pair tracking, inventory velocity, cache cleanup, shrinkage detection). Heuristic-based suggestions always active; Grok API integration optional (requires `XAI_API_KEY`). Suggestion types: upsell, inventory-push, combo-upgrade, dynamic-pricing.
+Background scheduler runs 6 jobs (suggestion cache refresh, hourly snapshots, item pair tracking, inventory velocity, cache cleanup, shrinkage detection). Heuristic-based suggestions always active; Grok API integration optional (requires `XAI_API_KEY`). Model: `grok-4-1-fast-reasoning` (configurable via `ai_config.grok_model`). Suggestion types: upsell, inventory-push, combo-upgrade, dynamic-pricing.
+
+### Super Admin Dashboard (`/#/super-admin`)
+
+- Protected by `ADMIN_SECRET` — entered via login gate, stored in `sessionStorage`
+- Tabs: Overview (KPIs, plan distribution, signups, churn, activity), Tenants, Revenue, Health
+- Tenant management: full CRUD with onboarding (create + seed + PIN generation) and offboarding (export + delete)
+- API client: `src/api/superAdmin.ts` — `createTenant`, `seedTenant`, `patchTenant`, `resetTenantPassword`, `exportTenantData`, `deleteTenant`
+- Modals: `src/components/admin/TenantManagement.tsx` — Create, Edit, ResetPassword, Delete modals + `downloadTenantExport` utility
+- Delete safety: requires typing tenant ID to confirm, FK-safe cascading delete across all 46 tenant-scoped tables in a single transaction
+- Backend: `server/routes/admin.js` — all endpoints under `/admin/*`, protected by `requireAdmin` middleware
 
 ### Offline Support
 
@@ -169,40 +182,52 @@ Background scheduler runs 6 jobs (suggestion cache refresh, hourly snapshots, it
 
 ### Database
 
-35+ tables in better-sqlite3. Schema defined in `server/db/schema.js` via `applySchema()` using `CREATE TABLE IF NOT EXISTS` + `alterSafe()` for migrations. Key domains:
+46+ tables in Neon Postgres. All tenant-scoped tables have a `tenant_id` column with RLS policies. Key domains:
 - **Core**: employees, menu (categories/items/modifiers/combos), orders (items/modifiers/payments), inventory
 - **Delivery**: delivery_platforms, delivery_orders, delivery_markup_rules, virtual_brands, virtual_brand_items, delivery_recapture
 - **AI**: ai_config, ai_suggestion_events, ai_hourly_snapshots, ai_item_pairs, ai_inventory_velocity, ai_suggestion_cache
-- **Loyalty**: loyalty_customers, stamp_cards, stamp_events, loyalty_config, loyalty_messages
-- **Infrastructure**: printers, role_permissions, purchase_orders, purchase_order_items, vendors
-- **Master DB** (separate file): tenants (id, name, subdomain, plan, stripe fields, branding_json, owner credentials)
+- **Loyalty**: loyalty_customers, stamp_cards, stamp_events, loyalty_config, loyalty_messages, referral_events
+- **Financial**: financial_targets, financial_actuals
+- **Infrastructure**: printers, category_printer_routes, role_permissions, purchase_orders, purchase_order_items, vendors, vendor_items, order_templates
+- **Platform**: tenants (id, name, subdomain, plan, stripe fields, branding_json, owner credentials)
 
-No migrations system — schema changes go directly in `applySchema()` in `server/db/schema.js`.
+Schema managed via SQL migrations in Neon. `schema_version` table tracks applied versions.
 
 ## Environment Variables
 
 Copy `apps/pos/.env.example` to `apps/pos/.env`:
 ```
-STRIPE_SECRET_KEY=sk_test_...           # Required for payments
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_... # Required for browser Stripe
+# Database (required)
+DATABASE_URL=postgres://...             # Neon Postgres connection string
+PG_APP_USER=app_user                    # RLS-enforced role for tenant queries
+PG_APP_PASSWORD=...                     # Password for app_user role
+
+# Payments (required)
+STRIPE_SECRET_KEY=sk_test_...           # Stripe secret key
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_... # Stripe publishable key (browser)
 PORT=3001                               # Optional (default: 3001)
-XAI_API_KEY=...                         # Optional (enables Grok AI suggestions)
+
+# AI (optional — enables Grok-powered suggestions)
+XAI_API_KEY=...                         # xAI API key (model: grok-4-1-fast-reasoning)
 
 # Multi-tenancy
-ADMIN_SECRET=...                        # Protects /admin/* API routes
+ADMIN_SECRET=...                        # Protects /admin/* API routes + super-admin dashboard
 DEFAULT_TENANT_ID=                      # Optional fallback tenant for local dev
 JWT_SECRET=...                          # JWT signing secret for owner auth
 
 # Stripe Billing (optional — enables SaaS subscriptions)
 # STRIPE_PRICE_STARTER=price_xxx
 # STRIPE_PRICE_PRO=price_xxx
-# STRIPE_WEBHOOK_SECRET=whsec_xxx
+# STRIPE_WEBHOOK_SECRET=whsec_xxx       # Webhook: https://pos.desktop.kitchen/api/billing/webhook
 # APP_URL=https://pos.desktop.kitchen
 
 # Twilio SMS (optional — enables loyalty + recapture SMS)
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=+1234567890
+
+# Email (optional — sends PIN emails on tenant creation)
+RESEND_API_KEY=...                      # Resend API key for transactional email
 ```
 
 ## Key Patterns
