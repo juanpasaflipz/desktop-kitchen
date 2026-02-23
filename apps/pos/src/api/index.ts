@@ -1181,7 +1181,12 @@ export async function createPortalSession(): Promise<{ url: string }> {
 export async function getAccount(): Promise<any> {
   const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/account`, { headers: ownerHeaders() });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch account');
+  if (!res.ok) {
+    const msg = (await res.json().catch(() => ({}))).error || 'Failed to fetch account';
+    const err: any = new Error(msg);
+    err.status = res.status;
+    throw err;
+  }
   return res.json();
 }
 

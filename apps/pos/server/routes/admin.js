@@ -217,8 +217,11 @@ router.get('/tenants/:id/deep-dive', async (req, res) => {
         (SELECT MAX(created_at) FROM orders WHERE tenant_id = ${tenant.id}) AS last_order_at
     `;
 
+    // Strip sensitive fields
+    const { owner_password_hash, ...safeTenant } = tenant;
+
     res.json({
-      tenant,
+      tenant: safeTenant,
       stats: {
         total_orders: Number(stats.total_orders),
         total_revenue: Number(stats.total_revenue),

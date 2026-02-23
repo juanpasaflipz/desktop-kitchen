@@ -82,7 +82,7 @@ export default function AccountScreen() {
   // Billing
   const [billingLoading, setBillingLoading] = useState<string | null>(null);
 
-  const hasOwnerToken = !!localStorage.getItem('owner_token');
+  const [hasOwnerToken, setHasOwnerToken] = useState(!!localStorage.getItem('owner_token'));
 
   useEffect(() => {
     if (!hasOwnerToken) {
@@ -96,7 +96,16 @@ export default function AccountScreen() {
         setEditName(data.name);
         setEditEmail(data.email);
       })
-      .catch(err => setError(err.message))
+      .catch((err: any) => {
+        // If token is expired/invalid, clear it and show the auth gate
+        if (err.status === 401 || err.status === 403) {
+          localStorage.removeItem('owner_token');
+          setHasOwnerToken(false);
+          setError('');
+        } else {
+          setError(err.message);
+        }
+      })
       .finally(() => setLoading(false));
   }, [hasOwnerToken]);
 
