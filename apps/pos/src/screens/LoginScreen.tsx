@@ -64,11 +64,11 @@ const LoginScreen: React.FC = () => {
       <div className="text-center mb-12">
         <BrandLogo className="h-28 mx-auto mb-6" />
         <h1 className="text-5xl font-black tracking-tighter text-white mb-2">
-          {branding?.restaurantName || "Juanberto's"}
+          {branding?.restaurantName || 'Desktop Kitchen'}
         </h1>
-        {(branding?.tagline || 'California Burritos') && (
+        {branding?.tagline && (
           <p className="text-xl font-semibold text-brand-600 tracking-tight">
-            {branding?.tagline || 'California Burritos'}
+            {branding.tagline}
           </p>
         )}
         <p className="text-lg text-neutral-400 mt-2">{t('login.employeeLogin')}</p>

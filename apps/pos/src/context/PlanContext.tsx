@@ -52,7 +52,10 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const fetchPlan = useCallback(async () => {
     try {
-      const res = await fetch('/api/branding');
+      const tenantId = localStorage.getItem('tenant_id');
+      const headers: Record<string, string> = {};
+      if (tenantId) headers['X-Tenant-ID'] = tenantId;
+      const res = await fetch('/api/branding', { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.plan) setPlan(data.plan);

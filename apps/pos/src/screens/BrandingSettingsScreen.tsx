@@ -92,10 +92,12 @@ export default function BrandingSettingsScreen() {
       if (logoFile) {
         const formData = new FormData();
         formData.append('logo', logoFile);
+        const tid = localStorage.getItem('tenant_id');
         const logoRes = await fetch('/api/branding/logo', {
           method: 'POST',
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(tid ? { 'X-Tenant-ID': tid } : {}),
           },
           body: formData,
         });
@@ -107,11 +109,13 @@ export default function BrandingSettingsScreen() {
       }
 
       // Save settings
+      const tid2 = localStorage.getItem('tenant_id');
       const settingsRes = await fetch('/api/branding/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(tid2 ? { 'X-Tenant-ID': tid2 } : {}),
         },
         body: JSON.stringify({ primaryColor, restaurantName, tagline }),
       });

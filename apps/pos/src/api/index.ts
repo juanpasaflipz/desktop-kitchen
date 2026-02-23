@@ -128,6 +128,10 @@ async function apiRequest<T>(
   if (currentEmployeeToken) {
     defaultHeaders['Authorization'] = `Bearer ${currentEmployeeToken}`;
   }
+  const tenantId = localStorage.getItem('tenant_id');
+  if (tenantId) {
+    defaultHeaders['X-Tenant-ID'] = tenantId;
+  }
 
   const response = await fetch(url, {
     ...options,
@@ -1137,9 +1141,11 @@ export async function getMenuBoardData(): Promise<any> {
 
 function ownerHeaders(): Record<string, string> {
   const token = localStorage.getItem('owner_token');
+  const tenantId = localStorage.getItem('tenant_id');
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(tenantId ? { 'X-Tenant-ID': tenantId } : {}),
   };
 }
 

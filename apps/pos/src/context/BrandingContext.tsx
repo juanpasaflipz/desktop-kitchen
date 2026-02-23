@@ -36,7 +36,10 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Fetch branding from server
   const fetchBranding = useCallback(async () => {
     try {
-      const res = await fetch('/api/branding');
+      const tenantId = localStorage.getItem('tenant_id');
+      const headers: Record<string, string> = {};
+      if (tenantId) headers['X-Tenant-ID'] = tenantId;
+      const res = await fetch('/api/branding', { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.primaryColor) {
