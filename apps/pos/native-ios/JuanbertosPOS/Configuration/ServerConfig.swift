@@ -1,7 +1,7 @@
 import Foundation
 
 @Observable
-final class ServerConfig {
+final class ServerConfig: @unchecked Sendable {
     static let shared = ServerConfig()
 
     private let key = "server_base_url"

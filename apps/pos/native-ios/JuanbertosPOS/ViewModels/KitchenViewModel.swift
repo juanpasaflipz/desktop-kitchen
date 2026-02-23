@@ -1,7 +1,7 @@
 import SwiftUI
 import AVFoundation
 
-@Observable
+@Observable @MainActor
 final class KitchenViewModel {
     var orders: [Order] = []
     var isLoading = true

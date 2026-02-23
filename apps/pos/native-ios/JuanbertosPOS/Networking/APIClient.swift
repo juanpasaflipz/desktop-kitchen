@@ -1,6 +1,6 @@
 import Foundation
 
-final class APIClient {
+final class APIClient: @unchecked Sendable {
     static let shared = APIClient()
 
     private let session: URLSession

@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@Observable @MainActor
 final class AdminViewModel {
     var dailyStats: SalesReport?
     var lowStockItems: [InventoryItem] = []

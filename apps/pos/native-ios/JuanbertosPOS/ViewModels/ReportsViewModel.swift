@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@Observable @MainActor
 final class ReportsViewModel {
     var period: ReportPeriod = .today
     var salesData: SalesReport?

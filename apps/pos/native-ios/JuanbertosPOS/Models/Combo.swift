@@ -34,3 +34,25 @@ struct ComboSlot: Codable, Identifiable, Sendable {
     var specific_item_id: Int?
     var sort_order: Int
 }
+
+struct CreateComboSlotRequest: Codable, Sendable {
+    var slot_label: String
+    var category_id: Int?
+    var specific_item_id: Int?
+    var sort_order: Int?
+}
+
+struct CreateComboRequest: Codable, Sendable {
+    var name: String
+    var description: String?
+    var combo_price: Double
+    var slots: [CreateComboSlotRequest]?
+}
+
+struct UpdateComboRequest: Codable, Sendable {
+    var name: String?
+    var description: String?
+    var combo_price: Double?
+    var active: Bool?
+    var slots: [CreateComboSlotRequest]?
+}

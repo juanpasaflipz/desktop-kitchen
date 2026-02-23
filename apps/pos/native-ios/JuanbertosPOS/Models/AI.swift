@@ -174,6 +174,37 @@ struct CategoryRole: Codable, Identifiable, Sendable {
     var category_name: String
 }
 
+struct AIConfigBulkEntry: Codable, Sendable {
+    var key: String
+    var value: String
+    var description: String?
+}
+
+struct UpdateAIConfigRequest: Codable, Sendable {
+    var key: String?
+    var value: String?
+    var description: String?
+    var entries: [AIConfigBulkEntry]?
+
+    init(key: String, value: String, description: String? = nil) {
+        self.key = key
+        self.value = value
+        self.description = description
+        self.entries = nil
+    }
+
+    init(entries: [AIConfigBulkEntry]) {
+        self.key = nil
+        self.value = nil
+        self.description = nil
+        self.entries = entries
+    }
+}
+
+struct ImportAIConfigRequest: Codable, Sendable {
+    var config: [String: AIConfigEntry]
+}
+
 // Type-erased Codable for dynamic JSON (used in feedback suggestion_data)
 struct AnyCodable: Codable, @unchecked Sendable {
     let value: Any

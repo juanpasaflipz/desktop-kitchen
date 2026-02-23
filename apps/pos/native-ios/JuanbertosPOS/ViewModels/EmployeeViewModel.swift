@@ -1,6 +1,6 @@
 import Foundation
 
-@Observable
+@Observable @MainActor
 final class EmployeeViewModel {
     var employees: [Employee] = []
     var isLoading = true

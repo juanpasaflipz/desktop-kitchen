@@ -1,6 +1,6 @@
 import SwiftUI
 
-@Observable
+@Observable @MainActor
 final class LoginViewModel {
     var pin = ""
     var isLoading = false

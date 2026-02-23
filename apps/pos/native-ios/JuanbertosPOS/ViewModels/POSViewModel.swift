@@ -1,6 +1,6 @@
 import SwiftUI
 
-@Observable
+@Observable @MainActor
 final class POSViewModel {
     // Data
     var categories: [MenuCategory] = []
@@ -177,10 +177,11 @@ final class POSViewModel {
     func addToast(_ message: String, type: ToastType = .info) {
         let toast = ToastMessage(message: message, type: type)
         toasts.append(toast)
+        let toastId = toast.id
 
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(3))
-            toasts.removeAll { $0.id == toast.id }
+            self?.toasts.removeAll { $0.id == toastId }
         }
     }
 }
