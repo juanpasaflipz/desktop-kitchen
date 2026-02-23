@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   tenant_id TEXT NOT NULL DEFAULT current_setting('app.tenant_id', true),
-  order_number INTEGER NOT NULL,
+  order_number BIGINT NOT NULL,
   employee_id INTEGER NOT NULL REFERENCES employees(id),
   status TEXT DEFAULT 'pending',
   subtotal NUMERIC(10,2),
