@@ -101,7 +101,7 @@ const config = {
           {
             title: 'Product',
             items: [
-              { label: 'Website', href: 'https://desktop.kitchen' },
+              { label: 'Website', href: 'https://www.desktop.kitchen' },
               { label: 'POS App', href: 'https://pos.desktop.kitchen' },
             ],
           },
