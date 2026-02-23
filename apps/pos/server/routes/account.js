@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { requireOwner } from '../middleware/ownerAuth.js';
 import { getTenant, updateTenant } from '../tenants.js';
 import { adminSql } from '../db/index.js';
