@@ -1,10 +1,11 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
-import { createTenant, getTenantByEmail } from '../tenants.js';
+import { createTenant, getTenantByEmail, updateTenant } from '../tenants.js';
 import { adminSql } from '../db/index.js';
-import { sendPinEmail } from '../helpers/email.js';
+import { sendPinEmail, sendPasswordResetEmail } from '../helpers/email.js';
 
 const router = Router();
 
@@ -28,6 +29,15 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts. Please try again later.' },
+});
+
+// Rate limiting: 3 forgot-password attempts per IP per 15 minutes
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
 });
 
 function signToken(payload) {
@@ -201,6 +211,99 @@ router.post('/refresh', (req, res) => {
       return res.status(401).json({ error: 'Token expired' });
     }
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+/**
+ * POST /api/auth/forgot-password — request a password reset link
+ *
+ * Body: { email }
+ * Always returns same message to prevent email enumeration.
+ */
+router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Always respond with the same success message
+    const successMsg = { message: 'If an account with that email exists, a reset link has been sent.' };
+
+    const tenant = await getTenantByEmail(email);
+    if (!tenant || !tenant.active) {
+      return res.json(successMsg);
+    }
+
+    // Generate 256-bit token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await updateTenant(tenant.id, {
+      reset_token: token,
+      reset_token_expires: expires.toISOString(),
+    });
+
+    const appUrl = process.env.APP_URL || 'https://pos.desktop.kitchen';
+    const resetUrl = `${appUrl}/#/reset-password?token=${token}`;
+
+    // Fire-and-forget
+    sendPasswordResetEmail(email, resetUrl, tenant.name).catch(() => {});
+
+    res.json(successMsg);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password — set a new password using a valid token
+ *
+ * Body: { token, new_password }
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, new_password } = req.body;
+
+    if (!token || !new_password) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    if (new_password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    // Look up tenant by token
+    const rows = await adminSql`
+      SELECT id, name, reset_token_expires
+      FROM tenants
+      WHERE reset_token = ${token} AND active = true
+    `;
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    const tenant = rows[0];
+
+    // Check expiry
+    if (new Date(tenant.reset_token_expires) < new Date()) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Hash new password and clear token (single-use)
+    const passwordHash = await bcrypt.hash(new_password, BCRYPT_ROUNDS);
+    await updateTenant(tenant.id, {
+      owner_password_hash: passwordHash,
+      reset_token: null,
+      reset_token_expires: null,
+    });
+
+    res.json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Something went wrong' });
   }
 });
 

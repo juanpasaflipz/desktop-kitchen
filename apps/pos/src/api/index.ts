@@ -57,6 +57,10 @@ import {
   WasteLogEntry,
   WasteReport,
   COGSSummary,
+  CfdiConfig,
+  CfdiInvoice,
+  CfdiInvoiceToken,
+  CfdiCatalogs,
 } from '../types';
 
 // Employee ID for display/sync use - set after login
@@ -1310,4 +1314,173 @@ export async function changePassword(currentPassword: string, newPassword: strin
     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to change password');
+}
+
+/* ==================== CFDI / Electronic Invoicing Endpoints ==================== */
+
+export async function getCfdiCatalogs(): Promise<CfdiCatalogs> {
+  return apiRequest<CfdiCatalogs>('/cfdi/catalogs');
+}
+
+export async function getCfdiConfig(): Promise<{ config: CfdiConfig | null; facturapi_configured: boolean }> {
+  return apiRequest('/cfdi/config');
+}
+
+export async function updateCfdiConfig(data: {
+  rfc: string;
+  legal_name: string;
+  tax_regime: string;
+  postal_code: string;
+  default_uso_cfdi?: string;
+  invoice_series?: string;
+  invoice_link_expiry_hours?: number;
+}): Promise<{ config: CfdiConfig }> {
+  return apiRequest('/cfdi/config', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadCSD(formData: FormData): Promise<{ config: CfdiConfig; message: string }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const headers: Record<string, string> = {};
+  if (currentEmployeeToken) {
+    headers['Authorization'] = `Bearer ${currentEmployeeToken}`;
+  }
+  const tenantId = localStorage.getItem('tenant_id');
+  if (tenantId) {
+    headers['X-Tenant-ID'] = tenantId;
+  }
+  // Note: no Content-Type header — browser sets multipart boundary automatically
+  const res = await fetch(`${base}/cfdi/config/csd`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to upload CSD');
+  }
+  return res.json();
+}
+
+export async function testCfdiConnection(): Promise<{ success: boolean; expires_at?: string; error?: string }> {
+  return apiRequest('/cfdi/config/test', { method: 'POST' });
+}
+
+export async function issueCfdiInvoice(data: {
+  order_id: number;
+  receptor?: { rfc: string; name: string; tax_regime: string; postal_code: string; uso_cfdi?: string };
+  publico_general?: boolean;
+}): Promise<CfdiInvoice> {
+  return apiRequest<CfdiInvoice>('/cfdi/invoices', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getCfdiInvoices(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}): Promise<{ invoices: CfdiInvoice[]; total: number; page: number; limit: number }> {
+  const qs = new URLSearchParams();
+  if (params?.page) qs.append('page', String(params.page));
+  if (params?.limit) qs.append('limit', String(params.limit));
+  if (params?.search) qs.append('search', params.search);
+  if (params?.status) qs.append('status', params.status);
+  const s = qs.toString();
+  return apiRequest(`/cfdi/invoices${s ? `?${s}` : ''}`);
+}
+
+export async function getCfdiInvoice(id: number): Promise<CfdiInvoice> {
+  return apiRequest<CfdiInvoice>(`/cfdi/invoices/${id}`);
+}
+
+export async function cancelCfdiInvoice(id: number, data: {
+  motive: string;
+  substitute_uuid?: string;
+}): Promise<CfdiInvoice> {
+  return apiRequest<CfdiInvoice>(`/cfdi/invoices/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getInvoiceToken(orderId: number): Promise<CfdiInvoiceToken> {
+  return apiRequest<CfdiInvoiceToken>(`/cfdi/orders/${orderId}/token`);
+}
+
+/* ==================== Password Reset Endpoints (no auth) ==================== */
+
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Reset failed');
+  }
+  return res.json();
+}
+
+/* ==================== CFDI Public Endpoints (no auth) ==================== */
+
+export async function getCfdiPublicOrder(token: string): Promise<{
+  order_number: string;
+  date: string;
+  items: Array<{ item_name: string; quantity: number; unit_price: number }>;
+  subtotal: number;
+  tax: number;
+  total: number;
+  tenant_name: string;
+  tenant_logo: string | null;
+  tenant_color: string;
+  emisor_postal_code: string;
+}> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/cfdi-public/${token}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to load order');
+  }
+  return res.json();
+}
+
+export async function issueCfdiPublicInvoice(token: string, data: {
+  rfc: string;
+  name: string;
+  tax_regime: string;
+  postal_code: string;
+  uso_cfdi?: string;
+}): Promise<{ uuid_fiscal: string; pdf_url: string; xml_url: string; invoice_id: number }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/cfdi-public/${token}/issue`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to issue invoice');
+  }
+  return res.json();
 }

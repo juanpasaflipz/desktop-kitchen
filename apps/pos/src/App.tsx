@@ -141,6 +141,18 @@ const BrandingSettingsScreen = React.lazy(() =>
   }))
 );
 
+const InvoicingScreen = React.lazy(() =>
+  import('./screens/InvoicingScreen').then((module) => ({
+    default: module.default || (() => <div>Invoicing</div>),
+  }))
+);
+
+const PublicInvoiceScreen = React.lazy(() =>
+  import('./screens/PublicInvoiceScreen').then((module) => ({
+    default: module.default || (() => <div>Public Invoice</div>),
+  }))
+);
+
 const SuperAdminDashboard = React.lazy(() =>
   import('./screens/SuperAdminDashboard').then((module) => ({
     default: module.default || (() => <div>Super Admin</div>),
@@ -150,6 +162,12 @@ const SuperAdminDashboard = React.lazy(() =>
 const PlatformGateway = React.lazy(() =>
   import('./screens/PlatformGateway').then((module) => ({
     default: module.default || (() => <div>Platform Gateway</div>),
+  }))
+);
+
+const ResetPasswordScreen = React.lazy(() =>
+  import('./screens/ResetPasswordScreen').then((module) => ({
+    default: module.default || (() => <div>Reset Password</div>),
   }))
 );
 
@@ -240,6 +258,7 @@ const PlatformRoutes: React.FC = () => (
   <Routes>
     <Route path="/" element={<PlatformGateway />} />
     <Route path="/onboarding" element={<OnboardingScreen />} />
+    <Route path="/reset-password" element={<ResetPasswordScreen />} />
     <Route path="/super-admin" element={<SuperAdminDashboard />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
@@ -480,6 +499,17 @@ const TenantRoutes: React.FC = () => {
         }
       />
 
+      {/* Invoicing — CFDI electronic invoicing */}
+      <Route
+        path="/admin/invoicing"
+        element={
+          <ProtectedRoute
+            element={<InvoicingScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
+
       {/* Account — owner portal */}
       <Route
         path="/admin/account"
@@ -496,6 +526,9 @@ const TenantRoutes: React.FC = () => {
 
       {/* Menu Board — public, no auth */}
       <Route path="/menu-board" element={<MenuBoardScreen />} />
+
+      {/* Public invoice self-service — no auth */}
+      <Route path="/invoice/:token" element={<PublicInvoiceScreen />} />
 
       {/* Fallback route */}
       <Route
