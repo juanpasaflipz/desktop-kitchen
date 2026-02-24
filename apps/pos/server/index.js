@@ -58,7 +58,14 @@ app.use(cors({
 // Stripe webhook needs raw body (before express.json)
 app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
-app.use(express.json());
+// Capture raw body for delivery webhook signature verification
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    if (req.url?.startsWith('/api/delivery/webhook')) {
+      req.rawBody = buf;
+    }
+  },
+}));
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Serve uploaded files (logos, etc.)
