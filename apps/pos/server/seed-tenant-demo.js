@@ -1,12 +1,12 @@
 /**
- * Seed script for the Juanberto's tenant.
+ * Seed script for the demo tenant.
  *
- * Creates (or re-seeds) the "juanbertos" tenant in the tenants table
- * and populates its data with employees, a Mexican menu, inventory,
+ * Creates (or re-seeds) the "demo" tenant in the tenants table
+ * and populates its data with employees, a sample menu, inventory,
  * modifiers, combos, delivery platforms, and loyalty test data.
  *
  * Usage:
- *   node apps/pos/server/seed-tenant-juanbertos.js
+ *   node apps/pos/server/seed-tenant-demo.js
  *
  * Run from the repo root (or apps/pos/).
  */
@@ -17,16 +17,16 @@ import { adminSql, initDb } from './db/index.js';
 
 // ==================== Constants ====================
 
-const TENANT_ID = 'juanbertos';
-const TENANT_NAME = "Juanberto's";
-const TENANT_SUBDOMAIN = 'juanbertos';
-const OWNER_EMAIL = 'admin@juanbertos.com';
-const OWNER_PASSWORD = 'juanbertos2024'; // change after first login
+const TENANT_ID = 'demo';
+const TENANT_NAME = 'Desktop Kitchen Demo';
+const TENANT_SUBDOMAIN = 'demo';
+const OWNER_EMAIL = 'admin@desktop.kitchen';
+const OWNER_PASSWORD = 'desktopkitchen2024'; // change after first login
 const PLAN = 'pro';
 
 const BRANDING = {
-  primaryColor: '#dc2626',  // Red
-  restaurantName: "Juanberto's",
+  primaryColor: '#0d9488',  // Teal (brand default)
+  restaurantName: 'Desktop Kitchen Demo',
   logoUrl: null,
 };
 
@@ -303,7 +303,7 @@ const BRANDING = {
     // ==================== AI Config ====================
 
     const configEntries = [
-      ['restaurant_name', "Juanberto's", 'Restaurant display name'],
+      ['restaurant_name', 'Desktop Kitchen Demo', 'Restaurant display name'],
       ['currency', 'MXN', 'Currency code'],
       ['tax_rate', '0.16', 'Tax rate (16% IVA)'],
       ['rush_hours', '11-14,18-21', 'Rush hour ranges (24h format)'],

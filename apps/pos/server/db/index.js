@@ -43,54 +43,6 @@ export const tenantSql = postgres(buildTenantUrl(), {
   connect_timeout: 10,
 });
 
-// ==================== Parameter Conversion ====================
-
-/**
- * Convert SQLite-style `?` placeholders to Postgres `$1, $2, ...` placeholders.
- * Handles quoted strings (single and double) so `?` inside strings are not replaced.
- *
- * WARNING: This replaces ALL unquoted `?` characters. JSONB operators (`?`, `?|`, `?&`)
- * will be incorrectly rewritten. For queries using JSONB operators, use the tagged
- * template `adminSql` or `tenantSql` directly instead of the `run/get/all` helpers.
- */
-export function convertParams(sql) {
-  let idx = 0;
-  let result = '';
-  let i = 0;
-  while (i < sql.length) {
-    const ch = sql[i];
-    // Skip single-quoted strings
-    if (ch === "'") {
-      let j = i + 1;
-      while (j < sql.length) {
-        if (sql[j] === "'" && sql[j + 1] === "'") { j += 2; continue; }
-        if (sql[j] === "'") break;
-        j++;
-      }
-      result += sql.slice(i, j + 1);
-      i = j + 1;
-      continue;
-    }
-    // Skip double-quoted identifiers
-    if (ch === '"') {
-      let j = i + 1;
-      while (j < sql.length && sql[j] !== '"') j++;
-      result += sql.slice(i, j + 1);
-      i = j + 1;
-      continue;
-    }
-    if (ch === '?') {
-      idx++;
-      result += '$' + idx;
-      i++;
-      continue;
-    }
-    result += ch;
-    i++;
-  }
-  return result;
-}
-
 // ==================== Connection Resolution ====================
 
 /**
@@ -111,15 +63,14 @@ export function getConn() {
  */
 export async function run(sql, params = []) {
   const conn = getConn();
-  const pgSql = convertParams(sql);
 
   // Auto-append RETURNING id for INSERTs that don't already have RETURNING
-  const isInsert = /^\s*INSERT\s/i.test(pgSql);
-  const hasReturning = /\bRETURNING\b/i.test(pgSql);
+  const isInsert = /^\s*INSERT\s/i.test(sql);
+  const hasReturning = /\bRETURNING\b/i.test(sql);
 
   if (isInsert && !hasReturning) {
     // Try with RETURNING id; fall back to plain INSERT for tables without an id column
-    const withReturning = pgSql.replace(/;?\s*$/, ' RETURNING id');
+    const withReturning = sql.replace(/;?\s*$/, ' RETURNING id');
     try {
       const rows = await conn.unsafe(withReturning, params);
       if (rows.length > 0 && rows[0].id != null) {
@@ -129,14 +80,14 @@ export async function run(sql, params = []) {
     } catch (err) {
       // '42703' = undefined_column — table has no "id" column (e.g. junction tables)
       if (err.code === '42703') {
-        const rows = await conn.unsafe(pgSql, params);
+        const rows = await conn.unsafe(sql, params);
         return { lastInsertRowid: 0, changes: rows.count ?? 0 };
       }
       throw err;
     }
   }
 
-  const rows = await conn.unsafe(pgSql, params);
+  const rows = await conn.unsafe(sql, params);
 
   if (isInsert && rows.length > 0 && rows[0].id != null) {
     return { lastInsertRowid: Number(rows[0].id) };
@@ -150,8 +101,7 @@ export async function run(sql, params = []) {
  */
 export async function get(sql, params = []) {
   const conn = getConn();
-  const pgSql = convertParams(sql);
-  const rows = await conn.unsafe(pgSql, params);
+  const rows = await conn.unsafe(sql, params);
   return rows[0] || undefined;
 }
 
@@ -160,8 +110,7 @@ export async function get(sql, params = []) {
  */
 export async function all(sql, params = []) {
   const conn = getConn();
-  const pgSql = convertParams(sql);
-  const rows = await conn.unsafe(pgSql, params);
+  const rows = await conn.unsafe(sql, params);
   return Array.from(rows);
 }
 
@@ -189,57 +138,6 @@ export async function initDb() {
     console.error('[DB] Failed to connect to Postgres:', err.message);
     throw err;
   }
-}
-
-// ==================== Bound Helpers ====================
-
-/**
- * Create bound run/get/all/exec helpers for a specific connection.
- * Used when you need to run queries on a specific connection outside
- * of the AsyncLocalStorage context (e.g., admin operations).
- */
-export function createDbHelpers(conn) {
-  return {
-    async run(sql, params = []) {
-      const pgSql = convertParams(sql);
-      const isInsert = /^\s*INSERT\s/i.test(pgSql);
-      const hasReturning = /\bRETURNING\b/i.test(pgSql);
-      if (isInsert && !hasReturning) {
-        const withReturning = pgSql.replace(/;?\s*$/, ' RETURNING id');
-        try {
-          const rows = await conn.unsafe(withReturning, params);
-          if (rows.length > 0 && rows[0].id != null) {
-            return { lastInsertRowid: Number(rows[0].id) };
-          }
-          return { lastInsertRowid: 0, changes: rows.count ?? 0 };
-        } catch (err) {
-          if (err.code === '42703') {
-            const rows = await conn.unsafe(pgSql, params);
-            return { lastInsertRowid: 0, changes: rows.count ?? 0 };
-          }
-          throw err;
-        }
-      }
-      const rows = await conn.unsafe(pgSql, params);
-      if (isInsert && rows.length > 0 && rows[0].id != null) {
-        return { lastInsertRowid: Number(rows[0].id) };
-      }
-      return { lastInsertRowid: 0, changes: rows.count ?? 0 };
-    },
-    async get(sql, params = []) {
-      const pgSql = convertParams(sql);
-      const rows = await conn.unsafe(pgSql, params);
-      return rows[0] || undefined;
-    },
-    async all(sql, params = []) {
-      const pgSql = convertParams(sql);
-      const rows = await conn.unsafe(pgSql, params);
-      return Array.from(rows);
-    },
-    async exec(sql) {
-      await conn.unsafe(sql);
-    },
-  };
 }
 
 // ==================== Shutdown ====================
