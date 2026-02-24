@@ -18,6 +18,7 @@ import {
   createPointOrder,
   cancelPointOrder,
 } from '../services/mercadopago.js';
+import { getServiceCredentials } from '../helpers/tenantCredentials.js';
 
 const router = Router();
 
@@ -635,10 +636,13 @@ function requirePro(req, res, next) {
 }
 
 // GET /api/payments/mp/connect — initiate MP OAuth flow
-router.get('/mp/connect', requireAuth('pos_access'), requirePro, (req, res) => {
+router.get('/mp/connect', requireAuth('pos_access'), requirePro, async (req, res) => {
+  const mpCreds = await getServiceCredentials(req.tenant.id, 'mercadopago', {
+    client_id: 'MP_CLIENT_ID',
+  });
   const BASE_URL = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
   const params = new URLSearchParams({
-    client_id: process.env.MP_CLIENT_ID || '',
+    client_id: mpCreds.client_id || '',
     response_type: 'code',
     platform_id: 'mp',
     redirect_uri: `${BASE_URL}/api/payments/mp/callback`,
@@ -819,13 +823,19 @@ export async function mpOAuthCallback(req, res) {
   }
 
   try {
+    // Resolve MP credentials for this tenant (state param = tenantId)
+    const mpCreds = await getServiceCredentials(tenantId, 'mercadopago', {
+      client_id: 'MP_CLIENT_ID',
+      client_secret: 'MP_CLIENT_SECRET',
+    });
+
     const BASE_URL = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const tokenRes = await fetch('https://api.mercadopago.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        client_secret: process.env.MP_CLIENT_SECRET,
-        client_id: process.env.MP_CLIENT_ID,
+        client_secret: mpCreds.client_secret,
+        client_id: mpCreds.client_id,
         grant_type: 'authorization_code',
         code,
         redirect_uri: `${BASE_URL}/api/payments/mp/callback`,

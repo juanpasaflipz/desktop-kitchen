@@ -3,11 +3,14 @@
  * Uses the MP Orders API (unified API) for terminal payments.
  */
 
+import { getServiceCredentials } from '../helpers/tenantCredentials.js';
+
 const MP = 'https://api.mercadopago.com';
 
 /**
  * Ensure the tenant's MP access token is fresh.
  * Refreshes if expiring within 5 minutes.
+ * Uses tenant-level MP credentials with fallback to platform env vars.
  * @returns {Promise<string>} valid access_token
  */
 export async function ensureFreshToken(tenant, adminSql) {
@@ -15,12 +18,18 @@ export async function ensureFreshToken(tenant, adminSql) {
   const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
   if (expiresAt > fiveMinFromNow) return tenant.mp_access_token;
 
+  // Resolve MP credentials: tenant-level first, then platform env vars
+  const mpCreds = await getServiceCredentials(tenant.id, 'mercadopago', {
+    client_id: 'MP_CLIENT_ID',
+    client_secret: 'MP_CLIENT_SECRET',
+  });
+
   const res = await fetch(`${MP}/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_secret: process.env.MP_CLIENT_SECRET,
-      client_id: process.env.MP_CLIENT_ID,
+      client_secret: mpCreds.client_secret,
+      client_id: mpCreds.client_id,
       grant_type: 'refresh_token',
       refresh_token: tenant.mp_refresh_token,
     }),

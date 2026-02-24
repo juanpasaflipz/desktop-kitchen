@@ -183,6 +183,12 @@ const AccountScreen = React.lazy(() =>
   }))
 );
 
+const IntegrationsScreen = React.lazy(() =>
+  import('./screens/IntegrationsScreen').then((module) => ({
+    default: module.default || (() => <div>Integrations</div>),
+  }))
+);
+
 const MobileShell = React.lazy(() =>
   import('./components/mobile/MobileShell').then((module) => ({
     default: module.default,
@@ -533,6 +539,17 @@ const TenantRoutes: React.FC = () => {
         element={
           <ProtectedRoute
             element={<AccountScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
+
+      {/* Integrations — owner credential management */}
+      <Route
+        path="/admin/integrations"
+        element={
+          <ProtectedRoute
+            element={<IntegrationsScreen />}
             requiredRole={['manager', 'admin']}
           />
         }

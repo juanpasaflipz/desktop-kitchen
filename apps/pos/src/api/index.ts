@@ -1629,3 +1629,76 @@ export async function mpCancelCharge(order_id: number): Promise<{ success: boole
   });
 }
 
+/* ==================== Credentials / Integrations ==================== */
+
+export interface ServiceField {
+  key: string;
+  label: string;
+  secret: boolean;
+}
+
+export interface ServiceSchema {
+  label: string;
+  fields: ServiceField[];
+}
+
+export async function getCredentialsSchema(): Promise<Record<string, ServiceSchema>> {
+  return apiRequest('/credentials/schema');
+}
+
+export async function getCredentials(): Promise<Record<string, Record<string, string>>> {
+  // Uses owner token
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const ownerToken = localStorage.getItem('owner_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (ownerToken) headers['Authorization'] = `Bearer ${ownerToken}`;
+  const tenantId = localStorage.getItem('tenant_id');
+  if (tenantId) headers['X-Tenant-ID'] = tenantId;
+
+  const res = await fetch(`${base}/credentials`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API Error: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function saveCredentials(service: string, values: Record<string, string>): Promise<{ success: boolean }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const ownerToken = localStorage.getItem('owner_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (ownerToken) headers['Authorization'] = `Bearer ${ownerToken}`;
+  const tenantId = localStorage.getItem('tenant_id');
+  if (tenantId) headers['X-Tenant-ID'] = tenantId;
+
+  const res = await fetch(`${base}/credentials/${service}`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(values),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API Error: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function deleteCredentials(service: string): Promise<{ success: boolean }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const ownerToken = localStorage.getItem('owner_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (ownerToken) headers['Authorization'] = `Bearer ${ownerToken}`;
+  const tenantId = localStorage.getItem('tenant_id');
+  if (tenantId) headers['X-Tenant-ID'] = tenantId;
+
+  const res = await fetch(`${base}/credentials/${service}`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API Error: ${res.status}`);
+  }
+  return res.json();
+}
+
