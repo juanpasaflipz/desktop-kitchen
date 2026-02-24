@@ -101,67 +101,45 @@ const BRANDING = {
 
     const catRows = await adminSql`
       INSERT INTO menu_categories (name, sort_order, active, printer_target, tenant_id) VALUES
-        ('Tacos', 1, true, 'kitchen', ${TENANT_ID}),
-        ('Burritos', 2, true, 'kitchen', ${TENANT_ID}),
-        ('Quesadillas', 3, true, 'kitchen', ${TENANT_ID}),
-        ('Tortas', 4, true, 'kitchen', ${TENANT_ID}),
-        ('Platos Fuertes', 5, true, 'kitchen', ${TENANT_ID}),
-        ('Sides', 6, true, 'kitchen', ${TENANT_ID}),
-        ('Bebidas', 7, true, 'bar', ${TENANT_ID}),
-        ('Postres', 8, true, 'kitchen', ${TENANT_ID})
+        ('Burgers', 1, true, 'kitchen', ${TENANT_ID}),
+        ('Chicken', 2, true, 'kitchen', ${TENANT_ID}),
+        ('Sides', 3, true, 'kitchen', ${TENANT_ID}),
+        ('Drinks', 4, true, 'bar', ${TENANT_ID}),
+        ('Desserts', 5, true, 'kitchen', ${TENANT_ID})
       RETURNING id, name
     `;
     const catId = {};
     for (const row of catRows) catId[row.name] = row.id;
-    console.log('Seeded 8 menu categories');
+    console.log('Seeded 5 menu categories');
 
     // ==================== Menu Items (MXN) ====================
 
     const items = [
-      // Tacos
-      [catId['Tacos'], 'Taco al Pastor', 35, 'Marinated pork with pineapple, cilantro, and onion'],
-      [catId['Tacos'], 'Taco de Carne Asada', 40, 'Grilled steak with cilantro and onion'],
-      [catId['Tacos'], 'Taco de Pollo', 35, 'Seasoned chicken with guacamole'],
-      [catId['Tacos'], 'Taco de Carnitas', 38, 'Slow-cooked pulled pork'],
-      [catId['Tacos'], 'Taco de Birria', 45, 'Braised beef birria with consomme'],
-      [catId['Tacos'], 'Taco de Chorizo', 35, 'Mexican chorizo with onion and cilantro'],
-      // Burritos
-      [catId['Burritos'], 'Burrito de Carne Asada', 120, 'Grilled steak, rice, beans, cheese, and salsa'],
-      [catId['Burritos'], 'Burrito al Pastor', 110, 'Pastor pork, rice, beans, pineapple, and salsa'],
-      [catId['Burritos'], 'Burrito de Pollo', 105, 'Chicken, rice, beans, cheese, and crema'],
-      [catId['Burritos'], 'Burrito Vegetariano', 95, 'Beans, rice, cheese, guacamole, and veggies'],
-      // Quesadillas
-      [catId['Quesadillas'], 'Quesadilla de Queso', 55, 'Melted Oaxaca cheese in a flour tortilla'],
-      [catId['Quesadillas'], 'Quesadilla de Pollo', 75, 'Chicken and cheese with salsa verde'],
-      [catId['Quesadillas'], 'Quesadilla de Carne Asada', 85, 'Steak and cheese with guacamole'],
-      [catId['Quesadillas'], 'Quesadilla de Chorizo', 70, 'Chorizo and melted cheese'],
-      // Tortas
-      [catId['Tortas'], 'Torta de Milanesa', 85, 'Breaded beef, beans, avocado, lettuce, tomato'],
-      [catId['Tortas'], 'Torta de Jamon', 70, 'Ham, cheese, beans, lettuce, tomato'],
-      [catId['Tortas'], 'Torta Cubana', 95, 'Ham, pork leg, chorizo, cheese, beans, avocado'],
-      [catId['Tortas'], 'Torta Ahogada', 90, 'Carnitas in a spicy tomato broth'],
-      // Platos Fuertes
-      [catId['Platos Fuertes'], 'Enchiladas Rojas', 130, 'Three chicken enchiladas with red sauce, crema, and cheese'],
-      [catId['Platos Fuertes'], 'Enchiladas Verdes', 130, 'Three chicken enchiladas with green tomatillo sauce'],
-      [catId['Platos Fuertes'], 'Chilaquiles', 95, 'Fried tortilla chips in salsa with crema, cheese, and egg'],
-      [catId['Platos Fuertes'], 'Carne Asada Plate', 180, 'Grilled steak with rice, beans, guacamole, and tortillas'],
+      // Burgers
+      [catId['Burgers'], 'Classic Burger', 95, 'Beef patty, lettuce, tomato, onion, pickles'],
+      [catId['Burgers'], 'Cheeseburger', 110, 'Beef patty with melted American cheese'],
+      [catId['Burgers'], 'Double Burger', 145, 'Two beef patties, cheese, special sauce'],
+      [catId['Burgers'], 'Bacon Burger', 130, 'Beef patty, crispy bacon, cheese, BBQ sauce'],
+      [catId['Burgers'], 'Chicken Burger', 105, 'Grilled chicken breast, lettuce, mayo'],
+      // Chicken
+      [catId['Chicken'], 'Chicken Tenders (4 pcs)', 85, 'Crispy breaded chicken strips'],
+      [catId['Chicken'], 'Chicken Wings (6 pcs)', 95, 'Fried wings with your choice of sauce'],
+      [catId['Chicken'], 'Chicken Wrap', 90, 'Grilled chicken, lettuce, ranch, flour tortilla'],
       // Sides
-      [catId['Sides'], 'Arroz Rojo', 35, 'Mexican red rice'],
-      [catId['Sides'], 'Frijoles Refritos', 30, 'Refried pinto beans with cheese'],
-      [catId['Sides'], 'Chips y Guacamole', 65, 'Warm tortilla chips with fresh guacamole'],
-      [catId['Sides'], 'Chips y Salsa', 40, 'Warm tortilla chips with house salsa'],
-      [catId['Sides'], 'Elote en Vaso', 45, 'Corn in a cup with mayo, chili, lime, and cheese'],
-      // Bebidas
-      [catId['Bebidas'], 'Agua de Horchata', 40, 'Classic rice and cinnamon drink'],
-      [catId['Bebidas'], 'Agua de Jamaica', 40, 'Hibiscus flower water'],
-      [catId['Bebidas'], 'Limonada', 35, 'Fresh-squeezed lemonade'],
-      [catId['Bebidas'], 'Coca-Cola', 30, 'Coca-Cola Mexicana (glass bottle)'],
-      [catId['Bebidas'], 'Agua Natural', 20, 'Bottled water'],
-      [catId['Bebidas'], 'Cafe de Olla', 35, 'Traditional Mexican cinnamon coffee'],
-      // Postres
-      [catId['Postres'], 'Churros (3 pcs)', 50, 'Cinnamon sugar churros with chocolate sauce'],
-      [catId['Postres'], 'Flan Napolitano', 55, 'Creamy custard with caramel'],
-      [catId['Postres'], 'Tres Leches', 65, 'Three-milk soaked cake with whipped cream'],
+      [catId['Sides'], 'French Fries', 45, 'Classic golden fries'],
+      [catId['Sides'], 'Onion Rings', 55, 'Crispy battered onion rings'],
+      [catId['Sides'], 'Coleslaw', 35, 'Fresh creamy coleslaw'],
+      [catId['Sides'], 'Side Salad', 50, 'Mixed greens, tomato, cucumber, dressing'],
+      // Drinks
+      [catId['Drinks'], 'Coca-Cola', 30, 'Coca-Cola (500ml)'],
+      [catId['Drinks'], 'Sprite', 30, 'Sprite (500ml)'],
+      [catId['Drinks'], 'Lemonade', 35, 'Fresh-squeezed lemonade'],
+      [catId['Drinks'], 'Water', 20, 'Bottled water'],
+      [catId['Drinks'], 'Coffee', 35, 'Freshly brewed coffee'],
+      // Desserts
+      [catId['Desserts'], 'Milkshake', 65, 'Vanilla, chocolate, or strawberry'],
+      [catId['Desserts'], 'Brownie', 50, 'Warm chocolate brownie'],
+      [catId['Desserts'], 'Ice Cream Cup', 45, 'Two scoops, your choice of flavor'],
     ];
 
     const itemRows = [];
@@ -180,29 +158,21 @@ const BRANDING = {
     // ==================== Inventory ====================
 
     const invItems = [
-      ['carne asada (steak)', 40, 'lbs', 8, 'Meats', 200],
-      ['pork (pastor)', 50, 'lbs', 10, 'Meats', 120],
-      ['chicken breast', 40, 'lbs', 10, 'Meats', 90],
-      ['carnitas', 30, 'lbs', 8, 'Meats', 140],
-      ['birria beef', 25, 'lbs', 5, 'Meats', 180],
-      ['chorizo', 20, 'lbs', 5, 'Meats', 100],
-      ['ham', 15, 'lbs', 5, 'Meats', 80],
-      ['milanesa (breaded beef)', 20, 'lbs', 5, 'Meats', 160],
-      ['tortillas (corn)', 500, 'count', 100, 'Dry Goods', 2],
-      ['tortillas (flour)', 300, 'count', 50, 'Dry Goods', 3],
-      ['bolillo rolls', 100, 'count', 20, 'Dry Goods', 5],
-      ['rice', 100, 'lbs', 20, 'Dry Goods', 20],
-      ['beans (pinto)', 80, 'lbs', 15, 'Dry Goods', 25],
-      ['oaxaca cheese', 30, 'lbs', 8, 'Dairy', 120],
-      ['crema', 20, 'liters', 5, 'Dairy', 50],
-      ['avocado', 100, 'count', 20, 'Produce', 25],
-      ['limes', 200, 'count', 50, 'Produce', 3],
-      ['cilantro', 40, 'bunches', 10, 'Produce', 8],
-      ['onions', 80, 'lbs', 15, 'Produce', 15],
+      ['beef patties', 200, 'count', 40, 'Meats', 25],
+      ['chicken breast', 50, 'lbs', 10, 'Meats', 90],
+      ['bacon', 30, 'lbs', 5, 'Meats', 120],
+      ['burger buns', 200, 'count', 40, 'Dry Goods', 5],
+      ['french fries (frozen)', 100, 'lbs', 20, 'Frozen', 15],
+      ['chicken tenders (frozen)', 80, 'lbs', 15, 'Frozen', 50],
+      ['American cheese', 30, 'lbs', 8, 'Dairy', 80],
+      ['lettuce', 30, 'heads', 5, 'Produce', 15],
       ['tomatoes', 50, 'lbs', 10, 'Produce', 30],
-      ['chiles (various)', 30, 'lbs', 5, 'Produce', 40],
+      ['onions', 40, 'lbs', 8, 'Produce', 15],
+      ['pickles', 20, 'jars', 5, 'Supplies', 40],
       ['cooking oil', 40, 'liters', 10, 'Supplies', 30],
-      ['pineapple', 20, 'count', 5, 'Produce', 35],
+      ['Coca-Cola (500ml)', 100, 'count', 20, 'Beverages', 12],
+      ['Sprite (500ml)', 80, 'count', 15, 'Beverages', 12],
+      ['coffee beans', 20, 'lbs', 5, 'Beverages', 150],
     ];
     for (const [name, qty, unit, threshold, category, cost] of invItems) {
       await adminSql`
@@ -216,55 +186,38 @@ const BRANDING = {
 
     const mgRows = await adminSql`
       INSERT INTO modifier_groups (name, selection_type, required, min_selections, max_selections, sort_order, active, tenant_id) VALUES
-        ('Salsa', 'multi', false, 0, 3, 1, true, ${TENANT_ID}),
-        ('Extras', 'multi', false, 0, 5, 2, true, ${TENANT_ID}),
-        ('Tortilla', 'single', false, 0, 1, 3, true, ${TENANT_ID})
+        ('Extras', 'multi', false, 0, 5, 1, true, ${TENANT_ID}),
+        ('Sauce', 'single', false, 0, 1, 2, true, ${TENANT_ID})
       RETURNING id, name
     `;
     const mgId = {};
     for (const row of mgRows) mgId[row.name] = row.id;
 
-    // Salsa modifiers
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Salsa']}, 'Salsa Verde', 0, 1, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Salsa']}, 'Salsa Roja', 0, 2, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Salsa']}, 'Habanero', 0, 3, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Salsa']}, 'Pico de Gallo', 0, 4, true, ${TENANT_ID})`;
-
     // Extras
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Extra Queso', 15, 1, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Guacamole', 20, 2, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Crema', 10, 3, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Jalapenos', 0, 4, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Extra Carne', 25, 5, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Extra Cheese', 15, 1, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Bacon', 20, 2, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Jalapenos', 0, 3, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Extras']}, 'Extra Patty', 35, 4, true, ${TENANT_ID})`;
 
-    // Tortilla
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Tortilla']}, 'Maiz (Corn)', 0, 1, true, ${TENANT_ID})`;
-    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Tortilla']}, 'Harina (Flour)', 0, 2, true, ${TENANT_ID})`;
+    // Sauce
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Sauce']}, 'Ketchup', 0, 1, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Sauce']}, 'BBQ', 0, 2, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Sauce']}, 'Ranch', 0, 3, true, ${TENANT_ID})`;
+    await adminSql`INSERT INTO modifiers (group_id, name, price_adjustment, sort_order, active, tenant_id) VALUES (${mgId['Sauce']}, 'Buffalo', 0, 4, true, ${TENANT_ID})`;
 
-    // Assign modifiers to taco items (Salsa, Extras, Tortilla)
-    const tacoNames = ['Taco al Pastor', 'Taco de Carne Asada', 'Taco de Pollo', 'Taco de Carnitas', 'Taco de Birria', 'Taco de Chorizo'];
-    for (const name of tacoNames) {
+    // Assign Extras to burgers
+    const burgerNames = ['Classic Burger', 'Cheeseburger', 'Double Burger', 'Bacon Burger', 'Chicken Burger'];
+    for (const name of burgerNames) {
       const mid = itemId[name];
       if (!mid) continue;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Salsa']}, 1, ${TENANT_ID})`;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Extras']}, 2, ${TENANT_ID})`;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Tortilla']}, 3, ${TENANT_ID})`;
+      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Extras']}, 1, ${TENANT_ID})`;
     }
-    // Burritos get Salsa, Extras
-    const burritoNames = ['Burrito de Carne Asada', 'Burrito al Pastor', 'Burrito de Pollo', 'Burrito Vegetariano'];
-    for (const name of burritoNames) {
+    // Assign Sauce to chicken items
+    const chickenNames = ['Chicken Tenders (4 pcs)', 'Chicken Wings (6 pcs)', 'Chicken Wrap'];
+    for (const name of chickenNames) {
       const mid = itemId[name];
       if (!mid) continue;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Salsa']}, 1, ${TENANT_ID})`;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Extras']}, 2, ${TENANT_ID})`;
-    }
-    // Quesadillas get Salsa, Extras
-    const quesaNames = ['Quesadilla de Queso', 'Quesadilla de Pollo', 'Quesadilla de Carne Asada', 'Quesadilla de Chorizo'];
-    for (const name of quesaNames) {
-      const mid = itemId[name];
-      if (!mid) continue;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Salsa']}, 1, ${TENANT_ID})`;
-      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Extras']}, 2, ${TENANT_ID})`;
+      await adminSql`INSERT INTO menu_item_modifier_groups (menu_item_id, modifier_group_id, sort_order, tenant_id) VALUES (${mid}, ${mgId['Sauce']}, 1, ${TENANT_ID})`;
     }
 
     console.log('Seeded modifier groups and modifiers');
@@ -273,23 +226,22 @@ const BRANDING = {
 
     const comboRows = await adminSql`
       INSERT INTO combo_definitions (name, description, combo_price, active, tenant_id) VALUES
-        ('Combo Tacos (3)', '3 tacos of your choice with a drink — save $15!', 130, true, ${TENANT_ID}),
-        ('Combo Burrito', 'Any burrito with a side and a drink — save $20!', 170, true, ${TENANT_ID})
+        ('Burger Combo', 'Any burger + fries + drink', 155, true, ${TENANT_ID}),
+        ('Chicken Combo', 'Tenders or wings + side + drink', 150, true, ${TENANT_ID})
       RETURNING id, name
     `;
     const comboId = {};
     for (const row of comboRows) comboId[row.name] = row.id;
 
-    // Combo Tacos: 3x taco (Tacos category) + drink (Bebidas category)
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Tacos (3)']}, 'Taco 1', ${catId['Tacos']}, 1, ${TENANT_ID})`;
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Tacos (3)']}, 'Taco 2', ${catId['Tacos']}, 2, ${TENANT_ID})`;
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Tacos (3)']}, 'Taco 3', ${catId['Tacos']}, 3, ${TENANT_ID})`;
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Tacos (3)']}, 'Bebida', ${catId['Bebidas']}, 4, ${TENANT_ID})`;
+    // Burger Combo: burger + side + drink
+    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Burger Combo']}, 'Burger', ${catId['Burgers']}, 1, ${TENANT_ID})`;
+    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Burger Combo']}, 'Side', ${catId['Sides']}, 2, ${TENANT_ID})`;
+    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Burger Combo']}, 'Drink', ${catId['Drinks']}, 3, ${TENANT_ID})`;
 
-    // Combo Burrito: burrito + side + drink
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Burrito']}, 'Burrito', ${catId['Burritos']}, 1, ${TENANT_ID})`;
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Burrito']}, 'Side', ${catId['Sides']}, 2, ${TENANT_ID})`;
-    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Combo Burrito']}, 'Bebida', ${catId['Bebidas']}, 3, ${TENANT_ID})`;
+    // Chicken Combo: chicken + side + drink
+    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Chicken Combo']}, 'Chicken', ${catId['Chicken']}, 1, ${TENANT_ID})`;
+    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Chicken Combo']}, 'Side', ${catId['Sides']}, 2, ${TENANT_ID})`;
+    await adminSql`INSERT INTO combo_slots (combo_id, slot_label, category_id, sort_order, tenant_id) VALUES (${comboId['Chicken Combo']}, 'Drink', ${catId['Drinks']}, 3, ${TENANT_ID})`;
 
     console.log('Seeded combo definitions');
 
@@ -327,21 +279,18 @@ const BRANDING = {
 
     // ==================== AI Category Roles ====================
 
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Tacos']}, 'main', ${TENANT_ID})`;
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Burritos']}, 'main', ${TENANT_ID})`;
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Quesadillas']}, 'main', ${TENANT_ID})`;
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Tortas']}, 'main', ${TENANT_ID})`;
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Platos Fuertes']}, 'main', ${TENANT_ID})`;
+    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Burgers']}, 'main', ${TENANT_ID})`;
+    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Chicken']}, 'main', ${TENANT_ID})`;
     await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Sides']}, 'side', ${TENANT_ID})`;
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Bebidas']}, 'drink', ${TENANT_ID})`;
-    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Postres']}, 'side', ${TENANT_ID})`;
+    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Drinks']}, 'drink', ${TENANT_ID})`;
+    await adminSql`INSERT INTO ai_category_roles (category_id, role, tenant_id) VALUES (${catId['Desserts']}, 'side', ${TENANT_ID})`;
     console.log('Seeded AI category roles');
 
     // ==================== Loyalty Config ====================
 
     const loyaltyEntries = [
       ['stamps_required', '10'],
-      ['reward_description', 'Free taco or drink of your choice'],
+      ['reward_description', 'Free item of your choice'],
       ['sms_enabled', '1'],
       ['referral_bonus_stamps', '2'],
     ];
@@ -392,7 +341,7 @@ const BRANDING = {
     console.log(`   Subdomain:  ${TENANT_SUBDOMAIN}.desktop.kitchen`);
     console.log(`   Owner:      ${OWNER_EMAIL}`);
     console.log(`   Plan:       ${PLAN}`);
-    console.log(`   Branding:   Red (#dc2626)`);
+    console.log(`   Branding:   Teal (#0d9488)`);
   } catch (error) {
     console.error('Error seeding demo tenant:', error);
     process.exit(1);
