@@ -15,6 +15,9 @@ const SERVICE_ICONS: Record<string, string> = {
   twilio: '\uD83D\uDCE8',
   facturapi: '\uD83E\uDDFE',
   xai: '\uD83E\uDDE0',
+  uber_eats: '\uD83C\uDF54',
+  rappi: '\uD83E\uDDCA',
+  didi_food: '\uD83D\uDE95',
 };
 
 const SERVICE_DESCRIPTIONS: Record<string, string> = {
@@ -23,7 +26,18 @@ const SERVICE_DESCRIPTIONS: Record<string, string> = {
   twilio: 'Envia SMS de lealtad, recaptura de clientes y notificaciones automaticas.',
   facturapi: 'Emite facturas CFDI 4.0 desde el POS usando tu propia cuenta FacturAPI.',
   xai: 'Habilita sugerencias AI, analisis de inventario y pricing inteligente con Grok.',
+  uber_eats: 'Recibe pedidos de Uber Eats directo en tu POS. Requiere cuenta de restaurante en Uber Eats.',
+  rappi: 'Integra tu restaurante con Rappi para recibir y gestionar pedidos desde el POS.',
+  didi_food: 'Conecta con DiDi Food para recibir pedidos y sincronizar tu menu automaticamente.',
 };
+
+const SERVICE_GROUPS: { label: string; keys: string[] }[] = [
+  { label: 'Pagos', keys: ['mercadopago', 'stripe'] },
+  { label: 'Delivery', keys: ['uber_eats', 'rappi', 'didi_food'] },
+  { label: 'Comunicaciones', keys: ['twilio'] },
+  { label: 'Facturacion', keys: ['facturapi'] },
+  { label: 'Inteligencia Artificial', keys: ['xai'] },
+];
 
 interface ServiceCardProps {
   serviceKey: string;
@@ -270,7 +284,7 @@ export default function IntegrationsScreen() {
           </Link>
           <div>
             <h1 className="text-3xl font-black tracking-tighter">Integraciones</h1>
-            <p className="text-neutral-400 text-sm mt-0.5">Conecta tus propias cuentas de pago, SMS, facturacion e IA</p>
+            <p className="text-neutral-400 text-sm mt-0.5">Conecta tus propias cuentas de pago, delivery, SMS, facturacion e IA</p>
           </div>
         </div>
       </div>
@@ -297,22 +311,35 @@ export default function IntegrationsScreen() {
             <p className="text-red-300">{error}</p>
           </div>
         ) : schema ? (
-          <div className="space-y-4">
-            <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-lg p-4 mb-2">
+          <div className="space-y-6">
+            <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-lg p-4">
               <p className="text-neutral-300 text-sm">
                 Cada servicio usa primero tus credenciales propias. Si no las configuras, se usaran las credenciales de la plataforma (si estan disponibles).
               </p>
             </div>
-            {Object.entries(schema).map(([key, svc]) => (
-              <ServiceCard
-                key={key}
-                serviceKey={key}
-                schema={svc}
-                stored={credentials[key] || {}}
-                onSave={handleSave}
-                onDelete={handleDelete}
-              />
-            ))}
+            {SERVICE_GROUPS.map((group) => {
+              const groupServices = group.keys.filter(k => schema[k]);
+              if (groupServices.length === 0) return null;
+              return (
+                <div key={group.label}>
+                  <h2 className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-3 px-1">
+                    {group.label}
+                  </h2>
+                  <div className="space-y-4">
+                    {groupServices.map((key) => (
+                      <ServiceCard
+                        key={key}
+                        serviceKey={key}
+                        schema={schema[key]}
+                        stored={credentials[key] || {}}
+                        onSave={handleSave}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : null}
       </div>

@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { all, get, run } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getPlanLimits, requirePlanFeature } from '../planLimits.js';
+import { getServiceCredentials } from '../helpers/tenantCredentials.js';
 
 const router = Router();
 
@@ -89,10 +91,32 @@ router.put('/orders/:id/status', requireAuth('manage_delivery'), requirePlanFeat
 });
 
 // POST /api/delivery/webhook/uber-eats - Uber Eats webhook
-router.post('/webhook/uber-eats', (req, res) => {
+router.post('/webhook/uber-eats', async (req, res) => {
   try {
     const payload = req.body;
-    // TODO: Validate webhook signature with webhook_secret
+    const tenantId = req.tenant?.id;
+
+    // Validate webhook signature if tenant has credentials configured
+    if (tenantId) {
+      const creds = await getServiceCredentials(tenantId, 'uber_eats', {
+        webhook_secret: '',
+      });
+      if (creds.webhook_secret) {
+        const signature = req.headers['x-uber-signature'];
+        if (!signature) {
+          console.warn('[Uber Eats] Webhook missing x-uber-signature header');
+          return res.status(403).json({ error: 'Missing webhook signature' });
+        }
+        const expected = crypto.createHmac('sha256', creds.webhook_secret)
+          .update(JSON.stringify(payload))
+          .digest('hex');
+        if (expected !== signature) {
+          console.warn('[Uber Eats] Webhook signature verification failed');
+          return res.status(403).json({ error: 'Invalid webhook signature' });
+        }
+      }
+    }
+
     // TODO: Parse Uber Eats order format and create internal order
     console.log('Uber Eats webhook received:', JSON.stringify(payload).slice(0, 200));
     res.json({ success: true, message: 'Webhook received' });
@@ -103,9 +127,32 @@ router.post('/webhook/uber-eats', (req, res) => {
 });
 
 // POST /api/delivery/webhook/rappi - Rappi webhook
-router.post('/webhook/rappi', (req, res) => {
+router.post('/webhook/rappi', async (req, res) => {
   try {
     const payload = req.body;
+    const tenantId = req.tenant?.id;
+
+    // Validate webhook signature if tenant has credentials configured
+    if (tenantId) {
+      const creds = await getServiceCredentials(tenantId, 'rappi', {
+        webhook_secret: '',
+      });
+      if (creds.webhook_secret) {
+        const signature = req.headers['x-rappi-signature'] || req.headers['x-webhook-signature'];
+        if (!signature) {
+          console.warn('[Rappi] Webhook missing signature header');
+          return res.status(403).json({ error: 'Missing webhook signature' });
+        }
+        const expected = crypto.createHmac('sha256', creds.webhook_secret)
+          .update(JSON.stringify(payload))
+          .digest('hex');
+        if (expected !== signature) {
+          console.warn('[Rappi] Webhook signature verification failed');
+          return res.status(403).json({ error: 'Invalid webhook signature' });
+        }
+      }
+    }
+
     console.log('Rappi webhook received:', JSON.stringify(payload).slice(0, 200));
     res.json({ success: true, message: 'Webhook received' });
   } catch (error) {
@@ -115,9 +162,32 @@ router.post('/webhook/rappi', (req, res) => {
 });
 
 // POST /api/delivery/webhook/didi - DiDi Food webhook
-router.post('/webhook/didi', (req, res) => {
+router.post('/webhook/didi', async (req, res) => {
   try {
     const payload = req.body;
+    const tenantId = req.tenant?.id;
+
+    // Validate webhook signature if tenant has credentials configured
+    if (tenantId) {
+      const creds = await getServiceCredentials(tenantId, 'didi_food', {
+        webhook_secret: '',
+      });
+      if (creds.webhook_secret) {
+        const signature = req.headers['x-didi-signature'] || req.headers['x-webhook-signature'];
+        if (!signature) {
+          console.warn('[DiDi Food] Webhook missing signature header');
+          return res.status(403).json({ error: 'Missing webhook signature' });
+        }
+        const expected = crypto.createHmac('sha256', creds.webhook_secret)
+          .update(JSON.stringify(payload))
+          .digest('hex');
+        if (expected !== signature) {
+          console.warn('[DiDi Food] Webhook signature verification failed');
+          return res.status(403).json({ error: 'Invalid webhook signature' });
+        }
+      }
+    }
+
     console.log('DiDi Food webhook received:', JSON.stringify(payload).slice(0, 200));
     res.json({ success: true, message: 'Webhook received' });
   } catch (error) {

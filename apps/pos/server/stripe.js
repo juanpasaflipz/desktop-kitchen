@@ -1,9 +1,37 @@
 import Stripe from 'stripe';
+import { tenantContext } from './db/index.js';
+import { getServiceCredentials } from './helpers/tenantCredentials.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
+const platformKey = process.env.STRIPE_SECRET_KEY || 'sk_test_dummy';
+const platformStripe = new Stripe(platformKey);
+
+// Tenant Stripe client cache (5-min TTL to pick up credential changes)
+const _cache = new Map();
+
+/**
+ * Resolve the Stripe client for the current tenant (via AsyncLocalStorage).
+ * Falls back to platform-level key when no tenant context or no tenant key stored.
+ */
+async function resolveStripe() {
+  const tenantId = tenantContext.getStore()?.tenantId;
+  if (!tenantId) return platformStripe;
+
+  const cached = _cache.get(tenantId);
+  if (cached && cached.ts > Date.now() - 300_000) return cached.client;
+
+  const creds = await getServiceCredentials(tenantId, 'stripe', {
+    secret_key: 'STRIPE_SECRET_KEY',
+  });
+
+  const key = creds.secret_key || platformKey;
+  const client = key === platformKey ? platformStripe : new Stripe(key);
+  _cache.set(tenantId, { client, ts: Date.now() });
+  return client;
+}
 
 export async function createPaymentIntent(amount, metadata = {}) {
   try {
+    const stripe = await resolveStripe();
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to centavos
       currency: 'mxn',
@@ -18,6 +46,7 @@ export async function createPaymentIntent(amount, metadata = {}) {
 
 export async function createRefund(paymentIntentId, amount = null) {
   try {
+    const stripe = await resolveStripe();
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       ...(amount && { amount: Math.round(amount * 100) }),
@@ -31,6 +60,7 @@ export async function createRefund(paymentIntentId, amount = null) {
 
 export async function getPaymentIntent(id) {
   try {
+    const stripe = await resolveStripe();
     const paymentIntent = await stripe.paymentIntents.retrieve(id);
     return paymentIntent;
   } catch (error) {
@@ -44,6 +74,7 @@ export async function getPaymentIntent(id) {
  */
 export async function getBalanceTransactions(startDate, endDate) {
   try {
+    const stripe = await resolveStripe();
     const params = { limit: 100 };
     if (startDate) params.created = { gte: Math.floor(new Date(startDate).getTime() / 1000) };
     if (endDate) {
@@ -63,6 +94,7 @@ export async function getBalanceTransactions(startDate, endDate) {
  */
 export async function getChargeFees(paymentIntentId) {
   try {
+    const stripe = await resolveStripe();
     const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
       expand: ['latest_charge.balance_transaction'],
     });
@@ -87,4 +119,5 @@ export async function getChargeFees(paymentIntentId) {
   }
 }
 
-export default stripe;
+// Platform-level client — used by billing.js (SaaS subscriptions are platform-level)
+export default platformStripe;

@@ -1,11 +1,26 @@
 import { run } from '../db/index.js';
+import { tenantContext } from '../db/index.js';
+import { getServiceCredentials } from './tenantCredentials.js';
 
-const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE = process.env.TWILIO_PHONE_NUMBER;
+// Platform-level defaults (used as fallbacks)
+const PLATFORM_SID = process.env.TWILIO_ACCOUNT_SID;
+const PLATFORM_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const PLATFORM_PHONE = process.env.TWILIO_PHONE_NUMBER;
 
-function isConfigured() {
-  return !!(TWILIO_SID && TWILIO_TOKEN && TWILIO_PHONE);
+/**
+ * Resolve Twilio credentials: tenant-level first, then platform env vars.
+ */
+async function resolveTwilio() {
+  const tenantId = tenantContext.getStore()?.tenantId;
+  if (tenantId) {
+    const creds = await getServiceCredentials(tenantId, 'twilio', {
+      account_sid: 'TWILIO_ACCOUNT_SID',
+      auth_token: 'TWILIO_AUTH_TOKEN',
+      phone_number: 'TWILIO_PHONE_NUMBER',
+    });
+    return { sid: creds.account_sid, token: creds.auth_token, phone: creds.phone_number };
+  }
+  return { sid: PLATFORM_SID, token: PLATFORM_TOKEN, phone: PLATFORM_PHONE };
 }
 
 /**
@@ -22,14 +37,16 @@ function toE164(phone) {
 
 /**
  * Send SMS via Twilio REST API (no SDK).
+ * Automatically resolves tenant credentials via AsyncLocalStorage.
  * Returns the message SID on success, null on failure or when unconfigured.
  */
 export async function sendSMS(to, body, customerId = null, messageType = 'general') {
-  if (!isConfigured()) return null;
+  const { sid, token, phone } = await resolveTwilio();
+  if (!sid || !token || !phone) return null;
 
   const e164 = toE164(to);
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`;
-  const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_TOKEN}`).toString('base64');
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
+  const auth = Buffer.from(`${sid}:${token}`).toString('base64');
 
   try {
     const res = await fetch(url, {
@@ -38,7 +55,7 @@ export async function sendSMS(to, body, customerId = null, messageType = 'genera
         'Authorization': `Basic ${auth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({ To: e164, From: TWILIO_PHONE, Body: body }),
+      body: new URLSearchParams({ To: e164, From: phone, Body: body }),
     });
 
     const data = await res.json();

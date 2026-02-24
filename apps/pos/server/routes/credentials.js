@@ -41,6 +41,32 @@ const SERVICE_SCHEMA = {
       { key: 'api_key', label: 'API Key', secret: true },
     ],
   },
+  uber_eats: {
+    label: 'Uber Eats',
+    fields: [
+      { key: 'client_id', label: 'Client ID', secret: false },
+      { key: 'client_secret', label: 'Client Secret', secret: true },
+      { key: 'store_id', label: 'Store ID (Restaurant UUID)', secret: false },
+      { key: 'webhook_secret', label: 'Webhook Signing Secret', secret: true },
+    ],
+  },
+  rappi: {
+    label: 'Rappi',
+    fields: [
+      { key: 'store_id', label: 'Store ID', secret: false },
+      { key: 'api_key', label: 'API Key', secret: true },
+      { key: 'webhook_secret', label: 'Webhook Secret', secret: true },
+    ],
+  },
+  didi_food: {
+    label: 'DiDi Food',
+    fields: [
+      { key: 'app_id', label: 'App ID', secret: false },
+      { key: 'app_secret', label: 'App Secret', secret: true },
+      { key: 'store_id', label: 'Store ID', secret: false },
+      { key: 'webhook_secret', label: 'Webhook Secret', secret: true },
+    ],
+  },
 };
 
 export { SERVICE_SCHEMA };

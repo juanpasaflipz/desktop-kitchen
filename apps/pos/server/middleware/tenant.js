@@ -127,7 +127,7 @@ export async function tenantMiddleware(req, res, next) {
     };
 
     // Run the rest of the request inside tenant context
-    tenantContext.run({ conn }, () => {
+    tenantContext.run({ conn, tenantId }, () => {
       next();
     });
   } catch (err) {
