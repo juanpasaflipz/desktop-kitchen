@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Check, Store, Palette, CreditCard } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Store, Palette, CreditCard, X, Loader2 } from 'lucide-react';
 import { useBranding } from '../context/BrandingContext';
 import { redirectToTenant, tenantUrl } from '../lib/tenantResolver';
+import { validatePromoCode } from '../api';
 
 const API_BASE = '/api';
 
@@ -15,6 +16,8 @@ interface OnboardingData {
   logo_url: string;
   plan: 'trial' | 'starter' | 'pro';
 }
+
+type PromoState = 'idle' | 'expanded' | 'loading' | 'valid' | 'invalid';
 
 const PLANS = [
   { id: 'trial' as const, name: 'Free Trial', price: 'Free for 14 days', description: 'Try everything — no card needed' },
@@ -43,6 +46,42 @@ const OnboardingScreen: React.FC = () => {
     logo_url: '',
     plan: 'trial',
   });
+
+  // Promo code state
+  const [promoState, setPromoState] = useState<PromoState>('idle');
+  const [promoInput, setPromoInput] = useState('');
+  const [promoCode, setPromoCode] = useState(''); // validated code string
+  const [promoDescription, setPromoDescription] = useState('');
+  const [promoError, setPromoError] = useState('');
+
+  const handleValidatePromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoState('loading');
+    setPromoError('');
+    try {
+      const result = await validatePromoCode(code);
+      if (result.valid) {
+        setPromoState('valid');
+        setPromoCode(result.code || code);
+        setPromoDescription(result.discount_description || 'Descuento aplicado');
+      } else {
+        setPromoState('invalid');
+        setPromoError(result.message || 'Código inválido o expirado');
+      }
+    } catch {
+      setPromoState('invalid');
+      setPromoError('Error al validar el código');
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoState('idle');
+    setPromoInput('');
+    setPromoCode('');
+    setPromoDescription('');
+    setPromoError('');
+  };
 
   const update = (field: keyof OnboardingData, value: string) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -79,6 +118,7 @@ const OnboardingScreen: React.FC = () => {
       };
       if (data.primaryColor !== '#0d9488') registerBody.primaryColor = data.primaryColor;
       if (data.logo_url) registerBody.logoUrl = data.logo_url;
+      if (promoCode) registerBody.promo_code = promoCode;
 
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
@@ -278,6 +318,75 @@ const OnboardingScreen: React.FC = () => {
                   <p className="text-sm text-neutral-400 mt-1">{plan.description}</p>
                 </button>
               ))}
+            </div>
+
+            {/* Promo Code */}
+            <div className="mt-4">
+              {promoState === 'idle' && (
+                <button
+                  type="button"
+                  onClick={() => setPromoState('expanded')}
+                  className="text-sm text-teal-500 hover:text-teal-400 transition-colors"
+                >
+                  ¿Tienes un código de descuento?
+                </button>
+              )}
+
+              {(promoState === 'expanded' || promoState === 'loading' || promoState === 'invalid') && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={promoInput}
+                      onChange={e => {
+                        setPromoInput(e.target.value.toUpperCase());
+                        if (promoState === 'invalid') {
+                          setPromoState('expanded');
+                          setPromoError('');
+                        }
+                      }}
+                      placeholder="Ingresa tu código"
+                      className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm placeholder-neutral-500 focus:outline-none focus:border-teal-600"
+                      disabled={promoState === 'loading'}
+                      onKeyDown={e => { if (e.key === 'Enter') handleValidatePromo(); }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleValidatePromo}
+                      disabled={promoState === 'loading' || !promoInput.trim()}
+                      className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
+                    >
+                      {promoState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aplicar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemovePromo}
+                      className="p-2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {promoState === 'invalid' && promoError && (
+                    <p className="text-red-400 text-sm">{promoError}</p>
+                  )}
+                </div>
+              )}
+
+              {promoState === 'valid' && (
+                <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-800/50 rounded-lg">
+                  <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                  <span className="text-green-400 font-semibold text-sm">{promoCode}</span>
+                  <span className="text-neutral-400 text-sm mx-1">&mdash;</span>
+                  <span className="text-green-300 text-sm flex-1">{promoDescription}</span>
+                  <button
+                    type="button"
+                    onClick={handleRemovePromo}
+                    className="p-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

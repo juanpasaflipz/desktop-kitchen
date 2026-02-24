@@ -52,7 +52,7 @@ function signToken(payload) {
  */
 router.post('/register', registerLimiter, async (req, res) => {
   try {
-    const { email, password, restaurant_name, subdomain, primaryColor, logoUrl } = req.body;
+    const { email, password, restaurant_name, subdomain, primaryColor, logoUrl, promo_code } = req.body;
 
     if (!email || !password || !restaurant_name) {
       return res.status(400).json({ error: 'Required: email, password, restaurant_name' });
@@ -100,6 +100,11 @@ router.post('/register', registerLimiter, async (req, res) => {
       plan: 'trial',
       branding_json,
     });
+
+    // Save promo code if provided (will be applied when they subscribe)
+    if (promo_code) {
+      await updateTenant(slug, { signup_promo_code: promo_code.trim().toUpperCase() });
+    }
 
     // Generate random 4-digit PIN for the admin employee
     const pin = String(Math.floor(1000 + Math.random() * 9000));

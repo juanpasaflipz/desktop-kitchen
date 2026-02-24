@@ -573,6 +573,27 @@ router.delete('/tenants/:id', async (req, res) => {
   }
 });
 
+// GET /admin/promos/usage — promo code signup stats
+router.get('/promos/usage', async (req, res) => {
+  try {
+    const rows = await adminSql`
+      SELECT
+        signup_promo_code,
+        COUNT(*)::int AS signups,
+        MIN(created_at) AS first_use,
+        MAX(created_at) AS last_use
+      FROM tenants
+      WHERE signup_promo_code IS NOT NULL
+      GROUP BY signup_promo_code
+      ORDER BY signups DESC
+    `;
+    res.json(rows);
+  } catch (error) {
+    console.error('Promo usage error:', error);
+    res.status(500).json({ error: 'Failed to fetch promo usage' });
+  }
+});
+
 // POST /admin/tenants/:id/seed — seed demo data for a tenant
 router.post('/tenants/:id/seed', async (req, res) => {
   try {

@@ -25,7 +25,7 @@ import orderTemplatesRoutes from './routes/order-templates.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import brandingRoutes from './routes/branding.js';
-import billingRoutes, { stripeWebhook } from './routes/billing.js';
+import billingRoutes, { stripeWebhook, promoValidateHandler } from './routes/billing.js';
 import deliveryIntelRoutes from './routes/delivery-intelligence.js';
 import pricingRoutes from './routes/pricing.js';
 import menuBoardRoutes from './routes/menu-board.js';
@@ -94,6 +94,9 @@ app.use('/api/cfdi-public', cfdiPublicRoutes);
 // Mercado Pago OAuth callback and webhook (before tenant middleware — no tenant context)
 app.get('/api/payments/mp/callback', mpOAuthCallback);
 app.post('/api/payments/mp/webhook', mpWebhook);
+
+// Promo code validation (public, no tenant context needed)
+app.get('/api/billing/promo/validate', promoValidateHandler);
 
 // Tenant resolution middleware — all /api routes below use the resolved tenant DB
 app.use('/api', tenantMiddleware);

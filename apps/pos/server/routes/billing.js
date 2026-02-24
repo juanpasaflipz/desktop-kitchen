@@ -15,6 +15,82 @@ const PRICE_IDS = {
 
 const BASE_URL = process.env.APP_URL || 'https://pos.desktop.kitchen';
 
+// ==================== Promo Code Cache (10-minute TTL) ====================
+const promoCache = new Map(); // code -> { promotion_code_id, expires }
+const PROMO_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function cachePromo(code, promotionCodeId) {
+  promoCache.set(code.toUpperCase(), {
+    promotion_code_id: promotionCodeId,
+    expires: Date.now() + PROMO_CACHE_TTL,
+  });
+}
+
+function getCachedPromo(code) {
+  const entry = promoCache.get(code.toUpperCase());
+  if (!entry) return null;
+  if (Date.now() > entry.expires) {
+    promoCache.delete(code.toUpperCase());
+    return null;
+  }
+  return entry.promotion_code_id;
+}
+
+function buildDiscountDescription(coupon) {
+  if (coupon.percent_off && coupon.duration === 'repeating') {
+    return `${coupon.percent_off}% de descuento por ${coupon.duration_in_months} meses`;
+  }
+  if (coupon.percent_off && coupon.duration === 'forever') {
+    return `${coupon.percent_off}% de descuento permanente`;
+  }
+  if (coupon.percent_off && coupon.duration === 'once') {
+    return `${coupon.percent_off}% de descuento en el primer pago`;
+  }
+  if (coupon.amount_off) {
+    return `${coupon.amount_off / 100} ${(coupon.currency || 'MXN').toUpperCase()} de descuento`;
+  }
+  return 'Descuento aplicado';
+}
+
+/**
+ * Validate a promo code against Stripe and return the promotion code ID.
+ * Returns { valid, promotionCodeId, code, discount_description } or { valid: false }.
+ */
+async function validatePromoWithStripe(code) {
+  const results = await stripe.promotionCodes.list({
+    code: code.toUpperCase(),
+    active: true,
+    limit: 1,
+  });
+
+  if (results.data.length === 0) {
+    return { valid: false };
+  }
+
+  const promo = results.data[0];
+  cachePromo(code, promo.id);
+
+  return {
+    valid: true,
+    code: promo.code,
+    promotion_code_id: promo.id,
+    discount_description: buildDiscountDescription(promo.coupon),
+  };
+}
+
+/**
+ * Resolve a promo code string to a Stripe promotion_code_id.
+ * Checks cache first, then re-validates with Stripe.
+ */
+async function resolvePromoCodeId(code) {
+  const cached = getCachedPromo(code);
+  if (cached) return cached;
+
+  const result = await validatePromoWithStripe(code);
+  if (!result.valid) return null;
+  return result.promotion_code_id;
+}
+
 /**
  * GET /api/billing — current subscription status
  */
@@ -37,11 +113,11 @@ router.get('/', requireOwner, async (req, res) => {
 
 /**
  * POST /api/billing/checkout — create Stripe Checkout session for plan upgrade
- * Body: { plan: 'starter' | 'pro' }
+ * Body: { plan: 'starter' | 'pro', promo_code?: string }
  */
 router.post('/checkout', requireOwner, async (req, res) => {
   try {
-    const { plan } = req.body;
+    const { plan, promo_code } = req.body;
     const priceId = PRICE_IDS[plan];
     if (!priceId) {
       return res.status(400).json({ error: `Invalid plan or price not configured: ${plan}` });
@@ -62,15 +138,31 @@ router.post('/checkout', requireOwner, async (req, res) => {
       await updateTenant(tenant.id, { stripe_customer_id: customerId });
     }
 
+    // Resolve promo code: explicit body param > tenant's saved signup code
+    let promotionCodeId = null;
+    const codeToApply = promo_code || tenant.signup_promo_code;
+    if (codeToApply) {
+      promotionCodeId = await resolvePromoCodeId(codeToApply);
+      if (promo_code && !promotionCodeId) {
+        return res.status(400).json({ error: 'Código de descuento inválido' });
+      }
+    }
+
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${BASE_URL}/#/admin?billing=success`,
       cancel_url: `${BASE_URL}/#/admin?billing=cancelled`,
-      metadata: { tenant_id: tenant.id, plan },
-    });
+      metadata: { tenant_id: tenant.id, plan, promo_code: codeToApply || '' },
+    };
+
+    if (promotionCodeId) {
+      sessionParams.discounts = [{ promotion_code: promotionCodeId }];
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     res.json({ url: session.url });
   } catch (error) {
@@ -102,6 +194,35 @@ router.post('/portal', requireOwner, async (req, res) => {
 });
 
 export default router;
+
+/**
+ * GET /api/billing/promo/validate — public promo code validation (no auth required).
+ * Mounted separately before tenant middleware in server/index.js.
+ */
+export async function promoValidateHandler(req, res) {
+  try {
+    const code = (req.query.code || '').trim().toUpperCase();
+    if (!code) {
+      return res.json({ valid: false, message: 'Código inválido o expirado' });
+    }
+
+    const result = await validatePromoWithStripe(code);
+
+    if (!result.valid) {
+      return res.json({ valid: false, message: 'Código inválido o expirado' });
+    }
+
+    // Never expose promotion_code_id to the client
+    res.json({
+      valid: true,
+      code: result.code,
+      discount_description: result.discount_description,
+    });
+  } catch (error) {
+    console.error('[Billing] Promo validation error:', error);
+    res.json({ valid: false, message: 'Código inválido o expirado' });
+  }
+}
 
 /**
  * Stripe webhook handler — must be mounted BEFORE express.json() body parser
@@ -140,12 +261,18 @@ export async function stripeWebhook(req, res) {
         const tenantId = session.metadata?.tenant_id;
         const plan = session.metadata?.plan;
         if (tenantId && plan) {
-          await updateTenant(tenantId, {
+          const updates = {
             plan,
             stripe_subscription_id: session.subscription,
             subscription_status: 'active',
-          });
-          console.log(`[Billing] Tenant ${tenantId} upgraded to ${plan}`);
+          };
+          // Save promo code used during signup/checkout
+          const promoCode = session.metadata?.promo_code;
+          if (promoCode) {
+            updates.signup_promo_code = promoCode;
+          }
+          await updateTenant(tenantId, updates);
+          console.log(`[Billing] Tenant ${tenantId} upgraded to ${plan}${promoCode ? ` with promo ${promoCode}` : ''}`);
         }
         break;
       }

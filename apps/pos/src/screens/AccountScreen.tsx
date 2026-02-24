@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, User, BarChart3, CreditCard, Settings, Lock,
-  Check, AlertCircle, Crown, Smartphone, Wifi, WifiOff,
+  Check, AlertCircle, Crown, Smartphone, Wifi, WifiOff, X, Loader2,
 } from 'lucide-react';
-import { getAccount, updateAccount, changePassword, createCheckoutSession, createPortalSession, getMpTerminals, setMpDefaultTerminal as apiSetMpDefaultTerminal } from '../api';
+import { getAccount, updateAccount, changePassword, createCheckoutSession, createPortalSession, getMpTerminals, setMpDefaultTerminal as apiSetMpDefaultTerminal, validatePromoCode } from '../api';
+
+type PromoState = 'idle' | 'expanded' | 'loading' | 'valid' | 'invalid';
 
 interface AccountData {
   id: string;
@@ -81,6 +83,13 @@ export default function AccountScreen() {
 
   // Billing
   const [billingLoading, setBillingLoading] = useState<string | null>(null);
+
+  // Promo code
+  const [promoState, setPromoState] = useState<PromoState>('idle');
+  const [promoInput, setPromoInput] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDescription, setPromoDescription] = useState('');
+  const [promoError, setPromoError] = useState('');
 
   // Mercado Pago
   const [mpTerminals, setMpTerminals] = useState<Array<{ id: string; external_pos_id: string }>>([]);
@@ -165,10 +174,39 @@ export default function AccountScreen() {
     setPwSaving(false);
   };
 
+  const handleValidatePromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoState('loading');
+    setPromoError('');
+    try {
+      const result = await validatePromoCode(code);
+      if (result.valid) {
+        setPromoState('valid');
+        setPromoCode(result.code || code);
+        setPromoDescription(result.discount_description || 'Descuento aplicado');
+      } else {
+        setPromoState('invalid');
+        setPromoError(result.message || 'Código inválido o expirado');
+      }
+    } catch {
+      setPromoState('invalid');
+      setPromoError('Error al validar el código');
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoState('idle');
+    setPromoInput('');
+    setPromoCode('');
+    setPromoDescription('');
+    setPromoError('');
+  };
+
   const handleSubscribe = async (plan: 'starter' | 'pro') => {
     setBillingLoading(plan);
     try {
-      const { url } = await createCheckoutSession(plan);
+      const { url } = await createCheckoutSession(plan, promoCode || undefined);
       window.location.href = url;
     } catch {
       setBillingLoading(null);
@@ -292,6 +330,75 @@ export default function AccountScreen() {
                     >
                       {billingLoading === 'pro' ? 'Redirecting...' : 'Pro — $79/mo'}
                     </button>
+                  </div>
+
+                  {/* Promo Code */}
+                  <div className="pt-2">
+                    {promoState === 'idle' && (
+                      <button
+                        type="button"
+                        onClick={() => setPromoState('expanded')}
+                        className="text-sm text-teal-500 hover:text-teal-400 transition-colors"
+                      >
+                        ¿Tienes un código de descuento?
+                      </button>
+                    )}
+
+                    {(promoState === 'expanded' || promoState === 'loading' || promoState === 'invalid') && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={promoInput}
+                            onChange={e => {
+                              setPromoInput(e.target.value.toUpperCase());
+                              if (promoState === 'invalid') {
+                                setPromoState('expanded');
+                                setPromoError('');
+                              }
+                            }}
+                            placeholder="Ingresa tu código"
+                            className="flex-1 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white text-sm placeholder-neutral-500 focus:outline-none focus:border-teal-600"
+                            disabled={promoState === 'loading'}
+                            onKeyDown={e => { if (e.key === 'Enter') handleValidatePromo(); }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleValidatePromo}
+                            disabled={promoState === 'loading' || !promoInput.trim()}
+                            className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
+                          >
+                            {promoState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aplicar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemovePromo}
+                            className="p-2 text-neutral-500 hover:text-neutral-300 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {promoState === 'invalid' && promoError && (
+                          <p className="text-red-400 text-sm">{promoError}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {promoState === 'valid' && (
+                      <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-800/50 rounded-lg">
+                        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        <span className="text-green-400 font-semibold text-sm">{promoCode}</span>
+                        <span className="text-neutral-400 text-sm mx-1">&mdash;</span>
+                        <span className="text-green-300 text-sm flex-1">{promoDescription}</span>
+                        <button
+                          type="button"
+                          onClick={handleRemovePromo}
+                          className="p-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
