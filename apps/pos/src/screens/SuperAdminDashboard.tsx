@@ -430,6 +430,13 @@ function TenantsTab() {
                             <Pencil size={14} />
                           </button>
                           <button
+                            onClick={() => setResetPwTenant(t)}
+                            title="Reset Password"
+                            className="p-1.5 rounded text-neutral-400 hover:text-yellow-400 hover:bg-neutral-800 transition-colors"
+                          >
+                            <KeyRound size={14} />
+                          </button>
+                          <button
                             onClick={() => handleToggleActive(t.id, t.active)}
                             className={`text-xs px-2 py-1 rounded ${t.active ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'} transition-colors`}
                           >
