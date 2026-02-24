@@ -11,6 +11,8 @@ import {
   splitPayment,
   addStampsForOrder,
   createOrderTemplate,
+  getOrders,
+  getOrder,
 } from '../api';
 import {
   getCachedCategories,
@@ -48,6 +50,7 @@ import { offlineDb } from '../lib/offlineDb';
 import CategoryBar from '../components/CategoryBar';
 import CartDrawer from '../components/CartDrawer';
 import MiniCartButton from '../components/MiniCartButton';
+import PaymentConfirmationModal from '../components/PaymentConfirmationModal';
 
 /* ==================== Toast Notification ==================== */
 
@@ -106,6 +109,12 @@ const POSScreen: React.FC = () => {
   const [showNavMenu, setShowNavMenu] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Unpaid orders (for Cobrar flow)
+  const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([]);
+  const [showUnpaidOrders, setShowUnpaidOrders] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+
   // AI Suggestions
   const cartItemIds = useMemo(() => cart.map((c) => c.menu_item_id), [cart]);
   const {
@@ -134,6 +143,24 @@ const POSScreen: React.FC = () => {
   // Update time every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch unpaid orders for the Cobrar flow (every 30s)
+  useEffect(() => {
+    const fetchUnpaid = async () => {
+      try {
+        const orders = await getOrders({ payment_status: 'unpaid' });
+        const ready = orders.filter(
+          (o) => o.status === 'ready' || o.status === 'completed'
+        );
+        setUnpaidOrders(ready);
+      } catch {
+        // non-blocking
+      }
+    };
+    fetchUnpaid();
+    const timer = setInterval(fetchUnpaid, 30000);
     return () => clearInterval(timer);
   }, []);
 
@@ -742,6 +769,34 @@ const POSScreen: React.FC = () => {
     navigate('/');
   };
 
+  const handleCobrar = async (order: Order) => {
+    try {
+      const fullOrder = await getOrder(order.id);
+      setPaymentOrder(fullOrder);
+      setShowPaymentConfirmation(true);
+    } catch {
+      addToast('Error al cargar la orden', 'error');
+    }
+  };
+
+  const handlePaymentConfirmed = (method: 'cash' | 'card' | 'transfer') => {
+    if (paymentOrder) {
+      // Update local state immediately — no refetch needed
+      setUnpaidOrders((prev) => prev.filter((o) => o.id !== paymentOrder.id));
+      const methodLabels: Record<string, string> = {
+        cash: '\uD83D\uDCB5',
+        card: '\uD83D\uDCB3',
+        transfer: '\uD83D\uDCF2',
+      };
+      addToast(
+        `Orden #${paymentOrder.order_number} — Pagado ${methodLabels[method] || ''}`,
+        'success'
+      );
+    }
+    setPaymentOrder(null);
+    setShowPaymentConfirmation(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
@@ -1092,6 +1147,45 @@ const POSScreen: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Unpaid orders banner */}
+        {unpaidOrders.length > 0 && (
+          <div className="border-b border-neutral-800">
+            <button
+              onClick={() => setShowUnpaidOrders(!showUnpaidOrders)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-amber-900/30 hover:bg-amber-900/40 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {unpaidOrders.length}
+                </span>
+                <span className="text-amber-200 font-bold text-sm">Pedidos por cobrar</span>
+              </div>
+              <span className="text-amber-400 text-xs">{showUnpaidOrders ? '\u25B2' : '\u25BC'}</span>
+            </button>
+            {showUnpaidOrders && (
+              <div className="px-4 pb-3 space-y-2 max-h-48 overflow-y-auto">
+                {unpaidOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between bg-neutral-800 rounded-lg px-3 py-2 border border-neutral-700"
+                  >
+                    <div>
+                      <p className="text-white font-bold text-sm">#{order.order_number}</p>
+                      <p className="text-neutral-400 text-xs">{formatPrice(order.total)}</p>
+                    </div>
+                    <button
+                      onClick={() => handleCobrar(order)}
+                      className="px-3 py-1.5 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 transition-all"
+                    >
+                      Cobrar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {cart.length === 0 ? (
@@ -1521,6 +1615,15 @@ const POSScreen: React.FC = () => {
             setRefundOrderId(null);
             addToast(t('toast.refundDone'), 'success');
           }}
+        />
+      )}
+
+      {paymentOrder && (
+        <PaymentConfirmationModal
+          isOpen={showPaymentConfirmation}
+          onClose={() => { setShowPaymentConfirmation(false); setPaymentOrder(null); }}
+          order={paymentOrder}
+          onPaymentConfirmed={handlePaymentConfirmed}
         />
       )}
 

@@ -25,10 +25,10 @@ async function generateOrderNumber() {
 // GET /api/orders - list orders (optional ?status, ?date filters)
 router.get('/', async (req, res) => {
   try {
-    const { status, date } = req.query;
+    const { status, date, payment_status } = req.query;
     let query = `
       SELECT o.id, o.order_number, o.employee_id, o.status, o.subtotal, o.tax, o.tip, o.total,
-             o.payment_status, o.payment_method, o.source, o.created_at, e.name as employee_name
+             o.payment_status, o.payment_method, o.paid_at, o.source, o.created_at, e.name as employee_name
       FROM orders o
       JOIN employees e ON o.employee_id = e.id
       WHERE 1=1
@@ -39,6 +39,11 @@ router.get('/', async (req, res) => {
     if (status) {
       query += ` AND o.status = $${paramIdx++}`;
       params.push(status);
+    }
+
+    if (payment_status) {
+      query += ` AND o.payment_status = $${paramIdx++}`;
+      params.push(payment_status);
     }
 
     if (date) {
@@ -332,6 +337,54 @@ router.get('/kitchen/active', async (req, res) => {
   } catch (error) {
     console.error('Error fetching kitchen orders:', error);
     res.status(500).json({ error: 'Failed to fetch kitchen orders' });
+  }
+});
+
+// PATCH /api/orders/:id/payment - confirm payment on an existing order
+router.patch('/:id/payment', requireAuth('pos_access'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_method, reference } = req.body;
+
+    const validMethods = ['cash', 'card', 'transfer'];
+    if (!validMethods.includes(payment_method)) {
+      return res.status(400).json({ error: 'Invalid payment_method. Must be cash, card, or transfer.' });
+    }
+
+    const order = await get(
+      'SELECT id, status, payment_status, total FROM orders WHERE id = $1',
+      [id]
+    );
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.payment_status === 'paid' || order.payment_status === 'completed') {
+      return res.status(400).json({ error: 'Order is already paid' });
+    }
+
+    const now = new Date().toISOString();
+
+    await run(`
+      UPDATE orders
+      SET payment_status = 'paid', payment_method = $1, paid_at = $2
+      WHERE id = $3
+    `, [payment_method, now, id]);
+
+    const updated = await get(`
+      SELECT o.id, o.order_number, o.employee_id, o.status, o.subtotal, o.tax, o.tip, o.total,
+             o.payment_status, o.payment_method, o.paid_at, o.source, o.created_at, o.completed_at,
+             e.name as employee_name
+      FROM orders o
+      JOIN employees e ON o.employee_id = e.id
+      WHERE o.id = $1
+    `, [id]);
+
+    res.json({ success: true, order: updated });
+  } catch (error) {
+    console.error('Error confirming payment:', error);
+    res.status(500).json({ error: 'Failed to confirm payment' });
   }
 });
 
