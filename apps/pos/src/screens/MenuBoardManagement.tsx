@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Tv, Plus, Pencil, Eye, Save, X, Trash2, RefreshCw, Image, ImageOff,
+  Monitor, Copy, Check, ExternalLink,
 } from 'lucide-react';
 import {
   getVirtualBrands,
@@ -135,6 +136,10 @@ export default function MenuBoardManagement() {
   const [editingBrandId, setEditingBrandId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>({ ...DEFAULT_FORM });
   const [itemAssignments, setItemAssignments] = useState<Map<number, ItemAssignment>>(new Map());
+
+  // Connect to screen state
+  const [screenModalOpen, setScreenModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -360,13 +365,31 @@ export default function MenuBoardManagement() {
             <Tv size={28} className="text-brand-500" />
             <h1 className="text-3xl font-black tracking-tighter">Menu Board Management</h1>
           </div>
-          <button
-            onClick={fetchBrands}
-            className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
-            title="Refresh"
-          >
-            <RefreshCw size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/#/menu-board"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-3 py-2 bg-neutral-800 text-neutral-300 text-sm rounded-lg hover:bg-neutral-700 transition-colors"
+            >
+              <Eye size={16} />
+              Preview
+            </a>
+            <button
+              onClick={() => setScreenModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors"
+            >
+              <Monitor size={16} />
+              Connect to Screen
+            </button>
+            <button
+              onClick={fetchBrands}
+              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -470,6 +493,80 @@ export default function MenuBoardManagement() {
           </div>
         )}
       </div>
+
+      {/* Connect to Screen Modal */}
+      {screenModalOpen && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={() => setScreenModalOpen(false)}>
+          <div className="bg-neutral-900 rounded-xl border border-neutral-800 w-full max-w-lg mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+              <div className="flex items-center gap-3">
+                <Monitor size={24} className="text-brand-500" />
+                <h2 className="text-xl font-bold text-white">Connect to Screen</h2>
+              </div>
+              <button onClick={() => setScreenModalOpen(false)} className="p-2 hover:bg-neutral-800 rounded-lg transition-colors text-neutral-400">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <p className="text-sm text-neutral-400">
+                Open this URL on any TV, tablet, or display in your restaurant to show your menu board. The display updates automatically when you make changes.
+              </p>
+
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2">Menu Board URL</label>
+                <div className="flex items-stretch gap-2">
+                  <div className="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white text-sm font-mono truncate select-all">
+                    {`${window.location.origin}/#/menu-board`}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/#/menu-board`);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={`flex items-center gap-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                      copied
+                        ? 'bg-green-600 text-white'
+                        : 'bg-brand-600 text-white hover:bg-brand-700'
+                    }`}
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-neutral-800/50 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-white">Setup Instructions</h3>
+                <ol className="text-sm text-neutral-400 space-y-2 list-decimal list-inside">
+                  <li>Open a web browser on your TV or display device</li>
+                  <li>Paste the URL above and navigate to it</li>
+                  <li>Press <kbd className="px-1.5 py-0.5 bg-neutral-700 rounded text-xs text-white">F11</kbd> for fullscreen mode</li>
+                  <li>The menu rotates automatically and refreshes every 5 minutes</li>
+                </ol>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <a
+                  href="/#/menu-board"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-brand-400 hover:text-brand-300 transition-colors"
+                >
+                  <ExternalLink size={14} />
+                  Open preview in new tab
+                </a>
+                <button
+                  onClick={() => setScreenModalOpen(false)}
+                  className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Editor Modal */}
       {editorOpen && (
