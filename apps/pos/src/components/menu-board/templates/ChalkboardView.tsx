@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import MenuBoardClock from '../MenuBoardClock';
-import type { TemplateViewProps } from '../../../types/menu-board';
+import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { CategoryData, MenuItemData } from '../../../types/menu-board';
 
 /* ── Chalk text-shadow presets ─────────────────────────────────────────────── */
@@ -51,7 +51,7 @@ const ChalkUnderline: React.FC = () => (
 );
 
 /* ── Single menu item row with dotted leaders ──────────────────────────────── */
-const ChalkMenuItem: React.FC<{ item: MenuItemData }> = ({ item }) => (
+const ChalkMenuItem: React.FC<{ item: MenuItemData; showPrices: boolean }> = ({ item, showPrices }) => (
   <div className="flex items-baseline gap-1 py-0.5 group">
     <span
       className="shrink-0 text-[clamp(0.75rem,1.3vw,1rem)] text-amber-50/90"
@@ -64,19 +64,23 @@ const ChalkMenuItem: React.FC<{ item: MenuItemData }> = ({ item }) => (
         {item.badges.map(b => b.label).join(' ')}
       </span>
     )}
-    {/* Dotted leader */}
-    <span className="flex-1 border-b border-dotted border-white/20 min-w-[20px] translate-y-[-3px]" />
-    <span
-      className="shrink-0 text-[clamp(0.75rem,1.3vw,1rem)] text-amber-100/80 tabular-nums"
-      style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
-    >
-      ${Number(item.price).toFixed(0)}
-    </span>
+    {showPrices && (
+      <>
+        {/* Dotted leader */}
+        <span className="flex-1 border-b border-dotted border-white/20 min-w-[20px] translate-y-[-3px]" />
+        <span
+          className="shrink-0 text-[clamp(0.75rem,1.3vw,1rem)] text-amber-100/80 tabular-nums"
+          style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
+        >
+          ${Number(item.price).toFixed(0)}
+        </span>
+      </>
+    )}
   </div>
 );
 
 /* ── Category section with chalk border and corner marks ───────────────────── */
-const ChalkCategory: React.FC<{ category: CategoryData; index: number }> = ({ category, index }) => {
+const ChalkCategory: React.FC<{ category: CategoryData; index: number; showPrices: boolean }> = ({ category, index, showPrices }) => {
   const Divider = DIVIDERS[index % DIVIDERS.length];
 
   return (
@@ -106,7 +110,7 @@ const ChalkCategory: React.FC<{ category: CategoryData; index: number }> = ({ ca
       {/* Items */}
       <div className="flex flex-col">
         {category.items.map(item => (
-          <ChalkMenuItem key={item.id} item={item} />
+          <ChalkMenuItem key={item.id} item={item} showPrices={showPrices} />
         ))}
       </div>
     </div>
@@ -114,7 +118,7 @@ const ChalkCategory: React.FC<{ category: CategoryData; index: number }> = ({ ca
 };
 
 /* ── Combos special section ────────────────────────────────────────────────── */
-const ChalkCombos: React.FC<{ combos: any[] }> = ({ combos }) => {
+const ChalkCombos: React.FC<{ combos: any[]; showPrices: boolean }> = ({ combos, showPrices }) => {
   if (combos.length === 0) return null;
 
   return (
@@ -149,13 +153,17 @@ const ChalkCombos: React.FC<{ combos: any[] }> = ({ combos }) => {
             >
               {combo.name}
             </span>
-            <span className="flex-1 border-b border-dotted border-amber-200/20 min-w-[20px] translate-y-[-3px]" />
-            <span
-              className="shrink-0 text-[clamp(0.75rem,1.3vw,1rem)] text-amber-100/80 tabular-nums"
-              style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
-            >
-              ${Number(combo.comboPrice ?? 0).toFixed(0)}
-            </span>
+            {showPrices && (
+              <>
+                <span className="flex-1 border-b border-dotted border-amber-200/20 min-w-[20px] translate-y-[-3px]" />
+                <span
+                  className="shrink-0 text-[clamp(0.75rem,1.3vw,1rem)] text-amber-100/80 tabular-nums"
+                  style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
+                >
+                  ${Number(combo.comboPrice ?? 0).toFixed(0)}
+                </span>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -225,8 +233,23 @@ const ChalkSmudges: React.FC = () => (
 );
 
 /* ── Main ChalkboardView ───────────────────────────────────────────────────── */
-const ChalkboardView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }) => {
+const ChalkboardView: React.FC<TemplateViewProps> = (props) => {
+  const { brand, combos, isPortrait } = props;
   const { theme } = brand;
+
+  const s: Required<BoardSettings> = {
+    showCombos: props.boardSettings?.showCombos !== false,
+    showLogo: props.boardSettings?.showLogo !== false,
+    showClock: props.boardSettings?.showClock !== false,
+    showPrices: props.boardSettings?.showPrices !== false,
+    showQrCode: props.boardSettings?.showQrCode === true,
+    qrCodeUrl: props.boardSettings?.qrCodeUrl || '',
+    qrCodeLabel: props.boardSettings?.qrCodeLabel || 'Scan to Order',
+    slideDuration: props.boardSettings?.slideDuration || 12,
+    footerText: props.boardSettings?.footerText || 'Precios en MXN',
+    announcementText: props.boardSettings?.announcementText || '',
+    showDescription: props.boardSettings?.showDescription !== false,
+  };
 
   const cssVars = {
     '--mb-primary': theme.primaryColor,
@@ -287,12 +310,15 @@ const ChalkboardView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait
           </div>
 
           {/* Clock top-right */}
-          <div
-            className="w-20 flex justify-end pt-1 text-amber-50/60"
-            style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
-          >
-            <MenuBoardClock />
-          </div>
+          {s.showClock && (
+            <div
+              className="w-20 flex justify-end pt-1 text-amber-50/60"
+              style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
+            >
+              <MenuBoardClock />
+            </div>
+          )}
+          {!s.showClock && <div className="w-20" />}
         </div>
       </header>
 
@@ -309,9 +335,9 @@ const ChalkboardView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait
           }}
         >
           {/* Combos at the top */}
-          {combos.length > 0 && (
+          {s.showCombos && combos.length > 0 && (
             <div className={isPortrait ? '' : 'col-span-2'}>
-              <ChalkCombos combos={combos} />
+              <ChalkCombos combos={combos} showPrices={s.showPrices} />
             </div>
           )}
 
@@ -319,19 +345,19 @@ const ChalkboardView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait
           {isPortrait ? (
             // Portrait: single column, all categories stacked
             nonComboCategories.map((cat, idx) => (
-              <ChalkCategory key={cat.id} category={cat} index={idx} />
+              <ChalkCategory key={cat.id} category={cat} index={idx} showPrices={s.showPrices} />
             ))
           ) : (
             // Landscape: two columns
             <>
               <div className="flex flex-col gap-3">
                 {columns[0]?.map((cat, idx) => (
-                  <ChalkCategory key={cat.id} category={cat} index={idx} />
+                  <ChalkCategory key={cat.id} category={cat} index={idx} showPrices={s.showPrices} />
                 ))}
               </div>
               <div className="flex flex-col gap-3">
                 {columns[1]?.map((cat, idx) => (
-                  <ChalkCategory key={cat.id} category={cat} index={idx + (columns[0]?.length ?? 0)} />
+                  <ChalkCategory key={cat.id} category={cat} index={idx + (columns[0]?.length ?? 0)} showPrices={s.showPrices} />
                 ))}
               </div>
             </>
@@ -345,7 +371,7 @@ const ChalkboardView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait
           className="text-[clamp(0.5rem,1vw,0.7rem)] uppercase tracking-[0.2em] text-amber-50/30"
           style={{ fontFamily: "'Patrick Hand', cursive", textShadow: chalkGlow }}
         >
-          Precios en MXN
+          {s.footerText}
         </span>
       </footer>
     </div>

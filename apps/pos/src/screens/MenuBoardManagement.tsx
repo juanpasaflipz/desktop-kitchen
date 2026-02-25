@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Tv, Plus, Pencil, Eye, Save, X, Trash2, RefreshCw, Image, ImageOff,
-  Monitor, Copy, Check, ExternalLink,
+  Monitor, Copy, Check, ExternalLink, Settings2, QrCode, Clock, DollarSign,
+  MessageSquare, Type, Layers,
 } from 'lucide-react';
 import {
   getVirtualBrands,
@@ -37,6 +38,7 @@ interface BrandRow {
   slug: string | null;
   show_in_pos: number;
   template_slug: string | null;
+  board_settings: Record<string, any> | null;
 }
 
 interface BrandItemRow {
@@ -66,6 +68,20 @@ interface CategoryRow {
   name: string;
 }
 
+interface BoardSettingsForm {
+  showCombos: boolean;
+  showLogo: boolean;
+  showClock: boolean;
+  showPrices: boolean;
+  showQrCode: boolean;
+  qrCodeUrl: string;
+  qrCodeLabel: string;
+  slideDuration: number;
+  footerText: string;
+  announcementText: string;
+  showDescription: boolean;
+}
+
 interface FormData {
   name: string;
   slug: string;
@@ -80,6 +96,7 @@ interface FormData {
   logo_url: string;
   platform_id: number;
   template_slug: string;
+  board_settings: BoardSettingsForm;
 }
 
 interface ItemAssignment {
@@ -103,6 +120,20 @@ const DISPLAY_TYPE_OPTIONS = [
   { value: 'both', label: 'Both' },
 ];
 
+const DEFAULT_BOARD_SETTINGS: BoardSettingsForm = {
+  showCombos: true,
+  showLogo: true,
+  showClock: true,
+  showPrices: true,
+  showQrCode: false,
+  qrCodeUrl: '',
+  qrCodeLabel: 'Scan to Order',
+  slideDuration: 12,
+  footerText: 'Precios en MXN',
+  announcementText: '',
+  showDescription: true,
+};
+
 const DEFAULT_FORM: FormData = {
   name: '',
   slug: '',
@@ -117,6 +148,7 @@ const DEFAULT_FORM: FormData = {
   logo_url: '',
   platform_id: 0,
   template_slug: '',
+  board_settings: { ...DEFAULT_BOARD_SETTINGS },
 };
 
 export default function MenuBoardManagement() {
@@ -187,6 +219,10 @@ export default function MenuBoardManagement() {
         logo_url: brand.logo_url || '',
         platform_id: brand.platform_id,
         template_slug: brand.template_slug || '',
+        board_settings: {
+          ...DEFAULT_BOARD_SETTINGS,
+          ...(brand.board_settings || {}),
+        },
       });
 
       // Load existing brand items
@@ -271,6 +307,13 @@ export default function MenuBoardManagement() {
     });
   };
 
+  const updateSetting = (key: keyof BoardSettingsForm, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      board_settings: { ...prev.board_settings, [key]: value },
+    }));
+  };
+
   const handleSave = async () => {
     if (!formData.name.trim()) return;
     setSaving(true);
@@ -290,6 +333,7 @@ export default function MenuBoardManagement() {
         show_in_pos: formData.show_in_pos,
         active: formData.active,
         template_slug: formData.template_slug || null,
+        board_settings: formData.board_settings,
       };
 
       if (brandId) {
@@ -784,6 +828,119 @@ export default function MenuBoardManagement() {
                   />
                   <span className="text-sm text-neutral-300">Show in POS</span>
                 </label>
+              </div>
+
+              {/* Board Settings */}
+              <div className="border border-neutral-800 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 bg-neutral-800/50 border-b border-neutral-800">
+                  <Settings2 size={16} className="text-brand-400" />
+                  <span className="text-sm font-semibold text-white">Board Display Settings</span>
+                </div>
+                <div className="p-4 space-y-4">
+                  {/* Toggle grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {([
+                      { key: 'showCombos' as const, label: 'Show Combos', icon: Layers },
+                      { key: 'showClock' as const, label: 'Show Clock', icon: Clock },
+                      { key: 'showPrices' as const, label: 'Show Prices', icon: DollarSign },
+                      { key: 'showDescription' as const, label: 'Show Descriptions', icon: Type },
+                      { key: 'showLogo' as const, label: 'Show Logo', icon: Image },
+                      { key: 'showQrCode' as const, label: 'Show QR Code', icon: QrCode },
+                    ]).map(({ key, label, icon: Icon }) => (
+                      <label
+                        key={key}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors border ${
+                          formData.board_settings[key]
+                            ? 'bg-brand-600/10 border-brand-700/40'
+                            : 'bg-neutral-800/30 border-neutral-800'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!formData.board_settings[key]}
+                          onChange={(e) => updateSetting(key, e.target.checked)}
+                          className="w-3.5 h-3.5 rounded border-neutral-600 text-brand-600 focus:ring-brand-500 bg-neutral-800"
+                        />
+                        <Icon size={14} className={formData.board_settings[key] ? 'text-brand-400' : 'text-neutral-500'} />
+                        <span className="text-xs text-neutral-300">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {/* QR Code settings (conditional) */}
+                  {formData.board_settings.showQrCode && (
+                    <div className="grid grid-cols-2 gap-3 pl-4 border-l-2 border-brand-600/30">
+                      <div>
+                        <label className="block text-xs text-neutral-500 mb-1">QR Code URL</label>
+                        <input
+                          type="text"
+                          value={formData.board_settings.qrCodeUrl}
+                          onChange={(e) => updateSetting('qrCodeUrl', e.target.value)}
+                          placeholder="https://your-ordering-page.com"
+                          className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-neutral-500 mb-1">QR Label</label>
+                        <input
+                          type="text"
+                          value={formData.board_settings.qrCodeLabel}
+                          onChange={(e) => updateSetting('qrCodeLabel', e.target.value)}
+                          placeholder="Scan to Order"
+                          className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Slide duration + footer */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-neutral-500 mb-1">Slide Duration (seconds)</label>
+                      <input
+                        type="number"
+                        min={5}
+                        max={120}
+                        value={formData.board_settings.slideDuration}
+                        onChange={(e) => updateSetting('slideDuration', Math.max(5, Math.min(120, parseInt(e.target.value) || 12)))}
+                        className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-neutral-500 mb-1">Footer Text</label>
+                      <input
+                        type="text"
+                        value={formData.board_settings.footerText}
+                        onChange={(e) => updateSetting('footerText', e.target.value)}
+                        placeholder="Precios en MXN"
+                        className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Announcement banner */}
+                  <div>
+                    <label className="flex items-center gap-2 text-xs text-neutral-500 mb-1">
+                      <MessageSquare size={12} />
+                      Announcement Banner
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.board_settings.announcementText}
+                      onChange={(e) => updateSetting('announcementText', e.target.value)}
+                      placeholder="e.g. Happy Hour 4-7 PM — 2x1 on all drinks!"
+                      className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
+                    />
+                    {formData.board_settings.announcementText && (
+                      <div
+                        className="mt-2 py-1.5 px-3 rounded text-center text-xs font-semibold text-white"
+                        style={{ backgroundColor: `${formData.primary_color}ee` }}
+                      >
+                        {formData.board_settings.announcementText}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Item assignment */}

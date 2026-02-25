@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TemplateViewProps } from '../../../types/menu-board';
+import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { MenuItemData, CategoryData } from '../../../types/menu-board';
 import MenuBoardClock from '../MenuBoardClock';
 
@@ -7,7 +7,7 @@ import MenuBoardClock from '../MenuBoardClock';
 /*  Item Card                                                         */
 /* ------------------------------------------------------------------ */
 
-const ItemCard: React.FC<{ item: MenuItemData }> = ({ item }) => (
+const ItemCard: React.FC<{ item: MenuItemData; showPrices: boolean; showDescription: boolean }> = ({ item, showPrices, showDescription }) => (
   <div className="flex items-start gap-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md">
     {item.imageUrl && (
       <img
@@ -22,7 +22,7 @@ const ItemCard: React.FC<{ item: MenuItemData }> = ({ item }) => (
         {item.name}
       </span>
 
-      {item.description && (
+      {showDescription && item.description && (
         <span className="text-xs leading-relaxed text-[#525252] line-clamp-2">
           {item.description}
         </span>
@@ -42,12 +42,14 @@ const ItemCard: React.FC<{ item: MenuItemData }> = ({ item }) => (
       )}
     </div>
 
-    <span
-      className="flex-shrink-0 text-sm font-semibold tabular-nums"
-      style={{ color: 'var(--mb-primary)' }}
-    >
-      ${Number(item.price).toFixed(2)}
-    </span>
+    {showPrices && (
+      <span
+        className="flex-shrink-0 text-sm font-semibold tabular-nums"
+        style={{ color: 'var(--mb-primary)' }}
+      >
+        ${Number(item.price).toFixed(2)}
+      </span>
+    )}
   </div>
 );
 
@@ -55,11 +57,11 @@ const ItemCard: React.FC<{ item: MenuItemData }> = ({ item }) => (
 /*  Combo Card                                                        */
 /* ------------------------------------------------------------------ */
 
-const ComboCard: React.FC<{ combo: any }> = ({ combo }) => (
+const ComboCard: React.FC<{ combo: any; showPrices: boolean; showDescription: boolean }> = ({ combo, showPrices, showDescription }) => (
   <div
     className="relative flex flex-col justify-between rounded-2xl border border-neutral-200 bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
   >
-    {combo.savings > 0 && (
+    {showPrices && combo.savings > 0 && (
       <span
         className="absolute -top-2.5 right-4 rounded-full px-3 py-0.5 text-[11px] font-semibold text-white"
         style={{ backgroundColor: 'var(--mb-primary)' }}
@@ -70,19 +72,21 @@ const ComboCard: React.FC<{ combo: any }> = ({ combo }) => (
 
     <div>
       <h3 className="text-base font-semibold text-[#1a1a1a]">{combo.name}</h3>
-      {combo.description && (
+      {showDescription && combo.description && (
         <p className="mt-1 text-xs text-[#525252] line-clamp-2">
           {combo.description}
         </p>
       )}
     </div>
 
-    <span
-      className="mt-3 text-lg font-bold tabular-nums"
-      style={{ color: 'var(--mb-primary)' }}
-    >
-      ${Number(combo.comboPrice ?? combo.price ?? 0).toFixed(2)}
-    </span>
+    {showPrices && (
+      <span
+        className="mt-3 text-lg font-bold tabular-nums"
+        style={{ color: 'var(--mb-primary)' }}
+      >
+        ${Number(combo.comboPrice ?? combo.price ?? 0).toFixed(2)}
+      </span>
+    )}
   </div>
 );
 
@@ -93,7 +97,9 @@ const ComboCard: React.FC<{ combo: any }> = ({ combo }) => (
 const CategorySection: React.FC<{
   category: CategoryData;
   columns: number;
-}> = ({ category, columns }) => (
+  showPrices: boolean;
+  showDescription: boolean;
+}> = ({ category, columns, showPrices, showDescription }) => (
   <section className="mb-10">
     {/* Category heading */}
     <div className="mb-5">
@@ -114,7 +120,7 @@ const CategorySection: React.FC<{
       }}
     >
       {category.items.map((item) => (
-        <ItemCard key={item.id} item={item} />
+        <ItemCard key={item.id} item={item} showPrices={showPrices} showDescription={showDescription} />
       ))}
     </div>
   </section>
@@ -128,9 +134,24 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
   brand,
   combos,
   isPortrait,
+  boardSettings,
 }) => {
   const { theme, categories } = brand;
   const columns = isPortrait ? 2 : 3;
+
+  const s: Required<BoardSettings> = {
+    showCombos: boardSettings?.showCombos !== false,
+    showLogo: boardSettings?.showLogo !== false,
+    showClock: boardSettings?.showClock !== false,
+    showPrices: boardSettings?.showPrices !== false,
+    showQrCode: boardSettings?.showQrCode === true,
+    qrCodeUrl: boardSettings?.qrCodeUrl || '',
+    qrCodeLabel: boardSettings?.qrCodeLabel || 'Scan to Order',
+    slideDuration: boardSettings?.slideDuration || 12,
+    footerText: boardSettings?.footerText || 'Precios en MXN',
+    announcementText: boardSettings?.announcementText || '',
+    showDescription: boardSettings?.showDescription !== false,
+  };
 
   return (
     <div
@@ -159,9 +180,11 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
         </div>
 
         {/* Clock */}
-        <div className="text-neutral-400">
-          <MenuBoardClock />
-        </div>
+        {s.showClock && (
+          <div className="text-neutral-400">
+            <MenuBoardClock />
+          </div>
+        )}
       </header>
 
       {/* ---------------------------------------------------------- */}
@@ -169,7 +192,7 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
       {/* ---------------------------------------------------------- */}
       <main className="flex-1 overflow-y-auto px-10 pb-6">
         {/* Combos */}
-        {combos.length > 0 && (
+        {s.showCombos && combos.length > 0 && (
           <section className="mb-10">
             <div className="mb-5">
               <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
@@ -188,7 +211,7 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
               }}
             >
               {combos.map((combo: any) => (
-                <ComboCard key={combo.id ?? combo.name} combo={combo} />
+                <ComboCard key={combo.id ?? combo.name} combo={combo} showPrices={s.showPrices} showDescription={s.showDescription} />
               ))}
             </div>
           </section>
@@ -196,7 +219,7 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
 
         {/* Categories */}
         {categories.map((cat) => (
-          <CategorySection key={cat.id} category={cat} columns={columns} />
+          <CategorySection key={cat.id} category={cat} columns={columns} showPrices={s.showPrices} showDescription={s.showDescription} />
         ))}
       </main>
 
@@ -205,7 +228,7 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
       {/* ---------------------------------------------------------- */}
       <footer className="px-10 py-4">
         <p className="text-center text-[11px] tracking-wide text-neutral-400">
-          Precios en MXN
+          {s.footerText}
         </p>
       </footer>
     </div>

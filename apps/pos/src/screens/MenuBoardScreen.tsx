@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GrainOverlay, BrandView, BrandTransition, MenuListView, TemplateRenderer } from '../components/menu-board';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { GrainOverlay, BrandView, BrandTransition, MenuListView, TemplateRenderer, QrCodeOverlay } from '../components/menu-board';
 import { TEMPLATE_REGISTRY } from '../components/menu-board/templates';
 import type { ComboData } from '../components/menu-board/ComboHero';
-import type { BrandData } from '../types/menu-board';
+import type { BrandData, BoardSettings } from '../types/menu-board';
 
 interface MenuBoardResponse {
   brands: BrandData[];
@@ -16,11 +16,28 @@ interface Slide {
   view: 'photo' | 'list' | 'template';
 }
 
-const ROTATE_INTERVAL = 12_000; // 12s per slide
+const DEFAULT_SLIDE_DURATION = 12_000; // 12s per slide
 const REFETCH_INTERVAL = 5 * 60_000; // 5 min
 const CURSOR_HIDE_DELAY = 3_000;
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+/** Merge board settings with sensible defaults */
+function resolveSettings(s?: BoardSettings): Required<BoardSettings> {
+  return {
+    showCombos: s?.showCombos !== false,
+    showLogo: s?.showLogo !== false,
+    showClock: s?.showClock !== false,
+    showPrices: s?.showPrices !== false,
+    showQrCode: s?.showQrCode === true,
+    qrCodeUrl: s?.qrCodeUrl || '',
+    qrCodeLabel: s?.qrCodeLabel || 'Scan to Order',
+    slideDuration: s?.slideDuration || 12,
+    footerText: s?.footerText || 'Precios en MXN',
+    announcementText: s?.announcementText || '',
+    showDescription: s?.showDescription !== false,
+  };
+}
 
 const MenuBoardScreen: React.FC = () => {
   const [brands, setBrands] = useState<BrandData[]>([]);
@@ -44,6 +61,20 @@ const MenuBoardScreen: React.FC = () => {
     ];
   });
 
+  // Resolve slide duration from the active slide's brand settings (or default)
+  const activeSlideDuration = useMemo(() => {
+    if (slides.length === 0) return DEFAULT_SLIDE_DURATION;
+    const activeSlide = slides[activeSlideIndex % slides.length];
+    const settings = resolveSettings(activeSlide?.brand.boardSettings);
+    return (settings.slideDuration || 12) * 1000;
+  }, [slides, activeSlideIndex]);
+
+  // Resolve combos visibility per brand
+  const getCombosForBrand = useCallback((brand: BrandData) => {
+    const settings = resolveSettings(brand.boardSettings);
+    return settings.showCombos ? combos : [];
+  }, [combos]);
+
   // Fetch menu data
   const fetchData = useCallback(async () => {
     try {
@@ -57,11 +88,9 @@ const MenuBoardScreen: React.FC = () => {
       // Load fonts for templates and special brands
       if (!fontsLoaded.current) {
         const fontUrls: string[] = [];
-        // Legacy: Ensenada 101 brand
         if (data.brands.some(b => b.slug === 'ensenada-101')) {
           fontUrls.push('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
         }
-        // Template fonts
         for (const brand of data.brands) {
           if (brand.templateSlug && TEMPLATE_REGISTRY[brand.templateSlug]?.fontsUrl) {
             const url = TEMPLATE_REGISTRY[brand.templateSlug].fontsUrl!;
@@ -89,14 +118,14 @@ const MenuBoardScreen: React.FC = () => {
     return () => clearInterval(id);
   }, [fetchData]);
 
-  // Auto-rotate slides
+  // Auto-rotate slides with per-brand duration
   useEffect(() => {
     if (slides.length <= 1) return;
     const id = setInterval(() => {
       setActiveSlideIndex(prev => (prev + 1) % slides.length);
-    }, ROTATE_INTERVAL);
+    }, activeSlideDuration);
     return () => clearInterval(id);
-  }, [slides.length]);
+  }, [slides.length, activeSlideDuration]);
 
   // Orientation detection
   useEffect(() => {
@@ -162,17 +191,47 @@ const MenuBoardScreen: React.FC = () => {
     >
       <GrainOverlay />
 
-      {slides.map((slide, i) => (
-        <BrandTransition key={`${slide.brand.id}-${slide.view}`} isActive={i === activeSlideIndex}>
-          {slide.view === 'template' ? (
-            <TemplateRenderer brand={slide.brand} combos={combos} isPortrait={isPortrait} />
-          ) : slide.view === 'photo' ? (
-            <BrandView brand={slide.brand} combos={combos} isPortrait={isPortrait} />
-          ) : (
-            <MenuListView brand={slide.brand} combos={combos} isPortrait={isPortrait} />
-          )}
-        </BrandTransition>
-      ))}
+      {slides.map((slide, i) => {
+        const brandSettings = resolveSettings(slide.brand.boardSettings);
+        const brandCombos = getCombosForBrand(slide.brand);
+
+        return (
+          <BrandTransition key={`${slide.brand.id}-${slide.view}`} isActive={i === activeSlideIndex}>
+            {slide.view === 'template' ? (
+              <TemplateRenderer
+                brand={slide.brand}
+                combos={brandCombos}
+                isPortrait={isPortrait}
+                boardSettings={brandSettings}
+              />
+            ) : slide.view === 'photo' ? (
+              <BrandView brand={slide.brand} combos={brandCombos} isPortrait={isPortrait} />
+            ) : (
+              <MenuListView brand={slide.brand} combos={brandCombos} isPortrait={isPortrait} />
+            )}
+
+            {/* QR Code overlay */}
+            <QrCodeOverlay
+              settings={brandSettings}
+              primaryColor={slide.brand.theme.primaryColor}
+            />
+
+            {/* Announcement banner */}
+            {brandSettings.announcementText && (
+              <div
+                className="absolute top-0 left-0 right-0 z-30 overflow-hidden"
+                style={{ backgroundColor: `${slide.brand.theme.primaryColor}ee` }}
+              >
+                <div className="py-1.5 px-4 text-center">
+                  <span className="text-white text-sm font-semibold tracking-wide">
+                    {brandSettings.announcementText}
+                  </span>
+                </div>
+              </div>
+            )}
+          </BrandTransition>
+        );
+      })}
 
       {/* Slide indicator dots */}
       {slides.length > 1 && (

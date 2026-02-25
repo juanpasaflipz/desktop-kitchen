@@ -1,6 +1,6 @@
 import React from 'react';
 import MenuBoardClock from '../MenuBoardClock';
-import type { TemplateViewProps } from '../../../types/menu-board';
+import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { CategoryData, MenuItemData } from '../../../types/menu-board';
 
 /* ── Ornamental flourish SVG (centered scroll/diamond motif) ─────────── */
@@ -57,7 +57,7 @@ const ThinRule: React.FC<{ color: string; className?: string }> = ({ color, clas
 );
 
 /* ── Single menu item row with dotted leader ─────────────────────────── */
-const ElegantItem: React.FC<{ item: MenuItemData; primaryColor: string }> = ({ item, primaryColor }) => (
+const ElegantItem: React.FC<{ item: MenuItemData; primaryColor: string; showPrices: boolean; showDescription: boolean }> = ({ item, primaryColor, showPrices, showDescription }) => (
   <div className="mb-2">
     <div className="flex items-baseline gap-2">
       <span
@@ -66,18 +66,22 @@ const ElegantItem: React.FC<{ item: MenuItemData; primaryColor: string }> = ({ i
       >
         {item.name}
       </span>
-      <span
-        className="flex-1 border-b border-dotted min-w-[2rem]"
-        style={{ borderColor: `${primaryColor}30`, marginBottom: '0.25em' }}
-      />
-      <span
-        className="shrink-0 text-[0.95rem] font-semibold tabular-nums"
-        style={{ fontFamily: "'Cormorant Garamond', serif", color: primaryColor }}
-      >
-        ${Number(item.price).toFixed(2)}
-      </span>
+      {showPrices && (
+        <>
+          <span
+            className="flex-1 border-b border-dotted min-w-[2rem]"
+            style={{ borderColor: `${primaryColor}30`, marginBottom: '0.25em' }}
+          />
+          <span
+            className="shrink-0 text-[0.95rem] font-semibold tabular-nums"
+            style={{ fontFamily: "'Cormorant Garamond', serif", color: primaryColor }}
+          >
+            ${Number(item.price).toFixed(2)}
+          </span>
+        </>
+      )}
     </div>
-    {item.description && (
+    {showDescription && item.description && (
       <p
         className="text-[0.7rem] italic leading-snug mt-0.5 ml-0.5"
         style={{ fontFamily: "'Lora', serif", color: 'rgba(255,255,255,0.4)' }}
@@ -93,7 +97,9 @@ const CategoryBlock: React.FC<{
   category: CategoryData;
   primaryColor: string;
   showDivider: boolean;
-}> = ({ category, primaryColor, showDivider }) => (
+  showPrices: boolean;
+  showDescription: boolean;
+}> = ({ category, primaryColor, showDivider, showPrices, showDescription }) => (
   <div className="mb-2">
     {showDivider && <OrnamentalDivider color={primaryColor} />}
     <h2
@@ -104,7 +110,7 @@ const CategoryBlock: React.FC<{
     </h2>
     <div>
       {category.items.map(item => (
-        <ElegantItem key={item.id} item={item} primaryColor={primaryColor} />
+        <ElegantItem key={item.id} item={item} primaryColor={primaryColor} showPrices={showPrices} showDescription={showDescription} />
       ))}
     </div>
   </div>
@@ -114,7 +120,8 @@ const CategoryBlock: React.FC<{
 const ComboSection: React.FC<{
   combos: any[];
   primaryColor: string;
-}> = ({ combos, primaryColor }) => (
+  showPrices: boolean;
+}> = ({ combos, primaryColor, showPrices }) => (
   <div className="mb-2">
     <OrnamentalDivider color={primaryColor} />
     <h2
@@ -136,26 +143,28 @@ const ComboSection: React.FC<{
           >
             {combo.name}
           </h3>
-          <div className="flex items-center justify-center gap-3">
-            <span
-              className="text-lg font-bold"
-              style={{ fontFamily: "'Cormorant Garamond', serif", color: primaryColor }}
-            >
-              ${Number(combo.comboPrice).toFixed(2)}
-            </span>
-            {combo.savings > 0 && (
+          {showPrices && (
+            <div className="flex items-center justify-center gap-3">
               <span
-                className="text-[0.65rem] uppercase tracking-wider px-2 py-0.5 rounded-full"
-                style={{
-                  fontFamily: "'Lora', serif",
-                  color: primaryColor,
-                  border: `1px solid ${primaryColor}44`,
-                }}
+                className="text-lg font-bold"
+                style={{ fontFamily: "'Cormorant Garamond', serif", color: primaryColor }}
               >
-                Save ${Number(combo.savings).toFixed(2)}
+                ${Number(combo.comboPrice).toFixed(2)}
               </span>
-            )}
-          </div>
+              {combo.savings > 0 && (
+                <span
+                  className="text-[0.65rem] uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  style={{
+                    fontFamily: "'Lora', serif",
+                    color: primaryColor,
+                    border: `1px solid ${primaryColor}44`,
+                  }}
+                >
+                  Save ${Number(combo.savings).toFixed(2)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -163,10 +172,25 @@ const ComboSection: React.FC<{
 );
 
 /* ── Main component ──────────────────────────────────────────────────── */
-const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }) => {
+const ClassicElegantView: React.FC<TemplateViewProps> = (props) => {
+  const { brand, combos, isPortrait } = props;
   const { theme } = brand;
   const primaryColor = theme.primaryColor;
   const secondaryColor = theme.secondaryColor || primaryColor;
+
+  const s: Required<BoardSettings> = {
+    showCombos: props.boardSettings?.showCombos !== false,
+    showLogo: props.boardSettings?.showLogo !== false,
+    showClock: props.boardSettings?.showClock !== false,
+    showPrices: props.boardSettings?.showPrices !== false,
+    showQrCode: props.boardSettings?.showQrCode === true,
+    qrCodeUrl: props.boardSettings?.qrCodeUrl || '',
+    qrCodeLabel: props.boardSettings?.qrCodeLabel || 'Scan to Order',
+    slideDuration: props.boardSettings?.slideDuration || 12,
+    footerText: props.boardSettings?.footerText || 'Precios en MXN',
+    announcementText: props.boardSettings?.announcementText || '',
+    showDescription: props.boardSettings?.showDescription !== false,
+  };
 
   const cssVars = {
     '--mb-primary': primaryColor,
@@ -222,9 +246,11 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
 
         {/* Header */}
         <div className="shrink-0 pt-5 pb-3 px-6 text-center relative z-10">
-          <div className="flex justify-end mb-2">
-            <MenuBoardClock />
-          </div>
+          {s.showClock && (
+            <div className="flex justify-end mb-2">
+              <MenuBoardClock />
+            </div>
+          )}
           <ThinRule color={primaryColor} className="mb-3" />
           <h1
             className="text-3xl font-bold uppercase tracking-[0.2em]"
@@ -232,7 +258,7 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
           >
             {brand.name}
           </h1>
-          {brand.description && (
+          {s.showDescription && brand.description && (
             <p
               className="text-[0.7rem] italic mt-1"
               style={{ fontFamily: "'Lora', serif", color: 'rgba(255,255,255,0.4)' }}
@@ -245,13 +271,15 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 pb-4 relative z-10 min-h-0">
-          {hasCombos && <ComboSection combos={combos} primaryColor={primaryColor} />}
+          {s.showCombos && hasCombos && <ComboSection combos={combos} primaryColor={primaryColor} showPrices={s.showPrices} />}
           {categories.map((cat, idx) => (
             <CategoryBlock
               key={cat.id}
               category={cat}
               primaryColor={primaryColor}
-              showDivider={idx > 0 || hasCombos}
+              showDivider={idx > 0 || (s.showCombos && hasCombos)}
+              showPrices={s.showPrices}
+              showDescription={s.showDescription}
             />
           ))}
         </div>
@@ -262,7 +290,7 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
             className="text-[0.6rem] uppercase tracking-[0.25em]"
             style={{ fontFamily: "'Cormorant Garamond', serif", color: 'rgba(255,255,255,0.35)' }}
           >
-            Precios en MXN
+            {s.footerText}
           </span>
         </div>
       </div>
@@ -304,7 +332,7 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
             >
               {brand.name}
             </h1>
-            {brand.description && (
+            {s.showDescription && brand.description && (
               <p
                 className="text-[0.65rem] italic mt-0.5"
                 style={{ fontFamily: "'Lora', serif", color: 'rgba(255,255,255,0.4)' }}
@@ -314,9 +342,11 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
             )}
             <ThinRule color={primaryColor} className="mt-2" />
           </div>
-          <div className="pt-1">
-            <MenuBoardClock />
-          </div>
+          {s.showClock && (
+            <div className="pt-1">
+              <MenuBoardClock />
+            </div>
+          )}
         </div>
       </div>
 
@@ -324,13 +354,15 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
       <div className="flex-1 overflow-hidden px-8 pb-2 flex gap-8 min-h-0 relative z-10">
         {/* Left column */}
         <div className="flex-1 overflow-y-auto min-h-0 pr-2">
-          {hasCombos && <ComboSection combos={combos} primaryColor={primaryColor} />}
+          {s.showCombos && hasCombos && <ComboSection combos={combos} primaryColor={primaryColor} showPrices={s.showPrices} />}
           {leftCats.map((cat, idx) => (
             <CategoryBlock
               key={cat.id}
               category={cat}
               primaryColor={primaryColor}
-              showDivider={idx > 0 || hasCombos}
+              showDivider={idx > 0 || (s.showCombos && hasCombos)}
+              showPrices={s.showPrices}
+              showDescription={s.showDescription}
             />
           ))}
         </div>
@@ -351,6 +383,8 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
               category={cat}
               primaryColor={primaryColor}
               showDivider={idx > 0}
+              showPrices={s.showPrices}
+              showDescription={s.showDescription}
             />
           ))}
         </div>
@@ -362,7 +396,7 @@ const ClassicElegantView: React.FC<TemplateViewProps> = ({ brand, combos, isPort
           className="text-[0.55rem] uppercase tracking-[0.25em]"
           style={{ fontFamily: "'Cormorant Garamond', serif", color: 'rgba(255,255,255,0.35)' }}
         >
-          Precios en MXN
+          {s.footerText}
         </span>
       </div>
     </div>

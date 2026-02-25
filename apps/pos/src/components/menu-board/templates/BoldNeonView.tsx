@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import MenuBoardClock from '../MenuBoardClock';
-import type { TemplateViewProps } from '../../../types/menu-board';
+import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { CategoryData, MenuItemData } from '../../../types/menu-board';
 
 // ── Neon flicker keyframes (injected once) ──────────────────────────────────
@@ -29,7 +29,9 @@ const NeonItemCard: React.FC<{
   item: MenuItemData;
   primaryColor: string;
   secondaryColor: string;
-}> = ({ item, primaryColor, secondaryColor }) => {
+  showDescription?: boolean;
+  showPrices?: boolean;
+}> = ({ item, primaryColor, secondaryColor, showDescription = true, showPrices = true }) => {
   const priceGlow = `0 0 4px ${secondaryColor}, 0 0 11px ${secondaryColor}, 0 0 22px ${secondaryColor}`;
 
   return (
@@ -82,24 +84,26 @@ const NeonItemCard: React.FC<{
           {item.name}
         </h3>
 
-        {item.description && (
+        {showDescription && item.description && (
           <p className="text-white/50 text-[10px] leading-snug line-clamp-2" style={{ fontFamily: "'Exo 2', sans-serif" }}>
             {item.description}
           </p>
         )}
 
-        <div className="mt-auto pt-1">
-          <span
-            className="font-bold text-base"
-            style={{
-              color: secondaryColor,
-              textShadow: priceGlow,
-              fontFamily: "'Orbitron', sans-serif",
-            }}
-          >
-            ${Number(item.price).toFixed(2)}
-          </span>
-        </div>
+        {showPrices && (
+          <div className="mt-auto pt-1">
+            <span
+              className="font-bold text-base"
+              style={{
+                color: secondaryColor,
+                textShadow: priceGlow,
+                fontFamily: "'Orbitron', sans-serif",
+              }}
+            >
+              ${Number(item.price).toFixed(2)}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -111,7 +115,9 @@ const NeonComboCard: React.FC<{
   combo: any;
   primaryColor: string;
   secondaryColor: string;
-}> = ({ combo, primaryColor, secondaryColor }) => {
+  showDescription?: boolean;
+  showPrices?: boolean;
+}> = ({ combo, primaryColor, secondaryColor, showDescription = true, showPrices = true }) => {
   const nameGlow = `0 0 4px ${primaryColor}, 0 0 14px ${primaryColor}, 0 0 28px ${primaryColor}`;
   const priceGlow = `0 0 4px ${secondaryColor}, 0 0 11px ${secondaryColor}, 0 0 22px ${secondaryColor}`;
 
@@ -135,12 +141,12 @@ const NeonComboCard: React.FC<{
       >
         {combo.name}
       </span>
-      {combo.description && (
+      {showDescription && combo.description && (
         <p className="text-white/40 text-[10px] mt-1 max-w-xs" style={{ fontFamily: "'Exo 2', sans-serif" }}>
           {combo.description}
         </p>
       )}
-      {combo.price != null && (
+      {showPrices && combo.price != null && (
         <span
           className="font-bold text-xl mt-2"
           style={{
@@ -190,11 +196,26 @@ const NeonCategoryHeader: React.FC<{
 
 // ── Main Component ──────────────────────────────────────────────────────────
 
-const BoldNeonView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }) => {
+const BoldNeonView: React.FC<TemplateViewProps> = (props) => {
+  const { brand, combos, isPortrait } = props;
   const { theme, categories } = brand;
   const primaryColor = theme.primaryColor;
   const secondaryColor = theme.secondaryColor || theme.primaryColor;
   const darkBg = theme.darkBg || '#0a0a0a';
+
+  const s: Required<BoardSettings> = {
+    showCombos: props.boardSettings?.showCombos !== false,
+    showLogo: props.boardSettings?.showLogo !== false,
+    showClock: props.boardSettings?.showClock !== false,
+    showPrices: props.boardSettings?.showPrices !== false,
+    showQrCode: props.boardSettings?.showQrCode === true,
+    qrCodeUrl: props.boardSettings?.qrCodeUrl || '',
+    qrCodeLabel: props.boardSettings?.qrCodeLabel || 'Scan to Order',
+    slideDuration: props.boardSettings?.slideDuration || 12,
+    footerText: props.boardSettings?.footerText || 'Precios en MXN',
+    announcementText: props.boardSettings?.announcementText || '',
+    showDescription: props.boardSettings?.showDescription !== false,
+  };
 
   const styleInjected = useRef(false);
 
@@ -251,15 +272,17 @@ const BoldNeonView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }
         >
           {brand.name}
         </h1>
-        <div className="text-white">
-          <MenuBoardClock />
-        </div>
+        {s.showClock && (
+          <div className="text-white">
+            <MenuBoardClock />
+          </div>
+        )}
       </div>
 
       {/* ── Scrollable Content ──────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
         {/* Combo "neon sign" cards */}
-        {hasCombos && (
+        {s.showCombos && hasCombos && (
           <div className="mb-6">
             <div
               className={`grid gap-4 ${
@@ -272,6 +295,8 @@ const BoldNeonView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }
                   combo={combo}
                   primaryColor={primaryColor}
                   secondaryColor={secondaryColor}
+                  showDescription={s.showDescription}
+                  showPrices={s.showPrices}
                 />
               ))}
             </div>
@@ -294,6 +319,8 @@ const BoldNeonView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }
                   item={item}
                   primaryColor={primaryColor}
                   secondaryColor={secondaryColor}
+                  showDescription={s.showDescription}
+                  showPrices={s.showPrices}
                 />
               ))}
             </div>
@@ -307,7 +334,7 @@ const BoldNeonView: React.FC<TemplateViewProps> = ({ brand, combos, isPortrait }
           className="text-[9px] uppercase tracking-[0.25em] text-white/30"
           style={{ fontFamily: "'Exo 2', sans-serif" }}
         >
-          Precios en MXN
+          {s.footerText}
         </span>
       </div>
     </div>

@@ -379,7 +379,8 @@ CREATE TABLE IF NOT EXISTS virtual_brands (
   dark_bg TEXT,
   slug TEXT,
   show_in_pos BOOLEAN DEFAULT true,
-  template_slug TEXT DEFAULT NULL
+  template_slug TEXT DEFAULT NULL,
+  board_settings JSONB DEFAULT '{}'::jsonb
 );
 
 -- Virtual Brand Items

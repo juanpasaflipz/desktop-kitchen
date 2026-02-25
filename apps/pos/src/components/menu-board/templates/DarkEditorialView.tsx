@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { TemplateViewProps } from '../../../types/menu-board';
+import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { MenuItemData } from '../../../types/menu-board';
 import MenuBoardClock from '../MenuBoardClock';
 import ItemBadge from '../ItemBadge';
@@ -112,12 +112,16 @@ interface FeaturedRowProps {
   item: MenuItemData;
   index: number;
   isPortrait: boolean;
+  showDescription?: boolean;
+  showPrices?: boolean;
 }
 
 const FeaturedRow: React.FC<FeaturedRowProps> = ({
   item,
   index,
   isPortrait,
+  showDescription = true,
+  showPrices = true,
 }) => {
   const isEven = index % 2 === 1; // 0-indexed: first is odd-display (image left)
 
@@ -184,7 +188,7 @@ const FeaturedRow: React.FC<FeaturedRowProps> = ({
       >
         {item.name}
       </h3>
-      {item.description && (
+      {showDescription && item.description && (
         <p
           className="font-[var(--mb-font-body)] text-white/60 mt-1 max-w-[50ch] leading-relaxed"
           style={{
@@ -196,17 +200,19 @@ const FeaturedRow: React.FC<FeaturedRowProps> = ({
           {item.description}
         </p>
       )}
-      <p
-        className="font-[var(--mb-font-heading)] font-black mt-2"
-        style={{
-          fontSize: isPortrait
-            ? 'clamp(1.8rem, 6vw, 3.5rem)'
-            : 'clamp(2rem, 4vw, 4rem)',
-          color: 'var(--mb-secondary)',
-        }}
-      >
-        {formatPrice(item.price)}
-      </p>
+      {showPrices && (
+        <p
+          className="font-[var(--mb-font-heading)] font-black mt-2"
+          style={{
+            fontSize: isPortrait
+              ? 'clamp(1.8rem, 6vw, 3.5rem)'
+              : 'clamp(2rem, 4vw, 4rem)',
+            color: 'var(--mb-secondary)',
+          }}
+        >
+          {formatPrice(item.price)}
+        </p>
+      )}
     </div>
   );
 
@@ -225,11 +231,23 @@ const FeaturedRow: React.FC<FeaturedRowProps> = ({
 /*  Main Template                                                      */
 /* ------------------------------------------------------------------ */
 
-const DarkEditorialView: React.FC<TemplateViewProps> = ({
-  brand,
-  isPortrait,
-}) => {
+const DarkEditorialView: React.FC<TemplateViewProps> = (props) => {
+  const { brand, isPortrait } = props;
   const { theme, name, description, categories } = brand;
+
+  const s: Required<BoardSettings> = {
+    showCombos: props.boardSettings?.showCombos !== false,
+    showLogo: props.boardSettings?.showLogo !== false,
+    showClock: props.boardSettings?.showClock !== false,
+    showPrices: props.boardSettings?.showPrices !== false,
+    showQrCode: props.boardSettings?.showQrCode === true,
+    qrCodeUrl: props.boardSettings?.qrCodeUrl || '',
+    qrCodeLabel: props.boardSettings?.qrCodeLabel || 'Scan to Order',
+    slideDuration: props.boardSettings?.slideDuration || 12,
+    footerText: props.boardSettings?.footerText || 'Precios en MXN',
+    announcementText: props.boardSettings?.announcementText || '',
+    showDescription: props.boardSettings?.showDescription !== false,
+  };
 
   const headingFont = 'Playfair Display';
   const bodyFont = 'Inter';
@@ -258,9 +276,11 @@ const DarkEditorialView: React.FC<TemplateViewProps> = ({
       />
 
       {/* Clock - top right */}
-      <div className="absolute top-4 right-5 z-10 text-white">
-        <MenuBoardClock />
-      </div>
+      {s.showClock && (
+        <div className="absolute top-4 right-5 z-10 text-white">
+          <MenuBoardClock />
+        </div>
+      )}
 
       {/* Header */}
       <header
@@ -276,7 +296,7 @@ const DarkEditorialView: React.FC<TemplateViewProps> = ({
         >
           {name}
         </h1>
-        {description && (
+        {s.showDescription && description && (
           <p
             className="font-[var(--mb-font-body)] text-white/50 text-center mt-1 flex items-center"
             style={{
@@ -310,6 +330,8 @@ const DarkEditorialView: React.FC<TemplateViewProps> = ({
             item={item}
             index={idx}
             isPortrait={isPortrait}
+            showDescription={s.showDescription}
+            showPrices={s.showPrices}
           />
         ))}
       </main>
@@ -326,7 +348,7 @@ const DarkEditorialView: React.FC<TemplateViewProps> = ({
               : 'clamp(0.55rem, 0.9vw, 0.8rem)',
           }}
         >
-          Precios en MXN
+          {s.footerText}
         </p>
       </footer>
     </div>
