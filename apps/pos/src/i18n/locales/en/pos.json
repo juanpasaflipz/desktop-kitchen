@@ -62,7 +62,9 @@
     "totalWithTip": "Total + Tip: {{amount}}",
     "thankYou": "Thank You!",
     "comeAgain": "Please come again",
-    "printReceipt": "Print Receipt"
+    "printReceipt": "Print Receipt",
+    "estimatedReady": "Estimated ready in {{low}}-{{high}} min",
+    "orderBeingPrepared": "Your order is being prepared"
   },
   "notes": {
     "title": "Special Instructions",

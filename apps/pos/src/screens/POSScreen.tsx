@@ -576,7 +576,7 @@ const POSScreen: React.FC = () => {
       const order = await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() });
       const paymentIntent = await createPaymentIntent({ order_id: order.id, tip });
       await confirmPayment({ order_id: order.id, payment_intent_id: paymentIntent.payment_intent_id });
-      const finalOrder: Order = { ...order, tip, total: order.total + tip, payment_method: 'card', employee_name: currentEmployee?.name };
+      const finalOrder: Order = { ...order, tip, total: order.total + tip, payment_method: 'card', employee_name: currentEmployee?.name, estimated_ready_minutes: order.estimated_ready_minutes, estimated_ready_range: order.estimated_ready_range };
       await handleLoyaltyStamp(order);
       setCompletedOrder(finalOrder);
       setShowPaymentModal(false);
@@ -605,7 +605,7 @@ const POSScreen: React.FC = () => {
       } else {
         const order = await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() });
         const result = await cashPayment({ order_id: order.id, tip, amount_received: amountReceived });
-        const finalOrder: Order = { ...order, tip, total: order.total + tip, payment_method: 'cash', employee_name: currentEmployee?.name };
+        const finalOrder: Order = { ...order, tip, total: order.total + tip, payment_method: 'cash', employee_name: currentEmployee?.name, estimated_ready_minutes: order.estimated_ready_minutes, estimated_ready_range: order.estimated_ready_range };
         await handleLoyaltyStamp(order);
         setCompletedOrder(finalOrder);
         setShowPaymentModal(false);
@@ -627,7 +627,7 @@ const POSScreen: React.FC = () => {
       const order = await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() });
       await splitPayment({ order_id: order.id, split_type: 'by_amount', splits });
       const totalTip = splits.reduce((sum, s) => sum + s.tip, 0);
-      const finalOrder: Order = { ...order, tip: totalTip, total: order.subtotal + order.tax + totalTip, payment_method: 'split', employee_name: currentEmployee?.name };
+      const finalOrder: Order = { ...order, tip: totalTip, total: order.subtotal + order.tax + totalTip, payment_method: 'split', employee_name: currentEmployee?.name, estimated_ready_minutes: order.estimated_ready_minutes, estimated_ready_range: order.estimated_ready_range };
       await handleLoyaltyStamp(order);
       setCompletedOrder(finalOrder);
       setShowSplitPayment(false);

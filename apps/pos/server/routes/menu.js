@@ -189,7 +189,7 @@ router.get('/items', async (req, res) => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     let query = `
-      SELECT id, category_id, name, price, description, image_url, active
+      SELECT id, category_id, name, price, description, image_url, active, prep_time_minutes
       FROM menu_items
       ${whereClause}
     `;
@@ -228,7 +228,7 @@ router.get('/items/:id', async (req, res) => {
 // POST /api/menu/items - create item (admin)
 router.post('/items', requireAuth('manage_menu'), async (req, res) => {
   try {
-    const { category_id, name, price, description, image_url } = req.body;
+    const { category_id, name, price, description, image_url, prep_time_minutes } = req.body;
 
     if (!category_id || !name || price === undefined) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -243,9 +243,9 @@ router.post('/items', requireAuth('manage_menu'), async (req, res) => {
     }
 
     const result = await run(`
-      INSERT INTO menu_items (category_id, name, price, description, image_url, active)
-      VALUES ($1, $2, $3, $4, $5, true)
-    `, [category_id, name, price, description || null, image_url || null]);
+      INSERT INTO menu_items (category_id, name, price, description, image_url, active, prep_time_minutes)
+      VALUES ($1, $2, $3, $4, $5, true, $6)
+    `, [category_id, name, price, description || null, image_url || null, prep_time_minutes || 5]);
 
     audit({
       tenantId: req.tenant?.id || 'default',
@@ -275,7 +275,7 @@ router.post('/items', requireAuth('manage_menu'), async (req, res) => {
 router.put('/items/:id', requireAuth('manage_menu'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { category_id, name, price, description, image_url } = req.body;
+    const { category_id, name, price, description, image_url, prep_time_minutes } = req.body;
 
     // Check if item exists
     const item = await get('SELECT id FROM menu_items WHERE id = $1', [id]);
@@ -305,6 +305,10 @@ router.put('/items/:id', requireAuth('manage_menu'), async (req, res) => {
     if (image_url !== undefined) {
       updates.push(`image_url = $${values.length + 1}`);
       values.push(image_url);
+    }
+    if (prep_time_minutes !== undefined) {
+      updates.push(`prep_time_minutes = $${values.length + 1}`);
+      values.push(prep_time_minutes);
     }
 
     if (updates.length === 0) {
@@ -353,6 +357,111 @@ router.put('/items/:id/toggle', requireAuth('manage_menu'), async (req, res) => 
   } catch (error) {
     console.error('Error toggling item:', error);
     res.status(500).json({ error: 'Failed to toggle item' });
+  }
+});
+
+// ─── Recipe / Ingredient Mapping ─────────────────────────────
+
+// GET /api/menu/items/:id/recipe - get ingredients for a menu item
+router.get('/items/:id/recipe', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ingredients = await all(`
+      SELECT mii.inventory_item_id, mii.quantity_used,
+             ii.name AS ingredient_name, ii.unit, ii.cost_price
+      FROM menu_item_ingredients mii
+      JOIN inventory_items ii ON mii.inventory_item_id = ii.id
+      WHERE mii.menu_item_id = $1
+      ORDER BY ii.name ASC
+    `, [id]);
+    res.json(ingredients);
+  } catch (error) {
+    console.error('Error fetching recipe:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe' });
+  }
+});
+
+// PUT /api/menu/items/:id/recipe - replace entire recipe for a menu item
+router.put('/items/:id/recipe', requireAuth('manage_menu'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ingredients } = req.body; // [{ inventory_item_id, quantity_used }]
+
+    if (!Array.isArray(ingredients)) {
+      return res.status(400).json({ error: 'ingredients must be an array' });
+    }
+
+    const item = await get('SELECT id FROM menu_items WHERE id = $1', [id]);
+    if (!item) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    // Delete existing recipe
+    await run('DELETE FROM menu_item_ingredients WHERE menu_item_id = $1', [id]);
+
+    // Insert new recipe
+    for (const ing of ingredients) {
+      if (!ing.inventory_item_id || !ing.quantity_used || ing.quantity_used <= 0) continue;
+      await run(`
+        INSERT INTO menu_item_ingredients (menu_item_id, inventory_item_id, quantity_used)
+        VALUES ($1, $2, $3)
+      `, [id, ing.inventory_item_id, ing.quantity_used]);
+    }
+
+    audit({
+      tenantId: req.tenant?.id || 'default',
+      actorType: 'employee',
+      actorId: req.headers['x-employee-id'] || 'unknown',
+      action: 'update',
+      resource: 'menu_item_recipe',
+      resourceId: String(id),
+      ip: req.ip,
+    });
+
+    // Return the updated recipe
+    const updated = await all(`
+      SELECT mii.inventory_item_id, mii.quantity_used,
+             ii.name AS ingredient_name, ii.unit, ii.cost_price
+      FROM menu_item_ingredients mii
+      JOIN inventory_items ii ON mii.inventory_item_id = ii.id
+      WHERE mii.menu_item_id = $1
+      ORDER BY ii.name ASC
+    `, [id]);
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating recipe:', error);
+    res.status(500).json({ error: 'Failed to update recipe' });
+  }
+});
+
+// GET /api/menu/recipes/summary - all menu items with their recipe status
+router.get('/recipes/summary', async (req, res) => {
+  try {
+    const items = await all(`
+      SELECT mi.id, mi.name, mi.price, mi.category_id, mi.active,
+             mc.name AS category_name,
+             COUNT(mii.inventory_item_id) AS ingredient_count,
+             COALESCE(SUM(mii.quantity_used * ii.cost_price), 0) AS cost_per_unit
+      FROM menu_items mi
+      JOIN menu_categories mc ON mi.category_id = mc.id
+      LEFT JOIN menu_item_ingredients mii ON mii.menu_item_id = mi.id
+      LEFT JOIN inventory_items ii ON mii.inventory_item_id = ii.id
+      GROUP BY mi.id, mi.name, mi.price, mi.category_id, mi.active, mc.name, mc.sort_order
+      ORDER BY mc.sort_order ASC, mi.name ASC
+    `);
+
+    // Coerce Postgres numeric strings
+    for (const item of items) {
+      item.ingredient_count = Number(item.ingredient_count) || 0;
+      item.cost_per_unit = Number(item.cost_per_unit) || 0;
+      item.price = Number(item.price) || 0;
+    }
+
+    res.json(items);
+  } catch (error) {
+    console.error('Error fetching recipe summary:', error);
+    res.status(500).json({ error: 'Failed to fetch recipe summary' });
   }
 });
 

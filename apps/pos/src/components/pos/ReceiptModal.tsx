@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
+import { Clock } from 'lucide-react';
 import { Order, CfdiInvoice } from '../../types';
 import { formatPrice, TAX_LABEL } from '../../utils/currency';
 import { formatDateTime } from '../../utils/dateFormat';
@@ -61,6 +62,22 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
                 <p className="text-neutral-600">{t('receipt.cashier', { name: order.employee_name })}</p>
               )}
             </div>
+
+            {/* Estimated Ready Time */}
+            {order.estimated_ready_range && (
+              <div className="flex items-center justify-center gap-2 py-3 px-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <Clock className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                <div className="text-center">
+                  <p className="text-amber-800 font-bold text-lg">
+                    {t('receipt.estimatedReady', {
+                      low: order.estimated_ready_range.low,
+                      high: order.estimated_ready_range.high,
+                    })}
+                  </p>
+                  <p className="text-amber-600 text-xs">{t('receipt.orderBeingPrepared')}</p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2 border-b pb-3">
               {order.items?.map((item) => (

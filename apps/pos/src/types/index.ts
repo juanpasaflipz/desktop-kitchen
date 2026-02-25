@@ -32,6 +32,7 @@ export interface MenuItem {
   description?: string;
   image_url?: string;
   active: boolean;
+  prep_time_minutes?: number;
 }
 
 /* Virtual Brand Types */
@@ -94,6 +95,9 @@ export interface Order {
   paid_at?: string;
   created_at: string;
   completed_at?: string;
+  ready_at?: string;
+  estimated_ready_minutes?: number;
+  estimated_ready_range?: { low: number; high: number };
   items?: OrderItem[];
 }
 
@@ -110,6 +114,26 @@ export interface InventoryItem {
   barcode?: string;
   expiry_date?: string;
   lot_number?: string;
+}
+
+/* Recipe Types */
+export interface RecipeIngredient {
+  inventory_item_id: number;
+  quantity_used: number;
+  ingredient_name: string;
+  unit: string;
+  cost_price: number;
+}
+
+export interface RecipeSummaryItem {
+  id: number;
+  name: string;
+  price: number;
+  category_id: number;
+  category_name: string;
+  active: boolean;
+  ingredient_count: number;
+  cost_per_unit: number;
 }
 
 /* Waste Types */

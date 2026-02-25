@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { all, get, run, getConn } from '../db/index.js';
+import { adminSql } from '../db/index.js';
 import { recordOrderItemPairs } from '../ai/data-pipeline.js';
 import { requireAuth } from '../middleware/auth.js';
 import { audit } from '../lib/auditLog.js';
@@ -8,19 +9,121 @@ const router = Router();
 
 const TAX_RATE = 0.16; // 16% IVA (Mexico) — prices already include tax
 
-async function generateOrderNumber() {
-  const conn = getConn();
-  const dateStr = new Date().toISOString().split('T')[0];
-  const dateNum = parseInt(dateStr.replace(/-/g, '')) * 1000;
+/**
+ * Calculate estimated prep time for an order.
+ *
+ * Strategy:
+ *   1. Use the MAX item prep time (kitchen works in parallel)
+ *   2. Add queue buffer: ~1.5 min per active order ahead
+ *   3. If historical data exists (30+ completed orders), blend with actual averages
+ *
+ * Returns { low, high } range in minutes.
+ */
+async function estimatePrepTime(conn, itemMenuIds, tenantId) {
+  // 1. Get max prep_time_minutes from items in this order
+  const prepRows = await conn.unsafe(`
+    SELECT COALESCE(MAX(prep_time_minutes), 5) AS max_prep
+    FROM menu_items
+    WHERE id = ANY($1::int[])
+  `, [itemMenuIds]);
+  const maxPrep = prepRows[0]?.max_prep || 5;
 
-  const [row] = await conn.unsafe(`
-    SELECT pg_advisory_xact_lock(hashtext($1::text)),
-           COALESCE(MAX(order_number), $2::int) + 1 AS order_number
+  // 2. Count active orders in queue (pending + preparing)
+  const queueRows = await conn.unsafe(`
+    SELECT COUNT(*) AS queue_size
     FROM orders
-    WHERE created_at::date = $1::date
-  `, [dateStr, dateNum]);
+    WHERE status IN ('pending', 'confirmed', 'preparing')
+  `);
+  const queueSize = Math.max(0, (parseInt(queueRows[0]?.queue_size) || 0) - 1); // exclude this order
+  const queueBuffer = Math.round(queueSize * 1.5);
 
-  return row.order_number;
+  // 3. Check historical average (completed orders with ready_at)
+  let historicalAvg = null;
+  const histQuery = tenantId
+    ? `SELECT COUNT(*) AS cnt,
+              AVG(EXTRACT(EPOCH FROM (ready_at - created_at)) / 60) AS avg_minutes
+       FROM (SELECT ready_at, created_at FROM orders
+             WHERE ready_at IS NOT NULL AND status IN ('ready', 'completed')
+               AND tenant_id = $1
+             ORDER BY created_at DESC LIMIT 200) sub`
+    : `SELECT COUNT(*) AS cnt,
+              AVG(EXTRACT(EPOCH FROM (ready_at - created_at)) / 60) AS avg_minutes
+       FROM (SELECT ready_at, created_at FROM orders
+             WHERE ready_at IS NOT NULL AND status IN ('ready', 'completed')
+             ORDER BY created_at DESC LIMIT 200) sub`;
+  const histRows = await conn.unsafe(histQuery, tenantId ? [tenantId] : []);
+  if (histRows[0] && parseInt(histRows[0].cnt) >= 30) {
+    historicalAvg = parseFloat(histRows[0].avg_minutes);
+  }
+
+  // 4. Blend: if historical data exists, weight 60% historical / 40% item-based
+  let basePrepMinutes;
+  if (historicalAvg && historicalAvg > 0) {
+    basePrepMinutes = Math.round(historicalAvg * 0.6 + maxPrep * 0.4);
+  } else {
+    basePrepMinutes = maxPrep;
+  }
+
+  const totalMinutes = basePrepMinutes + queueBuffer;
+
+  // Return a range: -1 / +2 for leeway (minimum 2 minutes)
+  const low = Math.max(2, totalMinutes - 1);
+  const high = totalMinutes + 2;
+
+  return { low, high, estimate: totalMinutes };
+}
+
+/**
+ * Ensure the daily_order_counter table exists (idempotent).
+ * Uses adminSql because app_user can't CREATE TABLE.
+ */
+let counterTableReady = false;
+async function ensureCounterTable() {
+  if (counterTableReady) return;
+  await adminSql.unsafe(`
+    CREATE TABLE IF NOT EXISTS daily_order_counter (
+      tenant_id TEXT NOT NULL,
+      date_key DATE NOT NULL,
+      last_seq INT NOT NULL DEFAULT 0,
+      PRIMARY KEY (tenant_id, date_key)
+    )
+  `);
+  // Grant access to app_user for the counter table
+  await adminSql.unsafe(`GRANT SELECT, INSERT, UPDATE ON daily_order_counter TO app_user`).catch(() => {});
+  counterTableReady = true;
+}
+
+/**
+ * Generate a unique order number and insert the order atomically.
+ *
+ * Uses a counter table with ON CONFLICT DO UPDATE — a single atomic
+ * statement that serializes on the PK, so no two concurrent requests
+ * can ever get the same sequence number.
+ */
+async function insertOrderWithNumber(conn, { employee_id, subtotal, tax, total, offline_temp_id, tenantId }) {
+  await ensureCounterTable();
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const datePrefix = parseInt(dateStr.replace(/-/g, '')) * 1000;
+  const tid = tenantId || 'default';
+
+  // Atomic increment — ON CONFLICT serializes on the PK
+  const [counter] = await conn.unsafe(`
+    INSERT INTO daily_order_counter (tenant_id, date_key, last_seq)
+    VALUES ($1, $2::date, 1)
+    ON CONFLICT (tenant_id, date_key) DO UPDATE SET last_seq = daily_order_counter.last_seq + 1
+    RETURNING last_seq
+  `, [tid, dateStr]);
+
+  const orderNumber = datePrefix + counter.last_seq;
+
+  const [inserted] = await conn.unsafe(`
+    INSERT INTO orders (order_number, employee_id, status, subtotal, tax, total, payment_status, offline_temp_id)
+    VALUES ($1, $2, 'pending', $3, $4, $5, 'unpaid', $6)
+    RETURNING id, order_number
+  `, [orderNumber, employee_id, subtotal, tax, total, offline_temp_id || null]);
+
+  return { orderId: inserted.id, orderNumber: inserted.order_number };
 }
 
 // GET /api/orders - list orders (optional ?status, ?date filters)
@@ -80,23 +183,32 @@ router.get('/:id', async (req, res) => {
     }
 
     const items = await all(`
-      SELECT id, order_id, menu_item_id, item_name, quantity, unit_price, notes, combo_instance_id
-      FROM order_items
-      WHERE order_id = $1
+      SELECT oi.id, oi.order_id, oi.menu_item_id, oi.item_name, oi.quantity, oi.unit_price, oi.notes, oi.combo_instance_id,
+             oim.id AS mod_id, oim.modifier_id, oim.modifier_name, oim.price_adjustment
+      FROM order_items oi
+      LEFT JOIN order_item_modifiers oim ON oim.order_item_id = oi.id
+      WHERE oi.order_id = $1
     `, [id]);
 
-    // Attach modifiers to each item
-    const itemsWithModifiers = [];
-    for (const item of items) {
-      const modifiers = await all(`
-        SELECT id, modifier_id, modifier_name, price_adjustment
-        FROM order_item_modifiers
-        WHERE order_item_id = $1
-      `, [item.id]);
-      itemsWithModifiers.push({ ...item, modifiers });
+    // Assemble items with modifiers from flat rows
+    const itemMap = new Map();
+    for (const row of items) {
+      if (!itemMap.has(row.id)) {
+        itemMap.set(row.id, {
+          id: row.id, order_id: row.order_id, menu_item_id: row.menu_item_id,
+          item_name: row.item_name, quantity: row.quantity, unit_price: row.unit_price,
+          notes: row.notes, combo_instance_id: row.combo_instance_id, modifiers: [],
+        });
+      }
+      if (row.mod_id) {
+        itemMap.get(row.id).modifiers.push({
+          id: row.mod_id, modifier_id: row.modifier_id,
+          modifier_name: row.modifier_name, price_adjustment: row.price_adjustment,
+        });
+      }
     }
 
-    res.json({ ...order, items: itemsWithModifiers });
+    res.json({ ...order, items: [...itemMap.values()] });
   } catch (error) {
     console.error('Error fetching order:', error);
     res.status(500).json({ error: 'Failed to fetch order' });
@@ -200,15 +312,21 @@ router.post('/', requireAuth('pos_access'), async (req, res) => {
     const total = itemsTotal; // what the customer pays (IVA included)
     const tax = Math.round((total - total / (1 + TAX_RATE)) * 100) / 100;
     const subtotal = Math.round((total - tax) * 100) / 100;
-    const orderNumber = await generateOrderNumber();
 
-    // Create order
-    const result = await run(`
-      INSERT INTO orders (order_number, employee_id, status, subtotal, tax, total, payment_status, offline_temp_id)
-      VALUES ($1, $2, 'pending', $3, $4, $5, 'unpaid', $6)
-    `, [orderNumber, employee_id, subtotal, tax, total, offline_temp_id || null]);
+    // Atomic order number generation + insert (prevents duplicate order numbers under concurrency)
+    const conn = getConn();
+    const { orderId, orderNumber } = await insertOrderWithNumber(conn, {
+      employee_id, subtotal, tax, total, offline_temp_id,
+      tenantId: req.tenant?.id,
+    });
 
-    const orderId = result.lastInsertRowid;
+    // Calculate estimated prep time
+    const itemMenuIds = orderItems.map(i => i.menu_item_id);
+    const prepEstimate = await estimatePrepTime(conn, itemMenuIds, req.tenant?.id);
+    await conn.unsafe(
+      `UPDATE orders SET estimated_ready_minutes = $1 WHERE id = $2`,
+      [prepEstimate.estimate, orderId]
+    );
 
     // Insert order items and their modifiers
     for (const item of orderItems) {
@@ -254,6 +372,8 @@ router.post('/', requireAuth('pos_access'), async (req, res) => {
       total,
       payment_status: 'unpaid',
       items: orderItems,
+      estimated_ready_minutes: prepEstimate.estimate,
+      estimated_ready_range: { low: prepEstimate.low, high: prepEstimate.high },
     });
   } catch (error) {
     console.error('Error creating order:', error);
@@ -294,13 +414,23 @@ router.put('/:id/status', async (req, res) => {
       });
     }
 
-    const completedAt = status === 'completed' ? new Date().toISOString() : null;
+    const now = new Date().toISOString();
+    const completedAt = status === 'completed' ? now : null;
+    const readyAt = status === 'ready' ? now : null;
 
-    await run(`
-      UPDATE orders
-      SET status = $1, completed_at = $2
-      WHERE id = $3
-    `, [status, completedAt, id]);
+    if (readyAt) {
+      await run(`
+        UPDATE orders
+        SET status = $1, completed_at = $2, ready_at = $3
+        WHERE id = $4
+      `, [status, completedAt, readyAt, id]);
+    } else {
+      await run(`
+        UPDATE orders
+        SET status = $1, completed_at = $2
+        WHERE id = $3
+      `, [status, completedAt, id]);
+    }
 
     res.json({ id, status });
   } catch (error) {
@@ -312,39 +442,70 @@ router.put('/:id/status', async (req, res) => {
 // GET /api/orders/kitchen/active - get pending+preparing orders for kitchen display
 router.get('/kitchen/active', async (req, res) => {
   try {
-    const orders = await all(`
-      SELECT o.id, o.order_number, o.status, o.payment_method, o.source, o.created_at, e.name as employee_name
+    // Single query: fetch orders + items + modifiers in one round trip
+    const rows = await all(`
+      SELECT o.id AS order_id, o.order_number, o.status, o.payment_method, o.source, o.created_at,
+             o.estimated_ready_minutes,
+             e.name AS employee_name,
+             oi.id AS item_id, oi.item_name, oi.quantity, oi.notes, oi.combo_instance_id,
+             oi.virtual_brand_id, vb.name AS brand_name, vb.primary_color AS brand_color,
+             oim.modifier_name, oim.price_adjustment
       FROM orders o
       JOIN employees e ON o.employee_id = e.id
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN virtual_brands vb ON oi.virtual_brand_id = vb.id
+      LEFT JOIN order_item_modifiers oim ON oim.order_item_id = oi.id
       WHERE o.status IN ('pending', 'confirmed', 'preparing')
-      ORDER BY o.created_at ASC
+      ORDER BY o.created_at ASC, oi.id ASC
     `);
 
-    // Get detailed items for each order (with modifiers and combo info)
-    const ordersWithItems = [];
-    for (const order of orders) {
-      const items = await all(`
-        SELECT oi.id, oi.item_name, oi.quantity, oi.notes, oi.combo_instance_id,
-               oi.virtual_brand_id, vb.name as brand_name, vb.primary_color as brand_color
-        FROM order_items oi
-        LEFT JOIN virtual_brands vb ON oi.virtual_brand_id = vb.id
-        WHERE oi.order_id = $1
-      `, [order.id]);
+    // Assemble nested structure from flat rows
+    const orderMap = new Map();
+    for (const row of rows) {
+      if (!orderMap.has(row.order_id)) {
+        orderMap.set(row.order_id, {
+          id: row.order_id,
+          order_number: row.order_number,
+          status: row.status,
+          payment_method: row.payment_method,
+          source: row.source,
+          created_at: row.created_at,
+          estimated_ready_minutes: row.estimated_ready_minutes,
+          employee_name: row.employee_name,
+          items: new Map(),
+        });
+      }
+      const order = orderMap.get(row.order_id);
 
-      const itemsWithModifiers = [];
-      for (const item of items) {
-        const modifiers = await all(`
-          SELECT modifier_name, price_adjustment
-          FROM order_item_modifiers
-          WHERE order_item_id = $1
-        `, [item.id]);
-        itemsWithModifiers.push({ ...item, modifiers });
+      if (row.item_id && !order.items.has(row.item_id)) {
+        order.items.set(row.item_id, {
+          id: row.item_id,
+          item_name: row.item_name,
+          quantity: row.quantity,
+          notes: row.notes,
+          combo_instance_id: row.combo_instance_id,
+          virtual_brand_id: row.virtual_brand_id,
+          brand_name: row.brand_name,
+          brand_color: row.brand_color,
+          modifiers: [],
+        });
       }
 
-      ordersWithItems.push({ ...order, items: itemsWithModifiers });
+      if (row.item_id && row.modifier_name) {
+        order.items.get(row.item_id).modifiers.push({
+          modifier_name: row.modifier_name,
+          price_adjustment: row.price_adjustment,
+        });
+      }
     }
 
-    res.json(ordersWithItems);
+    // Convert Maps to arrays
+    const result = [];
+    for (const order of orderMap.values()) {
+      result.push({ ...order, items: [...order.items.values()] });
+    }
+
+    res.json(result);
   } catch (error) {
     console.error('Error fetching kitchen orders:', error);
     res.status(500).json({ error: 'Failed to fetch kitchen orders' });

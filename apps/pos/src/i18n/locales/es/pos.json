@@ -62,7 +62,9 @@
     "totalWithTip": "Total + Propina: {{amount}}",
     "thankYou": "¡Gracias!",
     "comeAgain": "Vuelva pronto",
-    "printReceipt": "Imprimir Recibo"
+    "printReceipt": "Imprimir Recibo",
+    "estimatedReady": "Listo en aprox. {{low}}-{{high}} min",
+    "orderBeingPrepared": "Tu orden se esta preparando"
   },
   "notes": {
     "title": "Instrucciones Especiales",
