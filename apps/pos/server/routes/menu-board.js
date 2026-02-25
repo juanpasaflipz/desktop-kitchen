@@ -37,6 +37,7 @@ router.get('/data', async (req, res) => {
         COALESCE(vbi.custom_price, mi.price) as price,
         mi.description,
         mi.image_url,
+        COALESCE(vbi.show_image, true) as show_image,
         mi.category_id,
         mc.name as category_name,
         mc.sort_order as category_sort
@@ -162,7 +163,7 @@ router.get('/data', async (req, res) => {
         name: row.name,
         price: row.price,
         description: row.description,
-        imageUrl: row.image_url,
+        imageUrl: row.show_image ? row.image_url : null,
         badges: itemBadges,
       });
     }

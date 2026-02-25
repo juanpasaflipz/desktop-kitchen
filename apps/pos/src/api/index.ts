@@ -1306,6 +1306,7 @@ export async function setVirtualBrandItems(brandId: number, items: Array<{
   menu_item_id: number;
   custom_name?: string;
   custom_price?: number;
+  show_image?: boolean;
 }>): Promise<any> {
   return apiRequest(`/delivery-intel/virtual-brands/${brandId}/items`, {
     method: 'POST',

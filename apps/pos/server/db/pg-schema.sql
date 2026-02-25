@@ -391,6 +391,7 @@ CREATE TABLE IF NOT EXISTS virtual_brand_items (
   custom_name TEXT,
   custom_price NUMERIC(10,2),
   active BOOLEAN DEFAULT true,
+  show_image BOOLEAN DEFAULT true,
   UNIQUE(tenant_id, virtual_brand_id, menu_item_id)
 );
 

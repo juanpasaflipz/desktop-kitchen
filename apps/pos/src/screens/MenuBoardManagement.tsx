@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  ArrowLeft, Tv, Plus, Pencil, Eye, Save, X, Trash2, RefreshCw,
+  ArrowLeft, Tv, Plus, Pencil, Eye, Save, X, Trash2, RefreshCw, Image, ImageOff,
 } from 'lucide-react';
 import {
   getVirtualBrands,
@@ -44,6 +44,7 @@ interface BrandItemRow {
   menu_item_id: number;
   custom_name: string | null;
   custom_price: number | null;
+  show_image: boolean;
   active: number;
   original_name: string;
   original_price: number;
@@ -56,6 +57,7 @@ interface MenuItemRow {
   price: number;
   category_id: number;
   active: boolean;
+  image_url?: string;
 }
 
 interface CategoryRow {
@@ -84,6 +86,7 @@ interface ItemAssignment {
   checked: boolean;
   custom_name: string;
   custom_price: string;
+  show_image: boolean;
 }
 
 function slugify(text: string): string {
@@ -192,6 +195,7 @@ export default function MenuBoardManagement() {
             checked: !!existing,
             custom_name: existing?.custom_name || '',
             custom_price: existing?.custom_price != null ? String(existing.custom_price) : '',
+            show_image: existing ? existing.show_image !== false : true,
           });
         });
         setItemAssignments(assignments);
@@ -214,6 +218,7 @@ export default function MenuBoardManagement() {
         checked: false,
         custom_name: '',
         custom_price: '',
+        show_image: true,
       });
     });
     setItemAssignments(assignments);
@@ -248,6 +253,15 @@ export default function MenuBoardManagement() {
       const next = new Map(prev);
       const current = next.get(itemId)!;
       next.set(itemId, { ...current, [field]: value });
+      return next;
+    });
+  };
+
+  const toggleItemImage = (itemId: number) => {
+    setItemAssignments((prev) => {
+      const next = new Map(prev);
+      const current = next.get(itemId)!;
+      next.set(itemId, { ...current, show_image: !current.show_image });
       return next;
     });
   };
@@ -290,6 +304,7 @@ export default function MenuBoardManagement() {
           menu_item_id: a.menu_item_id,
           custom_name: a.custom_name || undefined,
           custom_price: a.custom_price ? parseFloat(a.custom_price) : undefined,
+          show_image: a.show_image,
         }));
 
       await setVirtualBrandItems(brandId!, items);
@@ -689,6 +704,7 @@ export default function MenuBoardManagement() {
                         {cat.items.map((mi) => {
                           const assignment = itemAssignments.get(mi.id);
                           if (!assignment) return null;
+                          const hasImage = !!mi.image_url;
                           return (
                             <div
                               key={mi.id}
@@ -708,6 +724,20 @@ export default function MenuBoardManagement() {
                               </span>
                               {assignment.checked && (
                                 <>
+                                  {hasImage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleItemImage(mi.id)}
+                                      className={`flex-shrink-0 p-1 rounded transition-colors ${
+                                        assignment.show_image
+                                          ? 'text-brand-400 bg-brand-600/20 hover:bg-brand-600/30'
+                                          : 'text-neutral-500 bg-neutral-800 hover:bg-neutral-700'
+                                      }`}
+                                      title={assignment.show_image ? 'Image visible — click to hide' : 'Image hidden — click to show'}
+                                    >
+                                      {assignment.show_image ? <Image size={14} /> : <ImageOff size={14} />}
+                                    </button>
+                                  )}
                                   <input
                                     type="text"
                                     value={assignment.custom_name}

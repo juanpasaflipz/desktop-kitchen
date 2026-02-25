@@ -313,7 +313,7 @@ router.delete('/virtual-brands/:brandId/items/:itemId', requireAuth('manage_deli
 
 /**
  * POST /api/delivery/virtual-brands/:id/items — assign items to virtual brand
- * Body: { items: [{ menu_item_id, custom_name?, custom_price? }] }
+ * Body: { items: [{ menu_item_id, custom_name?, custom_price?, show_image? }] }
  */
 router.post('/virtual-brands/:id/items', requireAuth('manage_delivery'), async (req, res) => {
   try {
@@ -328,11 +328,12 @@ router.post('/virtual-brands/:id/items', requireAuth('manage_delivery'), async (
     if (!brand) return res.status(404).json({ error: 'Virtual brand not found' });
 
     for (const item of items) {
+      const showImage = item.show_image !== undefined ? item.show_image : true;
       await run(
-        `INSERT INTO virtual_brand_items (virtual_brand_id, menu_item_id, custom_name, custom_price, active)
-         VALUES ($1, $2, $3, $4, true)
-         ON CONFLICT (tenant_id, virtual_brand_id, menu_item_id) DO UPDATE SET custom_name = EXCLUDED.custom_name, custom_price = EXCLUDED.custom_price, active = true`,
-        [id, item.menu_item_id, item.custom_name || null, item.custom_price || null]
+        `INSERT INTO virtual_brand_items (virtual_brand_id, menu_item_id, custom_name, custom_price, show_image, active)
+         VALUES ($1, $2, $3, $4, $5, true)
+         ON CONFLICT (tenant_id, virtual_brand_id, menu_item_id) DO UPDATE SET custom_name = EXCLUDED.custom_name, custom_price = EXCLUDED.custom_price, show_image = EXCLUDED.show_image, active = true`,
+        [id, item.menu_item_id, item.custom_name || null, item.custom_price || null, showImage]
       );
     }
 
