@@ -29,6 +29,7 @@ export default function BrandingSettingsScreen() {
 
   const [restaurantName, setRestaurantName] = useState('');
   const [tagline, setTagline] = useState('');
+  const [address, setAddress] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#0d9488');
   const [customHex, setCustomHex] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -44,6 +45,7 @@ export default function BrandingSettingsScreen() {
     if (branding) {
       setRestaurantName(branding.restaurantName || '');
       setTagline(branding.tagline || '');
+      setAddress(branding.address || '');
       setPrimaryColor(branding.primaryColor || '#0d9488');
       setLogoPreview(branding.logoUrl || null);
     }
@@ -117,7 +119,7 @@ export default function BrandingSettingsScreen() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(tid2 ? { 'X-Tenant-ID': tid2 } : {}),
         },
-        body: JSON.stringify({ primaryColor, restaurantName, tagline }),
+        body: JSON.stringify({ primaryColor, restaurantName, tagline, address }),
       });
 
       if (!settingsRes.ok) {
@@ -186,6 +188,20 @@ export default function BrandingSettingsScreen() {
             onChange={(e) => setTagline(e.target.value)}
             className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
             placeholder="California Burritos"
+          />
+        </div>
+
+        {/* Address */}
+        <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
+          <label className="block text-sm font-medium text-neutral-400 mb-2">
+            {t('branding.address', 'Receipt Address')}
+          </label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
+            placeholder="123 Main St, City, State 12345"
           />
         </div>
 

@@ -59,6 +59,7 @@ router.get('/', (req, res) => {
       logoUrl: saved.logoUrl || null,
       restaurantName: saved.restaurantName || 'Desktop Kitchen',
       tagline: saved.tagline || '',
+      address: saved.address || '',
     });
   }
 
@@ -69,6 +70,7 @@ router.get('/', (req, res) => {
     logoUrl: branding.logoUrl || null,
     restaurantName: tenant.name || 'Desktop Kitchen',
     tagline: branding.tagline || '',
+    address: branding.address || '',
     plan,
     limits: getPlanLimits(plan),
     ownerEmail: tenant.owner_email || null,
@@ -118,7 +120,7 @@ router.put('/', requireOwner, async (req, res) => {
  */
 router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
   try {
-    const { primaryColor, restaurantName, tagline } = req.body;
+    const { primaryColor, restaurantName, tagline, address } = req.body;
     const tenantId = req.tenant?.id;
 
     // For non-tenant (default DB) — update a local branding file
@@ -133,6 +135,7 @@ router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
         ...(primaryColor !== undefined && { primaryColor }),
         ...(restaurantName !== undefined && { restaurantName }),
         ...(tagline !== undefined && { tagline }),
+        ...(address !== undefined && { address }),
       };
 
       fs.writeFileSync(brandingPath, JSON.stringify(updated, null, 2));
@@ -142,6 +145,7 @@ router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
         logoUrl: updated.logoUrl || null,
         restaurantName: updated.restaurantName || 'Desktop Kitchen',
         tagline: updated.tagline || '',
+        address: updated.address || '',
       });
     }
 
@@ -161,6 +165,7 @@ router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
       ...existing,
       ...(primaryColor !== undefined && { primaryColor }),
       ...(tagline !== undefined && { tagline }),
+      ...(address !== undefined && { address }),
     };
 
     const tenantUpdates = { branding_json: JSON.stringify(updated) };
@@ -175,6 +180,7 @@ router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
       logoUrl: updated.logoUrl || null,
       restaurantName: restaurantName || tenant.name,
       tagline: updated.tagline || '',
+      address: updated.address || '',
     });
   } catch (error) {
     console.error('Branding settings update error:', error);

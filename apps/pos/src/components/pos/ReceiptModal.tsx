@@ -36,12 +36,14 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
           <div className="p-6 text-center border-b-2 border-gray-300">
             <BrandLogo className="h-12 mx-auto mb-2" />
             <h2 className="text-2xl font-black tracking-tighter text-neutral-900 mb-1">{branding?.restaurantName || 'Desktop Kitchen'}</h2>
-            {(branding?.tagline || 'California Burritos') && (
-              <p className="text-neutral-600">{branding?.tagline || ''}</p>
+            {branding?.tagline && (
+              <p className="text-neutral-600">{branding.tagline}</p>
             )}
-            <p className="text-sm text-neutral-500 mt-2">
-              123 Main Street, San Francisco, CA 94102
-            </p>
+            {branding?.address && (
+              <p className="text-sm text-neutral-500 mt-2">
+                {branding.address}
+              </p>
+            )}
           </div>
 
           <div className="p-6 space-y-4 text-sm">
@@ -61,8 +63,8 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
             </div>
 
             <div className="space-y-2 border-b pb-3">
-              {order.items?.map((item, index) => (
-                <div key={index} className="flex justify-between">
+              {order.items?.map((item) => (
+                <div key={item.id || item.item_id} className="flex justify-between">
                   <div className="flex-1">
                     <p className="font-semibold">{item.item_name}</p>
                     {item.notes && (

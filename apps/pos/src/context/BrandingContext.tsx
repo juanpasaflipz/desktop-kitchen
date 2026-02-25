@@ -7,6 +7,7 @@ export interface BrandingConfig {
   logoUrl?: string;
   restaurantName?: string;
   tagline?: string;
+  address?: string;
 }
 
 interface BrandingContextType {

@@ -510,6 +510,8 @@ router.delete('/tenants/:id', async (req, res) => {
         'menu_item_ingredients', 'purchase_order_items', 'vendor_items',
         'ai_suggestion_events', 'ai_item_pairs', 'ai_inventory_velocity', 'ai_restock_log',
         'ai_category_roles', 'inventory_counts', 'shrinkage_alerts', 'refunds', 'crypto_payments',
+        'cfdi_invoice_tokens', 'cfdi_invoices', 'price_history', 'pricing_experiments',
+        'pricing_guardrails', 'waste_log',
       ];
       for (const t of layer1) {
         await sql.unsafe(`DELETE FROM ${t} WHERE tenant_id = $1`, [tid]);
@@ -546,6 +548,7 @@ router.delete('/tenants/:id', async (req, res) => {
         'ai_config', 'ai_suggestion_cache', 'ai_hourly_snapshots',
         'financial_targets', 'financial_actuals', 'loyalty_config',
         'role_permissions', 'order_templates',
+        'cfdi_config', 'pricing_rules', 'tenant_credentials', 'audit_log',
       ];
       for (const t of config) {
         await sql.unsafe(`DELETE FROM ${t} WHERE tenant_id = $1`, [tid]);
