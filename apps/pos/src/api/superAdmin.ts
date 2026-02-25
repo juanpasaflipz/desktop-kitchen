@@ -36,7 +36,7 @@ async function adminRequest<T>(endpoint: string, options: RequestInit = {}): Pro
 export interface OverviewData {
   total_tenants: number;
   active_tenants: number;
-  plan_breakdown: { trial: number; starter: number; pro: number };
+  plan_breakdown: { trial: number; starter: number; pro: number; ghost_kitchen: number };
   mrr: number;
   total_orders: number;
   total_revenue: number;
@@ -202,6 +202,27 @@ export function deleteTenant(id: string, confirm: string) {
   return adminRequest<{ message: string }>(`/tenants/${id}`, {
     method: 'DELETE',
     body: JSON.stringify({ confirm }),
+  });
+}
+
+// ==================== Employee PIN Management ====================
+
+export interface TenantEmployee {
+  id: number;
+  name: string;
+  role: string;
+  active: boolean;
+  created_at: string;
+}
+
+export function getTenantEmployees(tenantId: string) {
+  return adminRequest<TenantEmployee[]>(`/tenants/${tenantId}/employees`);
+}
+
+export function updateEmployeePin(tenantId: string, empId: number, pin: string) {
+  return adminRequest<{ message: string }>(`/tenants/${tenantId}/employees/${empId}/pin`, {
+    method: 'PATCH',
+    body: JSON.stringify({ pin }),
   });
 }
 

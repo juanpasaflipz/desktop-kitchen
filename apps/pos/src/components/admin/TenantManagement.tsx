@@ -144,6 +144,7 @@ export function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void;
               <option value="trial">Trial</option>
               <option value="starter">Starter</option>
               <option value="pro">Pro</option>
+              <option value="ghost_kitchen">Ghost Kitchen</option>
             </select>
           </div>
           <div>
@@ -221,6 +222,7 @@ export function EditTenantModal({ tenant, onClose, onSuccess }: {
               <option value="trial">Trial</option>
               <option value="starter">Starter</option>
               <option value="pro">Pro</option>
+              <option value="ghost_kitchen">Ghost Kitchen</option>
             </select>
           </div>
           <div>

@@ -28,7 +28,7 @@ router.use(requireAdmin);
 
 // ==================== Analytics Endpoints ====================
 
-const PLAN_PRICES = { starter: 29, pro: 79 };
+const PLAN_PRICES = { starter: 29, pro: 79, ghost_kitchen: 149 };
 
 // GET /admin/analytics/overview — KPIs: total tenants, plan breakdown, MRR, total orders/revenue
 router.get('/analytics/overview', async (req, res) => {
@@ -39,7 +39,8 @@ router.get('/analytics/overview', async (req, res) => {
         COUNT(*) FILTER (WHERE active = true) AS active_tenants,
         COUNT(*) FILTER (WHERE plan = 'trial') AS trial_count,
         COUNT(*) FILTER (WHERE plan = 'starter') AS starter_count,
-        COUNT(*) FILTER (WHERE plan = 'pro') AS pro_count
+        COUNT(*) FILTER (WHERE plan = 'pro') AS pro_count,
+        COUNT(*) FILTER (WHERE plan = 'ghost_kitchen') AS ghost_kitchen_count
       FROM tenants
     `;
 
@@ -51,7 +52,8 @@ router.get('/analytics/overview', async (req, res) => {
     `;
 
     const mrr = (tenantStats.starter_count * PLAN_PRICES.starter)
-              + (tenantStats.pro_count * PLAN_PRICES.pro);
+              + (tenantStats.pro_count * PLAN_PRICES.pro)
+              + (tenantStats.ghost_kitchen_count * PLAN_PRICES.ghost_kitchen);
 
     res.json({
       total_tenants: Number(tenantStats.total_tenants),
@@ -60,6 +62,7 @@ router.get('/analytics/overview', async (req, res) => {
         trial: Number(tenantStats.trial_count),
         starter: Number(tenantStats.starter_count),
         pro: Number(tenantStats.pro_count),
+        ghost_kitchen: Number(tenantStats.ghost_kitchen_count),
       },
       mrr,
       total_orders: Number(orderStats.total_orders),
@@ -625,6 +628,67 @@ router.post('/tenants/:id/seed', async (req, res) => {
   } catch (error) {
     console.error('Error seeding tenant:', error);
     res.status(500).json({ error: 'Failed to seed tenant' });
+  }
+});
+
+// GET /admin/tenants/:id/employees — list employees with roles (PINs are hashed, not returned)
+router.get('/tenants/:id/employees', async (req, res) => {
+  try {
+    const tenant = await getTenant(req.params.id);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+    const rows = await adminSql`
+      SELECT id, name, role, active, created_at
+      FROM employees
+      WHERE tenant_id = ${tenant.id}
+      ORDER BY role, name
+    `;
+    res.json(Array.from(rows));
+  } catch (error) {
+    console.error('Error listing tenant employees:', error);
+    res.status(500).json({ error: 'Failed to list employees' });
+  }
+});
+
+// PATCH /admin/tenants/:id/employees/:empId/pin — set a new PIN for an employee
+router.patch('/tenants/:id/employees/:empId/pin', async (req, res) => {
+  try {
+    const tenant = await getTenant(req.params.id);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+    const { pin } = req.body;
+    if (!pin || !/^\d{4,6}$/.test(pin)) {
+      return res.status(400).json({ error: 'PIN must be 4-6 digits' });
+    }
+
+    // Verify employee belongs to this tenant
+    const [emp] = await adminSql`
+      SELECT id, name FROM employees
+      WHERE id = ${req.params.empId} AND tenant_id = ${tenant.id}
+    `;
+    if (!emp) return res.status(404).json({ error: 'Employee not found' });
+
+    const hashedPin = await bcrypt.hash(pin, BCRYPT_ROUNDS);
+    await adminSql`
+      UPDATE employees SET pin = ${hashedPin}
+      WHERE id = ${req.params.empId} AND tenant_id = ${tenant.id}
+    `;
+
+    audit({
+      tenantId: tenant.id,
+      actorType: 'admin',
+      actorId: 'super-admin',
+      action: 'update',
+      resource: 'employee_pin',
+      resourceId: String(req.params.empId),
+      details: { employee_name: emp.name },
+      ip: req.ip,
+    });
+
+    res.json({ message: `PIN updated for ${emp.name}` });
+  } catch (error) {
+    console.error('Error updating employee PIN:', error);
+    res.status(500).json({ error: 'Failed to update PIN' });
   }
 });
 

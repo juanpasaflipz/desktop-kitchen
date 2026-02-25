@@ -58,6 +58,7 @@ export default function OverviewTab() {
     { name: 'Trial', value: overview.plan_breakdown.trial },
     { name: 'Starter', value: overview.plan_breakdown.starter },
     { name: 'Pro', value: overview.plan_breakdown.pro },
+    { name: 'Ghost Kitchen', value: overview.plan_breakdown.ghost_kitchen },
   ].filter(d => d.value > 0);
 
   return (

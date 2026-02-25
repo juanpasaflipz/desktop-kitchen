@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Search, X, Plus, Pencil, Sprout, KeyRound, Download, Trash2, Loader2,
+  Search, X, Plus, Pencil, Sprout, KeyRound, Download, Trash2, Loader2, Users, Check,
 } from 'lucide-react';
 import {
   getTenants, getTenantDeepDive, patchTenant, seedTenant,
-  type TenantRecord, type DeepDiveData,
+  getTenantEmployees, updateEmployeePin,
+  type TenantRecord, type DeepDiveData, type TenantEmployee,
 } from '../../api/superAdmin';
 import {
   CreateTenantModal, EditTenantModal, ResetPasswordModal, DeleteTenantModal,
@@ -35,6 +36,123 @@ function Stat({ label, value }: { label: string; value: string | number }) {
     <div className="bg-neutral-800 rounded p-2.5">
       <p className="text-neutral-500 text-xs">{label}</p>
       <p className="text-white text-sm font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function EmployeePinRow({ emp, tenantId }: { emp: TenantEmployee; tenantId: string }) {
+  const [editing, setEditing] = useState(false);
+  const [pin, setPin] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    setError('');
+    setSaving(true);
+    try {
+      await updateEmployeePin(tenantId, emp.id, pin);
+      setSaved(true);
+      setEditing(false);
+      setPin('');
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed');
+    }
+    setSaving(false);
+  };
+
+  const roleColors: Record<string, string> = {
+    admin: 'text-teal-400',
+    manager: 'text-blue-400',
+    cashier: 'text-neutral-300',
+    kitchen: 'text-orange-400',
+    bar: 'text-purple-400',
+  };
+
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-xs font-medium truncate">{emp.name}</p>
+        <p className={`text-[10px] ${roleColors[emp.role] || 'text-neutral-400'}`}>{emp.role}</p>
+      </div>
+      {editing ? (
+        <div className="flex items-center gap-1">
+          <input
+            type="text"
+            value={pin}
+            onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="PIN"
+            className="w-16 bg-neutral-700 border border-neutral-600 rounded px-1.5 py-1 text-xs text-white text-center font-mono focus:outline-none focus:border-teal-500"
+            autoFocus
+          />
+          <button
+            onClick={handleSave}
+            disabled={saving || pin.length < 4}
+            className="p-1 text-teal-400 hover:bg-teal-900/30 rounded disabled:opacity-50"
+          >
+            {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+          </button>
+          <button onClick={() => { setEditing(false); setPin(''); setError(''); }} className="p-1 text-neutral-500 hover:text-neutral-300">
+            <X size={12} />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1">
+          {saved && <span className="text-teal-400 text-[10px]">Saved</span>}
+          <button
+            onClick={() => setEditing(true)}
+            className="px-1.5 py-0.5 text-[10px] text-neutral-400 hover:text-teal-400 hover:bg-neutral-800 rounded transition-colors"
+          >
+            Set PIN
+          </button>
+        </div>
+      )}
+      {error && <span className="text-red-400 text-[10px]">{error}</span>}
+    </div>
+  );
+}
+
+function EmployeeSection({ tenantId }: { tenantId: string }) {
+  const [employees, setEmployees] = useState<TenantEmployee[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const fetchEmployees = async () => {
+    setLoading(true);
+    try {
+      setEmployees(await getTenantEmployees(tenantId));
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (expanded && employees.length === 0) fetchEmployees();
+  }, [expanded]);
+
+  return (
+    <div className="border-t border-neutral-800 pt-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 text-neutral-400 text-xs font-medium uppercase tracking-wide hover:text-neutral-200 transition-colors w-full"
+      >
+        <Users size={12} />
+        <span>Employees & PINs</span>
+        <span className="ml-auto text-neutral-600">{expanded ? '\u25B2' : '\u25BC'}</span>
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-0.5">
+          {loading ? (
+            <div className="text-neutral-500 text-xs py-2">Loading...</div>
+          ) : employees.length === 0 ? (
+            <div className="text-neutral-500 text-xs py-2">No employees</div>
+          ) : (
+            employees.map(emp => (
+              <EmployeePinRow key={emp.id} emp={emp} tenantId={tenantId} />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -127,6 +245,7 @@ export default function TenantsTab() {
           <option value="trial">Trial</option>
           <option value="starter">Starter</option>
           <option value="pro">Pro</option>
+          <option value="ghost_kitchen">Ghost Kitchen</option>
         </select>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-semibold transition-colors">
@@ -166,6 +285,7 @@ export default function TenantsTab() {
                           <option value="trial">Trial</option>
                           <option value="starter">Starter</option>
                           <option value="pro">Pro</option>
+                          <option value="ghost_kitchen">Ghost Kitchen</option>
                         </select>
                       </td>
                       <td className="px-4 py-3">
@@ -232,6 +352,7 @@ export default function TenantsTab() {
                 {deepDive.stats.last_order_at && (
                   <p className="text-neutral-500 text-xs">Last order: {new Date(deepDive.stats.last_order_at).toLocaleString()}</p>
                 )}
+                <EmployeeSection tenantId={selectedId!} />
                 <div className="border-t border-neutral-800 pt-4 space-y-2">
                   <p className="text-neutral-500 text-xs font-medium uppercase tracking-wide mb-2">Actions</p>
                   {ddTenant && (
