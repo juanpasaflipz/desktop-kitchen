@@ -331,7 +331,7 @@ router.post('/virtual-brands/:id/items', requireAuth('manage_delivery'), async (
       await run(
         `INSERT INTO virtual_brand_items (virtual_brand_id, menu_item_id, custom_name, custom_price, active)
          VALUES ($1, $2, $3, $4, true)
-         ON CONFLICT (virtual_brand_id, menu_item_id) DO UPDATE SET custom_name = EXCLUDED.custom_name, custom_price = EXCLUDED.custom_price, active = true`,
+         ON CONFLICT (tenant_id, virtual_brand_id, menu_item_id) DO UPDATE SET custom_name = EXCLUDED.custom_name, custom_price = EXCLUDED.custom_price, active = true`,
         [id, item.menu_item_id, item.custom_name || null, item.custom_price || null]
       );
     }
