@@ -112,10 +112,10 @@ async function fetchTestData() {
   const menuItems = await all('SELECT id, name, price FROM menu_items WHERE active = true');
   const employees = await all('SELECT id, name, role FROM employees WHERE active = true');
   const modifiers = await all(`
-    SELECT m.id, m.name, m.price_adjustment, m.modifier_group_id
+    SELECT m.id, m.name, m.price_adjustment, m.group_id
     FROM modifiers m
-    JOIN modifier_groups mg ON mg.id = m.modifier_group_id
-    WHERE mg.active = true
+    JOIN modifier_groups mg ON mg.id = m.group_id
+    WHERE mg.active = true AND m.active = true
   `);
 
   if (menuItems.length === 0) throw new Error('No active menu items found. Seed your menu before running stress tests.');
@@ -140,11 +140,11 @@ async function createTestOrder(conn, { menuItems, employees, modifiers, tenantId
     // 30% chance of adding a modifier
     if (modifiers.length > 0 && Math.random() < 0.3) {
       const mod = pick(modifiers);
-      modAdj = mod.price_adjustment;
+      modAdj = Number(mod.price_adjustment) || 0;
       itemMods.push(mod);
     }
 
-    const unitPrice = item.price + modAdj;
+    const unitPrice = Number(item.price) + modAdj;
     itemsTotal += unitPrice * qty;
     orderItems.push({
       menu_item_id: item.id,
@@ -241,7 +241,8 @@ async function runBatchOrders({ conn, testData, count, tenantId }) {
       const id = await createTestOrder(conn, { ...testData, tenantId });
       orderIds.push(id);
       timings.push(Date.now() - start);
-    } catch {
+    } catch (err) {
+      console.error('[StressTest] Order creation error:', err.message);
       errors++;
       timings.push(Date.now() - start);
     }
@@ -311,21 +312,15 @@ async function runStandardTest(conn, testData, tenantId, params, templateId, emi
     ordersCreated: 0,
   });
 
-  // Process in batches
+  // Process in batches (sequential within batch — single DB connection)
   for (let i = 0; i < orderQueue.length; i += batchSize) {
-    const batch = orderQueue.slice(i, i + batchSize);
-    const promises = batch.map(() =>
-      runBatchOrders({ conn, testData, count: 1, tenantId })
-    );
+    const batchCount = Math.min(batchSize, orderQueue.length - i);
+    const r = await runBatchOrders({ conn, testData, count: batchCount, tenantId });
+    allOrderIds.push(...r.orderIds);
+    allTimings.push(...r.timings);
+    totalErrors += r.errors;
 
-    const results = await Promise.all(promises);
-    for (const r of results) {
-      allOrderIds.push(...r.orderIds);
-      allTimings.push(...r.timings);
-      totalErrors += r.errors;
-    }
-
-    created += batch.length;
+    created += batchCount;
     emit('progress', {
       phase: 'orders',
       message: `Created ${created}/${total} orders`,
@@ -380,22 +375,13 @@ async function runBreakingPoint(conn, testData, tenantId, params, emit) {
       ordersCreated: allOrderIds.length,
     });
 
-    // Fire all orders in this batch concurrently
-    const promises = Array.from({ length: batchSize }, () =>
-      runBatchOrders({ conn, testData, count: 1, tenantId })
-    );
-
-    const results = await Promise.all(promises);
-    let batchTimings = [];
-    let batchErrors = 0;
-
-    for (const r of results) {
-      allOrderIds.push(...r.orderIds);
-      allTimings.push(...r.timings);
-      batchTimings.push(...r.timings);
-      batchErrors += r.errors;
-      totalErrors += r.errors;
-    }
+    // Create all orders in this batch sequentially (single DB connection)
+    const r = await runBatchOrders({ conn, testData, count: batchSize, tenantId });
+    allOrderIds.push(...r.orderIds);
+    allTimings.push(...r.timings);
+    const batchTimings = r.timings;
+    const batchErrors = r.errors;
+    totalErrors += batchErrors;
 
     const avgLatency = batchTimings.length > 0
       ? Math.round(batchTimings.reduce((a, b) => a + b, 0) / batchTimings.length)
