@@ -24,7 +24,7 @@ export async function generatePricingSuggestions() {
       AVG(revenue) as avg_revenue
     FROM ai_hourly_snapshots
     WHERE day_of_week = $1
-      AND EXTRACT(HOUR FROM snapshot_hour)::int = $2
+      AND SUBSTRING(snapshot_hour FROM 12 FOR 2)::int = $2
   `, [dayOfWeek, currentHour]);
 
   const avgOrders = historical?.avg_orders || 0;
@@ -138,7 +138,7 @@ export async function generateGrokPricingAnalysis() {
   const dowPatterns = await all(`
     SELECT day_of_week, AVG(order_count) as avg_orders, AVG(revenue) as avg_revenue
     FROM ai_hourly_snapshots
-    WHERE snapshot_hour >= NOW() - INTERVAL '30 days'
+    WHERE snapshot_hour >= to_char(NOW() - INTERVAL '30 days', 'YYYY-MM-DD"T"HH24')
     GROUP BY day_of_week
     ORDER BY day_of_week
   `);

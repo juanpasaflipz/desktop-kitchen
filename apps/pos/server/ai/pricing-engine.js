@@ -263,7 +263,7 @@ export async function evaluateActiveRules() {
         // Check current vs historical traffic
         const historical = await get(`
           SELECT AVG(order_count) as avg_orders FROM ai_hourly_snapshots
-          WHERE day_of_week = $1 AND EXTRACT(HOUR FROM snapshot_hour)::int = $2
+          WHERE day_of_week = $1 AND SUBSTRING(snapshot_hour FROM 12 FOR 2)::int = $2
         `, [currentDay, currentHour]);
         const current = await get(`
           SELECT COUNT(*) as cnt FROM orders
