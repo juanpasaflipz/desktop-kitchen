@@ -385,11 +385,11 @@ async function processUberOrder(tenantId, externalOrderId, rawWebhookData) {
       menu_item_id: localItem?.id || null,
       item_name: localItem?.name || title,
       quantity,
-      unit_price: unitPrice > 0 ? unitPrice : (localItem?.price || 0),
+      unit_price: unitPrice > 0 ? unitPrice : (Number(localItem?.price) || 0),
       notes,
     });
 
-    itemsTotal += (unitPrice > 0 ? unitPrice : (localItem?.price || 0)) * quantity;
+    itemsTotal += (unitPrice > 0 ? unitPrice : (Number(localItem?.price) || 0)) * quantity;
   }
 
   // Calculate tax (prices include IVA)
@@ -618,11 +618,11 @@ async function processRappiOrder(tenantId, payload, rawWebhookData) {
       menu_item_id: localItem?.id || null,
       item_name: localItem?.name || title,
       quantity,
-      unit_price: unitPrice > 0 ? unitPrice : (localItem?.price || 0),
+      unit_price: unitPrice > 0 ? unitPrice : (Number(localItem?.price) || 0),
       notes,
     });
 
-    itemsTotal += (unitPrice > 0 ? unitPrice : (localItem?.price || 0)) * quantity;
+    itemsTotal += (unitPrice > 0 ? unitPrice : (Number(localItem?.price) || 0)) * quantity;
   }
 
   // Calculate tax (prices include IVA)
@@ -857,11 +857,11 @@ async function processDidiOrder(tenantId, payload, rawWebhookData) {
       menu_item_id: localItem?.id || null,
       item_name: localItem?.name || title,
       quantity,
-      unit_price: unitPrice > 0 ? unitPrice : (localItem?.price || 0),
+      unit_price: unitPrice > 0 ? unitPrice : (Number(localItem?.price) || 0),
       notes,
     });
 
-    itemsTotal += (unitPrice > 0 ? unitPrice : (localItem?.price || 0)) * quantity;
+    itemsTotal += (unitPrice > 0 ? unitPrice : (Number(localItem?.price) || 0)) * quantity;
   }
 
   // Calculate tax (prices include IVA)

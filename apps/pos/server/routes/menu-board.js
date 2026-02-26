@@ -106,7 +106,7 @@ router.get('/data', async (req, res) => {
       for (const slot of combo.slots) {
         if (slot.specificItemId) {
           const item = await all('SELECT price FROM menu_items WHERE id = $1', [slot.specificItemId]);
-          alaCarteMin += item[0]?.price || 0;
+          alaCarteMin += Number(item[0]?.price) || 0;
         } else if (slot.categoryId) {
           alaCarteMin += minPriceMap.get(slot.categoryId) || 0;
         }

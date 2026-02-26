@@ -273,7 +273,7 @@ router.post('/', requireAuth('pos_access'), async (req, res) => {
         for (const modId of item.modifiers) {
           const mod = await get('SELECT id, name, price_adjustment FROM modifiers WHERE id = $1', [modId]);
           if (mod) {
-            modifierTotal += mod.price_adjustment;
+            modifierTotal += Number(mod.price_adjustment);
             resolvedModifiers.push(mod);
           }
         }
@@ -281,7 +281,7 @@ router.post('/', requireAuth('pos_access'), async (req, res) => {
 
       // Resolve brand-specific name/price if virtual_brand_id present
       let itemName = menuItem.name;
-      let basePrice = menuItem.price;
+      let basePrice = Number(menuItem.price);
       const virtualBrandId = item.virtual_brand_id || null;
 
       if (virtualBrandId) {
@@ -291,7 +291,7 @@ router.post('/', requireAuth('pos_access'), async (req, res) => {
         );
         if (brandItem) {
           if (brandItem.custom_name) itemName = brandItem.custom_name;
-          if (brandItem.custom_price != null) basePrice = brandItem.custom_price;
+          if (brandItem.custom_price != null) basePrice = Number(brandItem.custom_price);
         }
       }
 

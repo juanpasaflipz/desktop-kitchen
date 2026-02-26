@@ -158,7 +158,7 @@ router.post('/cash', requireAuth('pos_access'), async (req, res) => {
     }
 
     const tipAmount = typeof tip === 'number' ? tip : 0;
-    const finalTotal = order.total + tipAmount;
+    const finalTotal = Number(order.total) + tipAmount;
     const changeDue = amount_received > 0 ? Math.max(0, amount_received - finalTotal) : 0;
 
     // Mark order as paid with cash
@@ -275,8 +275,8 @@ router.post('/refund', requireAuth('process_refunds'), async (req, res) => {
       return res.status(400).json({ error: 'Order must be paid before refunding' });
     }
 
-    const existingRefundTotal = order.refund_total || 0;
-    const maxRefundable = order.total + order.tip - existingRefundTotal;
+    const existingRefundTotal = Number(order.refund_total) || 0;
+    const maxRefundable = Number(order.total) + Number(order.tip) - existingRefundTotal;
 
     // Determine refund type and amount
     let refundAmount;
@@ -297,8 +297,8 @@ router.post('/refund', requireAuth('process_refunds'), async (req, res) => {
         if (!orderItem) {
           return res.status(400).json({ error: `Order item ${refundItem.order_item_id} not found` });
         }
-        const qty = refundItem.quantity || orderItem.quantity;
-        const itemAmount = orderItem.unit_price * qty;
+        const qty = refundItem.quantity || Number(orderItem.quantity);
+        const itemAmount = Number(orderItem.unit_price) * qty;
         refundAmount += itemAmount;
         refundItems.push({
           order_item_id: refundItem.order_item_id,
@@ -352,7 +352,7 @@ router.post('/refund', requireAuth('process_refunds'), async (req, res) => {
 
     // Update order refund_total
     const newRefundTotal = existingRefundTotal + refundAmount;
-    const fullyRefunded = newRefundTotal >= (order.total + order.tip);
+    const fullyRefunded = newRefundTotal >= (Number(order.total) + Number(order.tip));
 
     await run(`
       UPDATE orders
@@ -794,8 +794,8 @@ router.get('/:order_id', async (req, res) => {
         order_id,
         payment_status: order.payment_status || 'unpaid',
         payment_method: order.payment_method,
-        amount: order.total + order.tip,
-        refund_total: order.refund_total || 0,
+        amount: Number(order.total) + Number(order.tip),
+        refund_total: Number(order.refund_total) || 0,
       });
     }
 
@@ -806,7 +806,7 @@ router.get('/:order_id', async (req, res) => {
       order_number: order.order_number,
       payment_status: paymentIntent.status,
       payment_method: order.payment_method,
-      amount: order.total + order.tip,
+      amount: Number(order.total) + Number(order.tip),
       payment_intent_id: order.payment_intent_id,
       refund_total: order.refund_total || 0,
     });

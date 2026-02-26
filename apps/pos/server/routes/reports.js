@@ -646,7 +646,7 @@ router.get('/reconciliation', requireAuth('view_reports'), async (req, res) => {
         stripeAmount = fees.gross;
         stripeFee = fees.fee;
         netAmount = fees.net;
-        matched = Math.abs(stripeAmount - (order.total + order.tip)) < 0.02;
+        matched = Math.abs(stripeAmount - (Number(order.total) + Number(order.tip))) < 0.02;
       } catch {
         // If Stripe call fails, leave as unmatched
       }
@@ -654,8 +654,8 @@ router.get('/reconciliation', requireAuth('view_reports'), async (req, res) => {
       rows.push({
         order_id: order.id,
         order_number: order.order_number,
-        order_total: order.total + order.tip,
-        refund_total: order.refund_total || 0,
+        order_total: Number(order.total) + Number(order.tip),
+        refund_total: Number(order.refund_total) || 0,
         stripe_amount: stripeAmount,
         stripe_fee: stripeFee,
         net_amount: netAmount,
