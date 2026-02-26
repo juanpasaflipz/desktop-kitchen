@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dk-pos-v1';
+const CACHE_NAME = 'dk-pos-v2';
 const API_CACHE_NAME = 'dk-api-v1';
 
 // GET API endpoints eligible for stale-while-revalidate caching
@@ -45,6 +45,19 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests (POST/PUT can't be cached)
   if (request.method !== 'GET') return;
+
+  // Admin API requests: always network-only (not under /api prefix)
+  if (url.pathname.startsWith('/admin')) {
+    event.respondWith(
+      fetch(request).catch(() =>
+        new Response(JSON.stringify({ error: 'Offline' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    );
+    return;
+  }
 
   // GET API requests: stale-while-revalidate for cacheable endpoints
   if (url.pathname.startsWith('/api')) {
