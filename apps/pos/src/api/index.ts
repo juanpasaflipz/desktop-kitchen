@@ -143,6 +143,38 @@ async function resolveBaseUrl(): Promise<string> {
   return activeBaseUrl;
 }
 
+/* ==================== Numeric Coercion ==================== */
+
+// Neon Postgres returns NUMERIC(10,2) columns as strings to preserve precision.
+// This causes NaN bugs when JS uses + (string concat) instead of addition.
+// Coerce known numeric fields to numbers at the API boundary so all downstream
+// code can safely do arithmetic without per-callsite Number() wrapping.
+const NUMERIC_FIELDS = new Set([
+  'price', 'unit_price', 'subtotal', 'tax', 'tip', 'total',
+  'cost_price', 'price_adjustment', 'combo_price', 'amount',
+  'delivery_fee', 'platform_commission', 'custom_price', 'price_amount',
+  'unit_cost', 'total_amount', 'line_total', 'total_spent', 'refund_total',
+  'quantity_used', 'quantity_received',
+]);
+
+function coerceNumerics(data: unknown): unknown {
+  if (data === null || data === undefined) return data;
+  if (Array.isArray(data)) return data.map(coerceNumerics);
+  if (typeof data === 'object') {
+    const obj = data as Record<string, unknown>;
+    for (const key in obj) {
+      if (NUMERIC_FIELDS.has(key) && typeof obj[key] === 'string') {
+        const n = Number(obj[key]);
+        if (!Number.isNaN(n)) obj[key] = n;
+      } else if (typeof obj[key] === 'object') {
+        obj[key] = coerceNumerics(obj[key]);
+      }
+    }
+    return obj;
+  }
+  return data;
+}
+
 /* ==================== Base API Client ==================== */
 
 async function apiRequest<T>(
@@ -182,7 +214,7 @@ async function apiRequest<T>(
   }
 
   const data = await response.json();
-  return data as T;
+  return coerceNumerics(data) as T;
 }
 
 /* ==================== Menu Endpoints ==================== */

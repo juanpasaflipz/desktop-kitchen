@@ -385,7 +385,7 @@ const POSScreen: React.FC = () => {
           menu_item_id: item.id,
           item_name: displayName,
           quantity: 1,
-          unit_price: displayPrice,
+          unit_price: Number(displayPrice),
           menuItem: item,
           virtual_brand_id: brandId,
         },
@@ -406,7 +406,7 @@ const POSScreen: React.FC = () => {
         menu_item_id: item.id,
         item_name: displayName,
         quantity: 1,
-        unit_price: displayPrice + modifierPriceTotal,
+        unit_price: Number(displayPrice) + modifierPriceTotal,
         menuItem: item,
         notes: notes || undefined,
         selectedModifierIds: selectedModifiers,
@@ -860,7 +860,7 @@ const POSScreen: React.FC = () => {
                 for (const mod of g.modifiers || []) {
                   if (selectedModifiers.includes(mod.id)) {
                     modNames.push(mod.name);
-                    modPriceTotal += mod.price_adjustment;
+                    modPriceTotal += Number(mod.price_adjustment) || 0;
                   }
                 }
               }

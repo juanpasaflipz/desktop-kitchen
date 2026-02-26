@@ -58,7 +58,7 @@ export default function ModifierModal({ item, onConfirm, onClose }: ModifierModa
     .reduce((sum, modId) => {
       for (const g of groups) {
         const mod = g.modifiers?.find(m => m.id === modId);
-        if (mod) return sum + mod.price_adjustment;
+        if (mod) return sum + (Number(mod.price_adjustment) || 0);
       }
       return sum;
     }, 0);
@@ -170,7 +170,7 @@ export default function ModifierModal({ item, onConfirm, onClose }: ModifierModa
             disabled={!isValid}
             className="w-full py-4 bg-brand-600 text-white text-lg font-bold rounded-lg hover:bg-brand-700 disabled:bg-neutral-700 disabled:text-neutral-500 transition-all"
           >
-            {t('modifier.addToOrder', { price: formatPrice(item.price + totalAdjustment) })}
+            {t('modifier.addToOrder', { price: formatPrice(Number(item.price) + totalAdjustment) })}
           </button>
           <button
             onClick={onClose}
