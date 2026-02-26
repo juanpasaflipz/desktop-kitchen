@@ -73,6 +73,7 @@ import {
   StressTestConfig,
   StressTestProgress,
   StressTestResults,
+  StressTestResidual,
 } from '../types';
 
 // Employee ID for display/sync use - set after login
@@ -1823,6 +1824,14 @@ export async function runStressTest(
       }
     }
   }
+}
+
+export async function getStressTestResidual(): Promise<StressTestResidual> {
+  return apiRequest<StressTestResidual>('/stress-test/residual');
+}
+
+export async function cleanupStressTestData(): Promise<{ deleted: number }> {
+  return apiRequest<{ deleted: number }>('/stress-test/cleanup', { method: 'DELETE' });
 }
 
 export async function deleteCredentials(service: string): Promise<{ success: boolean }> {

@@ -16,13 +16,15 @@ import {
   BarChart3,
   TrendingUp,
   Loader2,
+  Trash2,
 } from 'lucide-react';
-import { getStressTestTemplates, runStressTest } from '../api';
+import { getStressTestTemplates, runStressTest, getStressTestResidual, cleanupStressTestData } from '../api';
 import {
   StressTestTemplate,
   StressTestConfig,
   StressTestProgress,
   StressTestResults,
+  StressTestResidual,
   StressTestTemplateId,
 } from '../types';
 
@@ -66,7 +68,15 @@ export default function StressTestScreen() {
   const [results, setResults] = useState<StressTestResults | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [residual, setResidual] = useState<StressTestResidual | null>(null);
+  const [cleaning, setCleaning] = useState(false);
   const progressLog = useRef<StressTestProgress[]>([]);
+
+  const fetchResidual = useCallback(() => {
+    getStressTestResidual()
+      .then(setResidual)
+      .catch(() => setResidual(null));
+  }, []);
 
   useEffect(() => {
     getStressTestTemplates()
@@ -78,6 +88,21 @@ export default function StressTestScreen() {
         setError(err.message);
         setLoading(false);
       });
+    fetchResidual();
+  }, [fetchResidual]);
+
+  const handleCleanup = useCallback(async () => {
+    setCleaning(true);
+    try {
+      const result = await cleanupStressTestData();
+      setResidual({ orderCount: 0, totalRevenue: 0, oldest: null, newest: null });
+      setError(null);
+      console.log(`[StressTest] Cleaned up ${result.deleted} orders`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clean up');
+    } finally {
+      setCleaning(false);
+    }
   }, []);
 
   const selectTemplate = useCallback((t: StressTestTemplate) => {
@@ -117,10 +142,12 @@ export default function StressTestScreen() {
         (r) => {
           setResults(r);
           setRunning(false);
+          fetchResidual();
         },
         (errMsg) => {
           setError(errMsg);
           setRunning(false);
+          fetchResidual();
         },
       );
       // If stream ends without complete event
@@ -155,6 +182,38 @@ export default function StressTestScreen() {
           <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 mb-6 flex items-center gap-3">
             <XCircle className="text-red-400 shrink-0" size={20} />
             <p className="text-red-300">{error}</p>
+          </div>
+        )}
+
+        {/* Residual Data Banner */}
+        {residual && residual.orderCount > 0 && !running && (
+          <div className="bg-orange-900/20 border border-orange-800/50 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-orange-400 shrink-0" size={20} />
+                <div>
+                  <p className="text-orange-300 font-medium">
+                    {residual.orderCount} leftover stress test order{residual.orderCount !== 1 ? 's' : ''} found
+                  </p>
+                  <p className="text-orange-400/70 text-sm mt-0.5">
+                    ${Number(residual.totalRevenue).toFixed(2)} in test revenue
+                    {residual.newest && ` \u00B7 last run ${new Date(residual.newest).toLocaleDateString()}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCleanup}
+                disabled={cleaning}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                {cleaning ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                {cleaning ? 'Cleaning...' : 'Delete Test Data'}
+              </button>
+            </div>
           </div>
         )}
 

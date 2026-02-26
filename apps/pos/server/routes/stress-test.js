@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requirePlanFeature } from '../planLimits.js';
 import { requireAuth } from '../middleware/auth.js';
-import { TEMPLATES, runStressTest } from '../lib/stressEngine.js';
+import { TEMPLATES, runStressTest, getResidualData, cleanupResidualData } from '../lib/stressEngine.js';
 
 const router = Router();
 
@@ -62,6 +62,28 @@ router.post('/run', requirePlanFeature('stressTest'), requireAuth(), async (req,
   }
 
   res.end();
+});
+
+// GET /api/stress-test/residual — check for leftover stress test data
+router.get('/residual', requireAuth(), async (req, res) => {
+  try {
+    const data = await getResidualData();
+    res.json(data);
+  } catch (err) {
+    console.error('[StressTest] Residual check error:', err);
+    res.status(500).json({ error: 'Failed to check residual data' });
+  }
+});
+
+// DELETE /api/stress-test/cleanup — delete all leftover stress test data
+router.delete('/cleanup', requirePlanFeature('stressTest'), requireAuth(), async (req, res) => {
+  try {
+    const result = await cleanupResidualData();
+    res.json(result);
+  } catch (err) {
+    console.error('[StressTest] Cleanup error:', err);
+    res.status(500).json({ error: 'Failed to clean up stress test data' });
+  }
 });
 
 export default router;

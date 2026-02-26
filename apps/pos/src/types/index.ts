@@ -1124,6 +1124,13 @@ export interface StressTestResults {
   recommendations: string[];
 }
 
+export interface StressTestResidual {
+  orderCount: number;
+  totalRevenue: number;
+  oldest: string | null;
+  newest: string | null;
+}
+
 /* API Response Types */
 export interface ApiResponse<T> {
   success: boolean;

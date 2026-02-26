@@ -8,7 +8,7 @@
 import { getConn, all, get, run } from '../db/index.js';
 
 const TAX_RATE = 0.16;
-const SOURCES = ['pos', 'uber_eats', 'rappi', 'didi_food'];
+const STRESS_SOURCE = 'stress_test';
 
 // ─── Templates ──────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ async function fetchTestData() {
   return { menuItems, employees, modifiers };
 }
 
-async function createTestOrder(conn, { menuItems, employees, modifiers, source, tenantId }) {
+async function createTestOrder(conn, { menuItems, employees, modifiers, tenantId }) {
   const employee = pick(employees);
   const numItems = Math.floor(Math.random() * 3) + 1; // 1-3 items
 
@@ -177,7 +177,7 @@ async function createTestOrder(conn, { menuItems, employees, modifiers, source, 
     INSERT INTO orders (order_number, employee_id, status, subtotal, tax, total, payment_status, source)
     VALUES ($1, $2, 'pending', $3, $4, $5, 'unpaid', $6)
     RETURNING id
-  `, [orderNumber, employee.id, subtotal, tax, total, source]);
+  `, [orderNumber, employee.id, subtotal, tax, total, STRESS_SOURCE]);
 
   const orderId = inserted.id;
 
@@ -230,7 +230,7 @@ async function cleanupOrders(conn, orderIds) {
 
 // ─── Runners ────────────────────────────────────────────────
 
-async function runBatchOrders({ conn, testData, count, source, tenantId }) {
+async function runBatchOrders({ conn, testData, count, tenantId }) {
   const timings = [];
   const orderIds = [];
   let errors = 0;
@@ -238,7 +238,7 @@ async function runBatchOrders({ conn, testData, count, source, tenantId }) {
   for (let i = 0; i < count; i++) {
     const start = Date.now();
     try {
-      const id = await createTestOrder(conn, { ...testData, source, tenantId });
+      const id = await createTestOrder(conn, { ...testData, tenantId });
       orderIds.push(id);
       timings.push(Date.now() - start);
     } catch {
@@ -301,15 +301,8 @@ async function runStandardTest(conn, testData, tenantId, params, templateId, emi
   let totalErrors = 0;
   let created = 0;
 
-  // Build order queue: interleave POS and delivery
-  const orderQueue = [];
-  for (let i = 0; i < posCount; i++) orderQueue.push('pos');
-  for (let i = 0; i < deliveryCount; i++) orderQueue.push(pick(['uber_eats', 'rappi', 'didi_food']));
-  // Shuffle
-  for (let i = orderQueue.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [orderQueue[i], orderQueue[j]] = [orderQueue[j], orderQueue[i]];
-  }
+  // Build order queue (all marked source='stress_test')
+  const orderQueue = new Array(total).fill(null);
 
   emit('progress', {
     phase: 'orders',
@@ -321,8 +314,8 @@ async function runStandardTest(conn, testData, tenantId, params, templateId, emi
   // Process in batches
   for (let i = 0; i < orderQueue.length; i += batchSize) {
     const batch = orderQueue.slice(i, i + batchSize);
-    const promises = batch.map(source =>
-      runBatchOrders({ conn, testData, count: 1, source, tenantId })
+    const promises = batch.map(() =>
+      runBatchOrders({ conn, testData, count: 1, tenantId })
     );
 
     const results = await Promise.all(promises);
@@ -389,7 +382,7 @@ async function runBreakingPoint(conn, testData, tenantId, params, emit) {
 
     // Fire all orders in this batch concurrently
     const promises = Array.from({ length: batchSize }, () =>
-      runBatchOrders({ conn, testData, count: 1, source: pick(SOURCES), tenantId })
+      runBatchOrders({ conn, testData, count: 1, tenantId })
     );
 
     const results = await Promise.all(promises);
@@ -545,4 +538,46 @@ export async function runStressTest(config, tenantId, emit) {
     breakingPointBatches: result.breakingPointBatches || undefined,
     recommendations,
   };
+}
+
+// ─── Residual Data ──────────────────────────────────────────
+
+/**
+ * Check for leftover stress test orders that weren't cleaned up.
+ */
+export async function getResidualData() {
+  const conn = getConn();
+  const rows = await conn.unsafe(`
+    SELECT COUNT(*)::int AS order_count,
+           COALESCE(SUM(total), 0) AS total_revenue,
+           MIN(created_at) AS oldest,
+           MAX(created_at) AS newest
+    FROM orders
+    WHERE source = 'stress_test'
+  `);
+  const row = rows[0] || { order_count: 0, total_revenue: 0, oldest: null, newest: null };
+  return {
+    orderCount: Number(row.order_count) || 0,
+    totalRevenue: Number(row.total_revenue) || 0,
+    oldest: row.oldest,
+    newest: row.newest,
+  };
+}
+
+/**
+ * Delete all stress test orders and their related data.
+ */
+export async function cleanupResidualData() {
+  const conn = getConn();
+
+  // Get all stress test order IDs
+  const orderRows = await conn.unsafe(
+    `SELECT id FROM orders WHERE source = 'stress_test'`
+  );
+  const orderIds = orderRows.map(r => r.id);
+
+  if (orderIds.length === 0) return { deleted: 0 };
+
+  await cleanupOrders(conn, orderIds);
+  return { deleted: orderIds.length };
 }
