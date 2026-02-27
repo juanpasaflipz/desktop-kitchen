@@ -192,7 +192,7 @@ api_get() {
     tmpfile=$(mktemp)
     HTTP_CODE=$(curl -s -o "$tmpfile" -w "%{http_code}" \
         "${AUTH_HEADERS[@]}" \
-        ${EMPLOYEE_TOKEN:+-H "x-employee-id: $EMPLOYEE_ID"} \
+        ${EMPLOYEE_TOKEN:+-H "Authorization: Bearer $EMPLOYEE_TOKEN"} \
         "$url" 2>/dev/null || echo "000")
     BODY=$(cat "$tmpfile")
     rm -f "$tmpfile"
@@ -211,7 +211,7 @@ api_post() {
     HTTP_CODE=$(curl -s -o "$tmpfile" -w "%{http_code}" \
         -X POST \
         "${AUTH_HEADERS[@]}" \
-        ${EMPLOYEE_TOKEN:+-H "x-employee-id: $EMPLOYEE_ID"} \
+        ${EMPLOYEE_TOKEN:+-H "Authorization: Bearer $EMPLOYEE_TOKEN"} \
         -d "$data" \
         "$url" 2>/dev/null || echo "000")
     BODY=$(cat "$tmpfile")
@@ -231,7 +231,7 @@ api_put() {
     HTTP_CODE=$(curl -s -o "$tmpfile" -w "%{http_code}" \
         -X PUT \
         "${AUTH_HEADERS[@]}" \
-        ${EMPLOYEE_TOKEN:+-H "x-employee-id: $EMPLOYEE_ID"} \
+        ${EMPLOYEE_TOKEN:+-H "Authorization: Bearer $EMPLOYEE_TOKEN"} \
         -d "$data" \
         "$url" 2>/dev/null || echo "000")
     BODY=$(cat "$tmpfile")
