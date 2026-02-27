@@ -562,8 +562,7 @@ router.post('/webhook/uber-eats', async (req, res) => {
   } catch (error) {
     console.error('[Uber Eats] Webhook error:', error);
     // Return 200 even on error to prevent Uber from retrying indefinitely
-    // The error is logged for debugging
-    res.status(200).json({ success: false, error: error.message });
+    res.status(200).json({ success: false, error: 'Internal processing error' });
   }
 });
 
@@ -790,7 +789,7 @@ router.post('/webhook/rappi', async (req, res) => {
     }
   } catch (error) {
     console.error('[Rappi] Webhook error:', error);
-    res.status(200).json({ success: false, error: error.message });
+    res.status(200).json({ success: false, error: 'Internal processing error' });
   }
 });
 
@@ -1055,7 +1054,7 @@ router.post('/webhook/didi', async (req, res) => {
     return res.json({ success: true, message: `Event acknowledged` });
   } catch (error) {
     console.error('[DiDi Food] Webhook error:', error);
-    res.status(200).json({ success: false, error: error.message });
+    res.status(200).json({ success: false, error: 'Internal processing error' });
   }
 });
 

@@ -236,7 +236,7 @@ router.post('/:token/issue', async (req, res) => {
     });
   } catch (err) {
     console.error('[CFDI-Public] Error issuing invoice:', err.message);
-    res.status(500).json({ error: `Failed to issue invoice: ${err.message}` });
+    res.status(500).json({ error: 'Failed to issue invoice. Please try again or contact the restaurant.' });
   }
 });
 

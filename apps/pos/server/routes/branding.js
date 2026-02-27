@@ -199,9 +199,9 @@ router.post('/logo', requireAuth('manage_branding'), (req, res) => {
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({ error: 'File too large. Max 2MB.' });
         }
-        return res.status(400).json({ error: err.message });
+        return res.status(400).json({ error: 'File upload error' });
       }
-      return res.status(400).json({ error: err.message });
+      return res.status(400).json({ error: 'File upload failed' });
     }
 
     if (!req.file) {

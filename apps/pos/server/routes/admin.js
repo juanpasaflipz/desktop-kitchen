@@ -1,14 +1,22 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import { createTenant, getTenant, listTenants, updateTenant } from '../tenants.js';
 import { run, adminSql } from '../db/index.js';
 import { sendPinEmail, sendWelcomeEmail } from '../helpers/email.js';
 import { audit } from '../lib/auditLog.js';
+import { BCRYPT_ROUNDS } from '../lib/constants.js';
 import os from 'os';
 
-const BCRYPT_ROUNDS = 12;
-
 const router = Router();
+
+// Rate limit all admin routes — 100 requests per 15 min per IP
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  keyGenerator: (req) => `admin:${req.ip}`,
+  message: { error: 'Too many admin requests, please try again later' },
+});
 
 /**
  * Admin auth middleware — protects all admin routes with ADMIN_SECRET env var.
@@ -24,6 +32,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+router.use(adminLimiter);
 router.use(requireAdmin);
 
 // ==================== Analytics Endpoints ====================

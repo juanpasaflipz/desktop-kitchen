@@ -1,14 +1,19 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import { all, get, run, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { checkLimit } from '../planLimits.js';
 import { audit } from '../lib/auditLog.js';
+import { BCRYPT_ROUNDS, JWT_SECRET } from '../lib/constants.js';
 
-const BCRYPT_ROUNDS = 12;
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-me';
+const pinLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  keyGenerator: (req) => `pin-login:${req.ip}:${req.tenant?.id || 'unknown'}`,
+  message: { error: 'Too many login attempts, please try again later' },
+});
 
 const router = Router();
 
@@ -81,7 +86,7 @@ router.post('/', async (req, res) => {
 });
 
 // POST /api/employees/login - PIN login (must be before /:id to avoid shadowing)
-router.post('/login', async (req, res) => {
+router.post('/login', pinLoginLimiter, async (req, res) => {
   try {
     const { pin } = req.body;
 

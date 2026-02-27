@@ -7,11 +7,9 @@ import { createTenant, getTenantByEmail, updateTenant } from '../tenants.js';
 import { adminSql } from '../db/index.js';
 import { sendPinEmail, sendPasswordResetEmail } from '../helpers/email.js';
 
-const router = Router();
+import { BCRYPT_ROUNDS, JWT_SECRET, JWT_OWNER_EXPIRY } from '../lib/constants.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-me';
-const JWT_EXPIRES_IN = '7d';
-const BCRYPT_ROUNDS = 12;
+const router = Router();
 
 // Rate limiting: 5 registration attempts per IP per 15 minutes
 const registerLimiter = rateLimit({
@@ -41,7 +39,7 @@ const forgotPasswordLimiter = rateLimit({
 });
 
 function signToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_OWNER_EXPIRY });
 }
 
 /**

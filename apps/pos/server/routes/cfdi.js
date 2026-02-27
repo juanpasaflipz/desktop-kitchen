@@ -129,7 +129,7 @@ router.post('/config/csd', requireAuth('manage_invoicing'), upload.fields([
     res.json({ config: updated, message: 'CSD uploaded and CFDI activated' });
   } catch (err) {
     console.error('[CFDI] Error uploading CSD:', err.message);
-    res.status(500).json({ error: `Failed to upload CSD: ${err.message}` });
+    res.status(500).json({ error: 'Failed to upload CSD' });
   }
 });
 
@@ -257,7 +257,7 @@ router.post('/invoices', requireAuth('manage_invoicing'), async (req, res) => {
     res.json(saved);
   } catch (err) {
     console.error('[CFDI] Error issuing invoice:', err.message);
-    res.status(500).json({ error: `Failed to issue invoice: ${err.message}` });
+    res.status(500).json({ error: 'Failed to issue invoice' });
   }
 });
 
@@ -406,7 +406,7 @@ router.post('/invoices/:id/cancel', requireAuth('manage_invoicing'), async (req,
     res.json(updated);
   } catch (err) {
     console.error('[CFDI] Error cancelling invoice:', err.message);
-    res.status(500).json({ error: `Failed to cancel invoice: ${err.message}` });
+    res.status(500).json({ error: 'Failed to cancel invoice' });
   }
 });
 

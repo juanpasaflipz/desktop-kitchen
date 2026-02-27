@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { getTenant } from '../tenants.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-me';
+import { JWT_SECRET } from '../lib/constants.js';
 
 /**
  * Owner auth middleware.

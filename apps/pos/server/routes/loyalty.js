@@ -21,15 +21,18 @@ const router = Router();
 // GET /customers — List/search (paginated)
 router.get('/customers', requireAuth('manage_loyalty'), async (req, res) => {
   try {
-    const { search, page = 1, limit = 20 } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const { search, page = 1, limit: rawLimit = 20 } = req.query;
+    const limit = Math.min(Math.max(parseInt(rawLimit) || 20, 1), 200);
+    const offset = (Math.max(parseInt(page) || 1, 1) - 1) * limit;
 
     let where = '';
     const params = [];
 
     if (search) {
-      where = `WHERE name LIKE $1 OR phone LIKE $2`;
-      params.push(`%${search}%`, `%${search}%`);
+      // Escape LIKE special characters to prevent pattern injection
+      const escaped = search.replace(/[%_\\]/g, '\\$&');
+      where = `WHERE (name LIKE $1 OR phone LIKE $2) ESCAPE '\\'`;
+      params.push(`%${escaped}%`, `%${escaped}%`);
     }
 
     const countResult = await get(`SELECT COUNT(*) as total FROM loyalty_customers ${where}`, params);
@@ -38,7 +41,7 @@ router.get('/customers', requireAuth('manage_loyalty'), async (req, res) => {
     const offsetParamIdx = params.length + 2;
     const customers = await all(
       `SELECT * FROM loyalty_customers ${where} ORDER BY created_at DESC LIMIT $${limitParamIdx} OFFSET $${offsetParamIdx}`,
-      [...params, parseInt(limit), offset]
+      [...params, limit, offset]
     );
 
     // Attach active stamp card to each customer
@@ -48,9 +51,10 @@ router.get('/customers', requireAuth('manage_loyalty'), async (req, res) => {
       enriched.push({ ...c, activeCard: card });
     }
 
-    res.json({ data: enriched, total: countResult.total, page: parseInt(page), limit: parseInt(limit) });
+    res.json({ data: enriched, total: countResult.total, page: Math.max(parseInt(page) || 1, 1), limit });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -61,7 +65,8 @@ router.get('/customers/:id', requireAuth('manage_loyalty'), async (req, res) => 
     if (!data) return res.status(404).json({ error: 'Customer not found' });
     res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -75,7 +80,8 @@ router.get('/customers/phone/:phone', requireAuth('pos_access'), async (req, res
     const activeCard = await getActiveStampCard(customer.id);
     res.json({ ...customer, activeCard });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -100,7 +106,8 @@ router.post('/customers', requireAuth('pos_access'), requirePlanFeature('loyalty
     if (err.message?.includes('UNIQUE')) {
       return res.status(409).json({ error: 'A customer with this phone number already exists' });
     }
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -117,7 +124,8 @@ router.put('/customers/:id', requireAuth('manage_loyalty'), async (req, res) => 
 
     res.json(await get('SELECT * FROM loyalty_customers WHERE id = $1', [id]));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -144,7 +152,8 @@ router.post('/customers/:id/stamps', requireAuth('pos_access'), requirePlanFeatu
 
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -162,7 +171,8 @@ router.post('/customers/:id/stamps/manual', requireAuth('manage_loyalty'), requi
 
     res.json({ stampCard: card, customer: updatedCustomer });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -183,7 +193,8 @@ router.post('/customers/:id/redeem', requireAuth('pos_access'), requirePlanFeatu
     const redeemed = await redeemReward(card.id);
     res.json(redeemed);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error(err);
+    res.status(400).json({ error: 'Redemption failed' });
   }
 });
 
@@ -237,7 +248,8 @@ router.get('/analytics', requireAuth('manage_loyalty'), async (req, res) => {
       signupsByMonth,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -272,7 +284,8 @@ router.get('/referrals', requireAuth('manage_loyalty'), async (req, res) => {
 
     res.json({ leaderboard, recentReferrals, totalReferrals });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -283,7 +296,8 @@ router.get('/config', requireAuth('manage_loyalty'), async (req, res) => {
   try {
     res.json(await getLoyaltyConfig());
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -296,7 +310,8 @@ router.put('/config', requireAuth('manage_loyalty'), requirePlanFeature('loyalty
     await updateLoyaltyConfig(key, String(value));
     res.json(await getLoyaltyConfig());
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

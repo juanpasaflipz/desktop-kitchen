@@ -359,7 +359,8 @@ router.post('/history/:id/revert', requireAuth('manage_ai'), requireDynamicPrici
     const result = await revertPriceChange(parseInt(req.params.id), req.employeeId);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('Revert price change error:', error);
+    res.status(400).json({ error: 'Failed to revert price change' });
   }
 });
 

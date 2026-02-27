@@ -359,7 +359,7 @@ router.post('/refund', refundLimiter, requireAuth('process_refunds'), async (req
         stripeRefundId = refund.id;
       } catch (stripeError) {
         console.error('Stripe refund error:', stripeError);
-        return res.status(500).json({ error: 'Stripe refund failed: ' + stripeError.message });
+        return res.status(500).json({ error: 'Stripe refund failed. Please try again or contact support.' });
       }
     }
 
@@ -739,7 +739,7 @@ router.post('/mp/charge', requireAuth('pos_access'), requirePro, async (req, res
     res.json({ success: true, mp_order_id: mpOrder.id, payment_intent_id: mpOrder.id });
   } catch (error) {
     console.error('MP charge error:', error);
-    res.status(500).json({ error: error.message || 'Failed to create terminal payment' });
+    res.status(500).json({ error: 'Failed to create terminal payment' });
   }
 });
 

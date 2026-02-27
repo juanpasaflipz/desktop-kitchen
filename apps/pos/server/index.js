@@ -1,9 +1,11 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDb } from './db/index.js';
+import { initDb, adminSql } from './db/index.js';
 import { initMigrations, runMigrations } from './db/migrate.js';
 import { tenantMiddleware } from './middleware/tenant.js';
 
@@ -51,6 +53,18 @@ const PORT = process.env.PORT || 3001;
 // Without this, req.hostname won't reflect the actual Host header.
 app.set('trust proxy', 1);
 
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // CSP managed by frontend build
+  crossOriginEmbedderPolicy: false, // Allow loading external images/fonts
+}));
+
+// Request ID middleware — attach a unique ID to every request for tracing
+app.use((req, _res, next) => {
+  req.id = req.headers['x-request-id'] || crypto.randomUUID();
+  next();
+});
+
 // CORS — allow *.desktop.kitchen and localhost dev
 const CORS_ORIGIN_REGEX = /^(https?:\/\/(.*\.desktop\.kitchen|localhost(:\d+)?)|capacitor:\/\/localhost)$/;
 app.use(cors({
@@ -83,11 +97,21 @@ app.use(express.static(path.join(__dirname, '../dist')));
 app.use('/uploads', express.static(path.join(__dirname, '../data/uploads')));
 
 // Health check endpoints (before tenant middleware — always accessible)
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get('/health', async (req, res) => {
+  try {
+    await adminSql`SELECT 1`;
+    res.json({ status: 'ok', db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'degraded', db: 'unreachable' });
+  }
 });
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+app.get('/api/health', async (req, res) => {
+  try {
+    await adminSql`SELECT 1`;
+    res.json({ ok: true, db: 'connected' });
+  } catch {
+    res.status(503).json({ ok: false, db: 'unreachable' });
+  }
 });
 
 // Admin routes (uses admin pool, not tenant-scoped)
@@ -159,8 +183,8 @@ app.get('*', (req, res) => {
 });
 
 // Error handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+app.use((err, req, res, _next) => {
+  console.error(`[${req.id}] ${req.method} ${req.path} tenant=${req.tenant?.id || 'none'}:`, err.message || err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
