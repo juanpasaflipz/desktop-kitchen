@@ -102,7 +102,7 @@ struct OrderHistorySheet: View {
 
             Spacer()
 
-            Text(CurrencyFormatter.format(order.total))
+            Text(CurrencyFormatter.format(order.total ?? 0))
                 .font(AppFonts.headline)
                 .foregroundStyle(.white)
         }

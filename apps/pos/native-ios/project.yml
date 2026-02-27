@@ -39,7 +39,6 @@ targets:
       properties:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
-          NSAllowsArbitraryLoads: true
         NSLocalNetworkUsageDescription: "Connect to POS server on local network"
         NSBonjourServices:
           - "_http._tcp"
@@ -48,4 +47,4 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        UILaunchStoryboardName: LaunchScreen
+        UILaunchScreen: {}

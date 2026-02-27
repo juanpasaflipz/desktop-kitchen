@@ -105,6 +105,12 @@ const config = {
               { label: 'POS App', href: 'https://pos.desktop.kitchen' },
             ],
           },
+          {
+            title: 'Legal',
+            items: [
+              { label: 'Privacy Policy', to: '/privacy-policy' },
+            ],
+          },
         ],
         copyright: `© ${new Date().getFullYear()} Desktop Kitchen`,
       },

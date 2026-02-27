@@ -16,15 +16,15 @@ enum OrderSource: String, Codable, Sendable {
 struct Order: Codable, Identifiable, Sendable {
     let id: Int
     var order_number: String
-    var employee_id: Int
+    var employee_id: Int?
     var employee_name: String?
     var status: OrderStatus
-    var subtotal: Double
-    var tax: Double
-    var tip: Double
-    var total: Double
+    var subtotal: Double?
+    var tax: Double?
+    var tip: Double?
+    var total: Double?
     var payment_intent_id: String?
-    var payment_status: PaymentStatusType
+    var payment_status: PaymentStatusType?
     var payment_method: PaymentMethod?
     var source: OrderSource?
     var created_at: String?
@@ -57,10 +57,10 @@ enum PaymentStatusType: String, Codable, Sendable {
 struct OrderItem: Codable, Identifiable, Sendable {
     var id: Int?
     var order_id: Int?
-    var menu_item_id: Int
+    var menu_item_id: Int?
     var item_name: String
     var quantity: Int
-    var unit_price: Double
+    var unit_price: Double?
     var notes: String?
     var combo_instance_id: String?
     var modifiers: [OrderItemModifier]?

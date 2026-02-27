@@ -71,9 +71,16 @@ struct Modifier: Codable, Identifiable, Sendable {
 }
 
 struct OrderItemModifier: Codable, Identifiable, Sendable {
-    let id: Int
-    var order_item_id: Int
-    var modifier_id: Int
+    var _id: Int?
+    var order_item_id: Int?
+    var modifier_id: Int?
     var modifier_name: String
     var price_adjustment: Double
+
+    var id: String { _id.map(String.init) ?? modifier_name }
+
+    enum CodingKeys: String, CodingKey {
+        case _id = "id"
+        case order_item_id, modifier_id, modifier_name, price_adjustment
+    }
 }
