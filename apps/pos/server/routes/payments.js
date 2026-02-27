@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { all, get, run, adminSql } from '../db/index.js';
 import { createPaymentIntent, createRefund, getPaymentIntent } from '../stripe.js';
 import {
@@ -23,8 +24,26 @@ import { getServiceCredentials } from '../helpers/tenantCredentials.js';
 
 const router = Router();
 
+// Rate limiting: 20 payment creation attempts per IP per 15 minutes
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many payment requests. Please try again later.' },
+});
+
+// Rate limiting: 10 refund attempts per IP per 15 minutes
+const refundLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many refund requests. Please try again later.' },
+});
+
 // POST /api/payments/create-intent - create Stripe PaymentIntent for an order
-router.post('/create-intent', requireAuth('pos_access'), async (req, res) => {
+router.post('/create-intent', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
   try {
     const { order_id, tip = 0 } = req.body;
 
@@ -73,7 +92,7 @@ router.post('/create-intent', requireAuth('pos_access'), async (req, res) => {
 });
 
 // POST /api/payments/confirm - confirm card payment
-router.post('/confirm', requireAuth('pos_access'), async (req, res) => {
+router.post('/confirm', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
   try {
     const { order_id, payment_intent_id } = req.body;
 
@@ -135,7 +154,7 @@ router.post('/confirm', requireAuth('pos_access'), async (req, res) => {
 });
 
 // POST /api/payments/cash - process cash payment
-router.post('/cash', requireAuth('pos_access'), async (req, res) => {
+router.post('/cash', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
   try {
     const { order_id, tip = 0, amount_received = 0 } = req.body;
 
@@ -199,7 +218,7 @@ router.post('/cash', requireAuth('pos_access'), async (req, res) => {
 });
 
 // POST /api/payments/split - split payment across multiple methods
-router.post('/split', requireAuth('pos_access'), async (req, res) => {
+router.post('/split', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
   try {
     const { order_id, split_type, splits } = req.body;
 
@@ -253,7 +272,7 @@ router.get('/split/:order_id', async (req, res) => {
 });
 
 // POST /api/payments/refund - refund payment (full, partial by items, or partial by amount)
-router.post('/refund', requireAuth('process_refunds'), async (req, res) => {
+router.post('/refund', refundLimiter, requireAuth('process_refunds'), async (req, res) => {
   try {
     const { order_id, amount, items, reason } = req.body;
 

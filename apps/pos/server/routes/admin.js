@@ -273,6 +273,12 @@ router.post('/tenants', async (req, res) => {
       return res.status(409).json({ error: `Tenant '${id}' already exists` });
     }
 
+    // Check email uniqueness
+    const [existingEmail] = await adminSql`SELECT id FROM tenants WHERE owner_email = ${owner_email}`;
+    if (existingEmail) {
+      return res.status(409).json({ error: `Email '${owner_email}' is already associated with another tenant` });
+    }
+
     // Hash password
     const owner_password_hash = await bcrypt.hash(owner_password, BCRYPT_ROUNDS);
 

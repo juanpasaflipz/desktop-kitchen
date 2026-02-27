@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { all, get, run, getConn } from '../db/index.js';
 import { adminSql } from '../db/index.js';
 import { recordOrderItemPairs } from '../ai/data-pipeline.js';
@@ -6,6 +7,15 @@ import { requireAuth } from '../middleware/auth.js';
 import { audit } from '../lib/auditLog.js';
 
 const router = Router();
+
+// Rate limiting: 30 order creation attempts per IP per 15 minutes
+const orderCreateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many order requests. Please try again later.' },
+});
 
 const TAX_RATE = 0.16; // 16% IVA (Mexico) — prices already include tax
 
@@ -219,7 +229,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/orders - create order
-router.post('/', requireAuth('pos_access'), async (req, res) => {
+router.post('/', orderCreateLimiter, requireAuth('pos_access'), async (req, res) => {
   try {
     const { employee_id, items, offline_temp_id } = req.body;
 
