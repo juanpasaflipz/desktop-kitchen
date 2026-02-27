@@ -28,7 +28,7 @@ router.use(requireAdmin);
 
 // ==================== Analytics Endpoints ====================
 
-const PLAN_PRICES = { starter: 29, pro: 79, ghost_kitchen: 149 };
+const PLAN_PRICES = { starter: 29, pro: 79, ghost_kitchen: 129 };
 
 // GET /admin/analytics/overview — KPIs: total tenants, plan breakdown, MRR, total orders/revenue
 router.get('/analytics/overview', async (req, res) => {

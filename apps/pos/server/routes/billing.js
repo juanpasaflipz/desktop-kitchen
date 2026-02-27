@@ -11,6 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 const PRICE_IDS = {
   starter: process.env.STRIPE_PRICE_STARTER || null,
   pro: process.env.STRIPE_PRICE_PRO || null,
+  ghost_kitchen: process.env.STRIPE_PRICE_GHOST_KITCHEN || null,
 };
 
 const BASE_URL = process.env.APP_URL || 'https://pos.desktop.kitchen';
@@ -113,7 +114,7 @@ router.get('/', requireOwner, async (req, res) => {
 
 /**
  * POST /api/billing/checkout — create Stripe Checkout session for plan upgrade
- * Body: { plan: 'starter' | 'pro', promo_code?: string }
+ * Body: { plan: 'starter' | 'pro' | 'ghost_kitchen', promo_code?: string }
  */
 router.post('/checkout', requireOwner, async (req, res) => {
   try {
