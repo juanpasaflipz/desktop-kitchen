@@ -161,8 +161,8 @@ async function createOrdersForTenant(tenantInfo, count, emit) {
 
         const orderNumber = datePrefix + counter.last_seq;
 
-        // Use savepoint so order + items are atomic — prevents phantom orders on item INSERT failure
-        await conn`SAVEPOINT chaos_order`;
+        // Wrap order + items in a transaction so partial failures don't leave phantom orders
+        await conn`BEGIN`;
         try {
           const [order] = await conn`
             INSERT INTO orders (tenant_id, order_number, employee_id, status, subtotal, tax, total, payment_status, source)
@@ -175,11 +175,11 @@ async function createOrdersForTenant(tenantInfo, count, emit) {
               VALUES (${tenantInfo.id}, ${order.id}, ${item.menu_item_id}, ${item.item_name}, ${item.quantity}, ${item.unit_price})`;
           }
 
-          await conn`RELEASE SAVEPOINT chaos_order`;
+          await conn`COMMIT`;
           orderIds.push(order.id);
-        } catch (spErr) {
-          await conn`ROLLBACK TO SAVEPOINT chaos_order`;
-          throw spErr;
+        } catch (txErr) {
+          await conn`ROLLBACK`;
+          throw txErr;
         }
 
         timings.push(Date.now() - start);
