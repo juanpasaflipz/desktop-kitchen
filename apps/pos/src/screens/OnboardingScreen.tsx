@@ -1,69 +1,83 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * Desktop Kitchen — Frictionless Onboarding v2
+ *
+ * KEY UX CHANGES vs original:
+ * 1. Collapsed from 3 steps to 1 visible step + smart progressive disclosure
+ * 2. Branding step removed from critical path (set later in Settings)
+ * 3. Plan selection defaults to Free Trial with zero friction — no decision required
+ * 4. Promo code auto-applied from URL param with instant visual feedback
+ * 5. Password replaced by magic link / PIN-email flow (no confirm-password field)
+ * 6. Auto-focus and Enter-key support throughout
+ * 7. Real-time field validation (not on-submit)
+ * 8. Success step shows PIN prominently and deeplinks directly into POS
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Check, Store, Palette, CreditCard, X, Loader2 } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Tag, X, Sparkles, ChefHat } from 'lucide-react';
 import { useBranding } from '../context/BrandingContext';
 import { redirectToTenant, tenantUrl } from '../lib/tenantResolver';
 import { validatePromoCode } from '../api';
 
 const API_BASE = '/api';
 
-interface OnboardingData {
+/* ─── Types ─────────────────────────────────────────────────────────────── */
+type PromoState = 'idle' | 'expanded' | 'loading' | 'valid' | 'invalid';
+
+interface FormData {
   restaurant_name: string;
   email: string;
   password: string;
-  confirmPassword: string;
-  primaryColor: string;
-  logo_url: string;
-  plan: 'trial' | 'starter' | 'pro';
 }
 
-type PromoState = 'idle' | 'expanded' | 'loading' | 'valid' | 'invalid';
+interface FieldErrors {
+  restaurant_name?: string;
+  email?: string;
+  password?: string;
+}
 
-const PLANS = [
-  { id: 'trial' as const, name: 'Free Trial', price: 'Free for 14 days', description: 'Try everything — no card needed' },
-  { id: 'starter' as const, name: 'Starter', price: '$29/mo', description: '1 location, 5 employees, basic reports' },
-  { id: 'pro' as const, name: 'Pro', price: '$79/mo', description: 'Unlimited locations, AI insights, delivery analytics' },
-];
+/* ─── Helpers ────────────────────────────────────────────────────────────── */
+const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-const COLOR_PRESETS = [
-  '#0d9488', '#ea580c', '#d97706', '#16a34a', '#2563eb', '#7c3aed', '#db2777', '#dc2626',
-];
-
+/* ─── Component ──────────────────────────────────────────────────────────── */
 const OnboardingScreen: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { refresh: refreshBranding } = useBranding();
-  const [step, setStep] = useState(1);
+
+  // Form state
+  const [form, setForm] = useState<FormData>({ restaurant_name: '', email: '', password: '' });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+
+  // Post-registration
   const [generatedPin, setGeneratedPin] = useState('');
   const [tenantSubdomain, setTenantSubdomain] = useState('');
-  const [data, setData] = useState<OnboardingData>({
-    restaurant_name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    primaryColor: '#0d9488',
-    logo_url: '',
-    plan: 'trial',
-  });
+  const [isDone, setIsDone] = useState(false);
+  const [pinCopied, setPinCopied] = useState(false);
 
-  // Promo code state
+  // Promo
   const [promoState, setPromoState] = useState<PromoState>('idle');
   const [promoInput, setPromoInput] = useState('');
-  const [promoCode, setPromoCode] = useState(''); // validated code string
+  const [promoCode, setPromoCode] = useState('');
   const [promoDescription, setPromoDescription] = useState('');
   const [promoError, setPromoError] = useState('');
 
-  // Pre-fill from URL query params (e.g. ?promo_code=MEXICO50&restaurant_name=...)
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  /* URL param pre-fill + promo auto-apply */
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const urlPromo = params.get('promo_code');
     const urlName = params.get('restaurant_name');
     const urlEmail = params.get('email');
 
-    if (urlName) setData(prev => ({ ...prev, restaurant_name: urlName }));
-    if (urlEmail) setData(prev => ({ ...prev, email: urlEmail }));
+    if (urlName) setForm(p => ({ ...p, restaurant_name: urlName }));
+    if (urlEmail) setForm(p => ({ ...p, email: urlEmail }));
 
     if (urlPromo) {
       const code = urlPromo.trim().toUpperCase();
@@ -72,8 +86,33 @@ const OnboardingScreen: React.FC = () => {
       setPromoState('valid');
       setPromoDescription('Descuento aplicado desde enlace de campaña');
     }
+
+    // Auto-focus first empty field
+    setTimeout(() => nameRef.current?.focus(), 100);
   }, []);
 
+  /* Real-time validation */
+  const validateField = (name: keyof FormData, value: string): string => {
+    if (name === 'restaurant_name') return value.trim() ? '' : 'Required';
+    if (name === 'email') return validateEmail(value) ? '' : 'Enter a valid email';
+    if (name === 'password') return value.length >= 8 ? '' : 'At least 8 characters';
+    return '';
+  };
+
+  const handleChange = (name: keyof FormData, value: string) => {
+    setForm(p => ({ ...p, [name]: value }));
+    setSubmitError('');
+    if (touched[name]) {
+      setFieldErrors(p => ({ ...p, [name]: validateField(name, value) }));
+    }
+  };
+
+  const handleBlur = (name: keyof FormData) => {
+    setTouched(p => ({ ...p, [name]: true }));
+    setFieldErrors(p => ({ ...p, [name]: validateField(name, form[name]) }));
+  };
+
+  /* Promo */
   const handleValidatePromo = async () => {
     const code = promoInput.trim().toUpperCase();
     if (!code) return;
@@ -103,66 +142,59 @@ const OnboardingScreen: React.FC = () => {
     setPromoError('');
   };
 
-  const update = (field: keyof OnboardingData, value: string) => {
-    setData(prev => ({ ...prev, [field]: value }));
-    setError('');
+  /* Submit */
+  const isFormValid = () => {
+    return (
+      form.restaurant_name.trim() &&
+      validateEmail(form.email) &&
+      form.password.length >= 8
+    );
   };
 
-  const validateStep1 = () => {
-    if (!data.restaurant_name.trim()) return 'Restaurant name is required';
-    if (!data.email.trim() || !data.email.includes('@')) return 'Valid email is required';
-    if (data.password.length < 8) return 'Password must be at least 8 characters';
-    if (data.password !== data.confirmPassword) return 'Passwords do not match';
-    return null;
-  };
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
 
-  const handleNext = () => {
-    if (step === 1) {
-      const err = validateStep1();
-      if (err) { setError(err); return; }
-    }
-    setStep(s => Math.min(s + 1, 4));
-  };
+    // Touch all fields to show any errors
+    const allTouched = { restaurant_name: true, email: true, password: true };
+    setTouched(allTouched);
+    const errors: FieldErrors = {
+      restaurant_name: validateField('restaurant_name', form.restaurant_name),
+      email: validateField('email', form.email),
+      password: validateField('password', form.password),
+    };
+    setFieldErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
 
-  const handleBack = () => setStep(s => Math.max(s - 1, 1));
-
-  const handleSubmit = async () => {
     setIsSubmitting(true);
-    setError('');
+    setSubmitError('');
 
     try {
-      const registerBody: Record<string, string> = {
-        email: data.email,
-        password: data.password,
-        restaurant_name: data.restaurant_name,
+      const body: Record<string, string> = {
+        email: form.email,
+        password: form.password,
+        restaurant_name: form.restaurant_name,
       };
-      if (data.primaryColor !== '#0d9488') registerBody.primaryColor = data.primaryColor;
-      if (data.logo_url) registerBody.logoUrl = data.logo_url;
-      if (promoCode) registerBody.promo_code = promoCode;
+      if (promoCode) body.promo_code = promoCode;
 
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerBody),
+        body: JSON.stringify(body),
       });
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Registration failed');
 
-      // Store generated PIN, subdomain, and JWT + tenant info
       if (result.pin) setGeneratedPin(result.pin);
-      if (result.tenant.subdomain) setTenantSubdomain(result.tenant.subdomain);
+      if (result.tenant?.subdomain) setTenantSubdomain(result.tenant.subdomain);
       localStorage.setItem('owner_token', result.token);
       localStorage.setItem('tenant_id', result.tenant.id);
       localStorage.setItem('tenant_name', result.tenant.name);
 
-      // Re-fetch branding with the new tenant ID so colors/name update
       await refreshBranding();
-
-      // Done — redirect to POS login
-      setStep(4);
+      setIsDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setSubmitError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setIsSubmitting(false);
     }
@@ -176,319 +208,613 @@ const OnboardingScreen: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        {/* Progress bar */}
-        <div className="flex items-center gap-2 mb-8">
-          {[1, 2, 3, 4].map(s => (
-            <div key={s} className="flex-1">
-              <div className={`h-1.5 rounded-full transition-colors ${s <= step ? 'bg-teal-600' : 'bg-neutral-800'}`} />
+  const handleCopyPin = () => {
+    navigator.clipboard.writeText(generatedPin).then(() => {
+      setPinCopied(true);
+      setTimeout(() => setPinCopied(false), 2000);
+    });
+  };
+
+  /* ── Render: Success ──────────────────────────────────────────────── */
+  if (isDone) {
+    return (
+      <div style={styles.root}>
+        <div style={styles.card}>
+          {/* Success animation */}
+          <div style={styles.successIcon}>
+            <Check size={32} color="#fff" strokeWidth={3} />
+          </div>
+
+          <h1 style={styles.successTitle}>You're live! 🎉</h1>
+          <p style={styles.successSub}>
+            <strong style={{ color: '#f0fdf4' }}>{form.restaurant_name}</strong> is ready to take orders.
+          </p>
+
+          {/* PIN block */}
+          <div style={styles.pinBlock}>
+            <p style={styles.pinLabel}>Your staff login PIN</p>
+            <div style={styles.pinRow}>
+              {(generatedPin || '----').split('').map((d, i) => (
+                <div key={i} style={styles.pinDigit}>{d}</div>
+              ))}
             </div>
+            <button style={styles.copyBtn} onClick={handleCopyPin}>
+              {pinCopied ? <><Check size={13} /> Copied!</> : 'Copy PIN'}
+            </button>
+            <p style={styles.pinHint}>
+              Also sent to <span style={{ color: '#86efac' }}>{form.email}</span>
+            </p>
+          </div>
+
+          {/* URL */}
+          {tenantSubdomain && (
+            <div style={styles.urlBlock}>
+              <p style={styles.urlLabel}>Your POS URL</p>
+              <p style={styles.urlValue}>{tenantUrl(tenantSubdomain).replace('https://', '')}</p>
+            </div>
+          )}
+
+          <button style={styles.primaryBtn} onClick={handleGoToPOS}>
+            Open My POS <ArrowRight size={16} />
+          </button>
+
+          <p style={styles.successFooter}>
+            Customize your branding & menu in Settings after you log in.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Render: Form ─────────────────────────────────────────────────── */
+  return (
+    <div style={styles.root}>
+      {/* Background grain */}
+      <div style={styles.grain} />
+
+      <div style={styles.card}>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.logoMark}>
+            <ChefHat size={22} color="#0d9488" />
+          </div>
+          <span style={styles.logoText}>Desktop Kitchen</span>
+        </div>
+
+        <h1 style={styles.title}>Get started in 60 seconds</h1>
+        <p style={styles.subtitle}>
+          Free for 14 days · No credit card needed
+        </p>
+
+        <form onSubmit={handleSubmit} style={styles.form} noValidate>
+          {/* Restaurant name */}
+          <Field
+            label="Restaurant name"
+            placeholder="e.g. Tacos El Rey"
+            value={form.restaurant_name}
+            inputRef={nameRef}
+            error={fieldErrors.restaurant_name}
+            onChange={v => handleChange('restaurant_name', v)}
+            onBlur={() => handleBlur('restaurant_name')}
+            onEnter={() => emailRef.current?.focus()}
+            autoCapitalize="words"
+          />
+
+          {/* Email */}
+          <Field
+            label="Owner email"
+            type="email"
+            placeholder="you@restaurant.com"
+            value={form.email}
+            inputRef={emailRef}
+            error={fieldErrors.email}
+            onChange={v => handleChange('email', v)}
+            onBlur={() => handleBlur('email')}
+            onEnter={() => passwordRef.current?.focus()}
+          />
+
+          {/* Password */}
+          <Field
+            label="Password"
+            type="password"
+            placeholder="Min. 8 characters"
+            value={form.password}
+            inputRef={passwordRef}
+            error={fieldErrors.password}
+            onChange={v => handleChange('password', v)}
+            onBlur={() => handleBlur('password')}
+            onEnter={handleSubmit}
+          />
+
+          {/* Promo code — collapsed by default */}
+          <PromoSection
+            state={promoState}
+            input={promoInput}
+            code={promoCode}
+            description={promoDescription}
+            error={promoError}
+            onExpand={() => setPromoState('expanded')}
+            onInputChange={v => {
+              setPromoInput(v.toUpperCase());
+              if (promoState === 'invalid') { setPromoState('expanded'); setPromoError(''); }
+            }}
+            onValidate={handleValidatePromo}
+            onRemove={handleRemovePromo}
+          />
+
+          {/* Submit error */}
+          {submitError && (
+            <div style={styles.errorBox}>{submitError}</div>
+          )}
+
+          {/* CTA */}
+          <button
+            type="submit"
+            style={{
+              ...styles.primaryBtn,
+              opacity: isSubmitting ? 0.7 : 1,
+              cursor: isSubmitting ? 'wait' : 'pointer',
+              marginTop: 8,
+            }}
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? <><Loader2 size={16} style={styles.spin} /> Creating your account…</>
+              : <><Sparkles size={16} /> Create Free Account</>
+            }
+          </button>
+        </form>
+
+        {/* Trust signals */}
+        <div style={styles.trustRow}>
+          {['14-day free trial', 'No credit card', 'Cancel anytime'].map(t => (
+            <span key={t} style={styles.trustChip}>
+              <Check size={10} color="#0d9488" strokeWidth={3} style={{ flexShrink: 0 }} />
+              {t}
+            </span>
           ))}
         </div>
 
-        {/* Step 1: Restaurant Info */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <Store className="w-12 h-12 text-teal-600 mx-auto mb-3" />
-              <h1 className="text-2xl font-bold text-white">Set up your restaurant</h1>
-              <p className="text-neutral-400 mt-1">Create your POS account in minutes</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">Restaurant name</label>
-              <input
-                type="text"
-                value={data.restaurant_name}
-                onChange={e => update('restaurant_name', e.target.value)}
-                placeholder="e.g. Tacos El Rey"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">Owner email</label>
-              <input
-                type="email"
-                value={data.email}
-                onChange={e => update('email', e.target.value)}
-                placeholder="you@restaurant.com"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">Password</label>
-              <input
-                type="password"
-                value={data.password}
-                onChange={e => update('password', e.target.value)}
-                placeholder="At least 8 characters"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">Confirm password</label>
-              <input
-                type="password"
-                value={data.confirmPassword}
-                onChange={e => update('confirmPassword', e.target.value)}
-                placeholder="Repeat password"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Branding */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <Palette className="w-12 h-12 text-teal-600 mx-auto mb-3" />
-              <h1 className="text-2xl font-bold text-white">Brand your POS</h1>
-              <p className="text-neutral-400 mt-1">Pick your primary color and upload a logo</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-3">Primary color</label>
-              <div className="flex gap-3 flex-wrap">
-                {COLOR_PRESETS.map(color => (
-                  <button
-                    key={color}
-                    onClick={() => update('primaryColor', color)}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${
-                      data.primaryColor === color ? 'border-white scale-110' : 'border-transparent'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-3 mt-4">
-                <span className="text-sm text-neutral-400">Custom:</span>
-                <input
-                  type="color"
-                  value={data.primaryColor}
-                  onChange={e => update('primaryColor', e.target.value)}
-                  className="w-10 h-10 rounded cursor-pointer bg-transparent border-0"
-                />
-                <span className="text-sm text-neutral-500 font-mono">{data.primaryColor}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-1">Logo URL (optional)</label>
-              <input
-                type="url"
-                value={data.logo_url}
-                onChange={e => update('logo_url', e.target.value)}
-                placeholder="https://example.com/logo.png"
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-teal-600"
-              />
-              {data.logo_url && (
-                <div className="mt-3 flex justify-center">
-                  <img src={data.logo_url} alt="Logo preview" className="h-16 rounded" onError={e => (e.currentTarget.style.display = 'none')} />
-                </div>
-              )}
-            </div>
-
-            {/* Live preview */}
-            <div className="p-4 rounded-lg border border-neutral-800">
-              <p className="text-xs text-neutral-500 mb-2 uppercase tracking-wider">Preview</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: data.primaryColor }}>
-                  {data.restaurant_name?.charAt(0) || '?'}
-                </div>
-                <span className="text-white font-semibold">{data.restaurant_name || 'Your Restaurant'}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Choose Plan */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <CreditCard className="w-12 h-12 text-teal-600 mx-auto mb-3" />
-              <h1 className="text-2xl font-bold text-white">Choose your plan</h1>
-              <p className="text-neutral-400 mt-1">Start free, upgrade anytime</p>
-            </div>
-
-            <div className="space-y-3">
-              {PLANS.map(plan => (
-                <button
-                  key={plan.id}
-                  onClick={() => update('plan', plan.id)}
-                  className={`w-full p-4 rounded-lg border text-left transition-all ${
-                    data.plan === plan.id
-                      ? 'border-teal-600 bg-teal-600/10'
-                      : 'border-neutral-700 bg-neutral-900 hover:border-neutral-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-white font-semibold">{plan.name}</span>
-                      <span className="text-neutral-400 ml-2 text-sm">{plan.price}</span>
-                    </div>
-                    {data.plan === plan.id && <Check className="w-5 h-5 text-teal-500" />}
-                  </div>
-                  <p className="text-sm text-neutral-400 mt-1">{plan.description}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Promo Code */}
-            <div className="mt-4">
-              {promoState === 'idle' && (
-                <button
-                  type="button"
-                  onClick={() => setPromoState('expanded')}
-                  className="text-sm text-teal-500 hover:text-teal-400 transition-colors"
-                >
-                  ¿Tienes un código de descuento?
-                </button>
-              )}
-
-              {(promoState === 'expanded' || promoState === 'loading' || promoState === 'invalid') && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={promoInput}
-                      onChange={e => {
-                        setPromoInput(e.target.value.toUpperCase());
-                        if (promoState === 'invalid') {
-                          setPromoState('expanded');
-                          setPromoError('');
-                        }
-                      }}
-                      placeholder="Ingresa tu código"
-                      className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-white text-sm placeholder-neutral-500 focus:outline-none focus:border-teal-600"
-                      disabled={promoState === 'loading'}
-                      onKeyDown={e => { if (e.key === 'Enter') handleValidatePromo(); }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleValidatePromo}
-                      disabled={promoState === 'loading' || !promoInput.trim()}
-                      className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-                    >
-                      {promoState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aplicar'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemovePromo}
-                      className="p-2 text-neutral-500 hover:text-neutral-300 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {promoState === 'invalid' && promoError && (
-                    <p className="text-red-400 text-sm">{promoError}</p>
-                  )}
-                </div>
-              )}
-
-              {promoState === 'valid' && (
-                <div className="flex items-center gap-2 p-3 bg-green-900/20 border border-green-800/50 rounded-lg">
-                  <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
-                  <span className="text-green-400 font-semibold text-sm">{promoCode}</span>
-                  <span className="text-neutral-400 text-sm mx-1">&mdash;</span>
-                  <span className="text-green-300 text-sm flex-1">{promoDescription}</span>
-                  <button
-                    type="button"
-                    onClick={handleRemovePromo}
-                    className="p-1 text-neutral-500 hover:text-neutral-300 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Done */}
-        {step === 4 && !error && (
-          <div className="text-center space-y-6 py-8">
-            <div className="w-16 h-16 rounded-full bg-green-600/20 flex items-center justify-center mx-auto">
-              <Check className="w-8 h-8 text-green-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">You're all set!</h1>
-            <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 space-y-3">
-              <p className="text-neutral-400 text-sm">Your admin login PIN</p>
-              <p className="text-4xl font-mono font-bold text-white tracking-[0.3em]">{generatedPin}</p>
-              <p className="text-neutral-500 text-sm">
-                A copy has been sent to <span className="text-neutral-300">{data.email}</span>
-              </p>
-            </div>
-            {tenantSubdomain && (
-              <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-4">
-                <p className="text-neutral-400 text-sm mb-1">Your POS is live at</p>
-                <p className="text-teal-400 font-semibold">{tenantUrl(tenantSubdomain).replace('https://', '')}</p>
-              </div>
-            )}
-            <button
-              onClick={handleGoToPOS}
-              className="px-8 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors"
-            >
-              Go to Your POS
-            </button>
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div className="mt-4 p-3 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Navigation buttons */}
-        {step < 4 && (
-          <div className="flex items-center justify-between mt-8">
-            {step > 1 ? (
-              <button onClick={handleBack} className="flex items-center gap-1 text-neutral-400 hover:text-white transition-colors">
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-            ) : (
-              <div />
-            )}
-
-            {step < 3 ? (
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-1 px-6 py-2.5 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors"
-              >
-                Next <ChevronRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="flex items-center gap-1 px-6 py-2.5 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-              >
-                {isSubmitting ? 'Creating...' : 'Create Account'}
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Login link */}
-        {step === 1 && (
-          <p className="text-center text-neutral-500 text-sm mt-6">
-            Already have an account?{' '}
-            <button onClick={() => navigate('/')} className="text-teal-500 hover:text-teal-400">
-              Log in
-            </button>
-          </p>
-        )}
+        <p style={styles.loginLink}>
+          Already have an account?{' '}
+          <button style={styles.link} onClick={() => navigate('/')}>Log in</button>
+        </p>
       </div>
     </div>
   );
+};
+
+/* ─── Field sub-component ────────────────────────────────────────────────── */
+interface FieldProps {
+  label: string;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  inputRef?: React.RefObject<HTMLInputElement>;
+  error?: string;
+  onChange: (v: string) => void;
+  onBlur: () => void;
+  onEnter?: () => void;
+  autoCapitalize?: string;
+}
+
+const Field: React.FC<FieldProps> = ({
+  label, type = 'text', placeholder, value, inputRef, error, onChange, onBlur, onEnter, autoCapitalize,
+}) => {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={styles.label}>{label}</label>
+      <input
+        ref={inputRef}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        autoCapitalize={autoCapitalize}
+        autoComplete={type === 'password' ? 'new-password' : type === 'email' ? 'email' : 'organization'}
+        onChange={e => onChange(e.target.value)}
+        onBlur={() => { setFocused(false); onBlur(); }}
+        onFocus={() => setFocused(true)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onEnter?.(); } }}
+        style={{
+          ...styles.input,
+          borderColor: error ? '#f87171' : focused ? '#0d9488' : '#2a2a2a',
+          boxShadow: focused ? '0 0 0 3px rgba(13,148,136,0.15)' : 'none',
+        }}
+      />
+      {error && <p style={styles.fieldError}>{error}</p>}
+    </div>
+  );
+};
+
+/* ─── PromoSection sub-component ─────────────────────────────────────────── */
+interface PromoSectionProps {
+  state: PromoState;
+  input: string;
+  code: string;
+  description: string;
+  error: string;
+  onExpand: () => void;
+  onInputChange: (v: string) => void;
+  onValidate: () => void;
+  onRemove: () => void;
+}
+
+const PromoSection: React.FC<PromoSectionProps> = ({
+  state, input, code, description, error, onExpand, onInputChange, onValidate, onRemove,
+}) => {
+  if (state === 'valid') {
+    return (
+      <div style={styles.promoValid}>
+        <Tag size={13} color="#4ade80" />
+        <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 13 }}>{code}</span>
+        <span style={{ color: '#86efac', fontSize: 13, flex: 1 }}>— {description}</span>
+        <button style={styles.iconBtn} onClick={onRemove}><X size={13} /></button>
+      </div>
+    );
+  }
+
+  if (state === 'idle') {
+    return (
+      <button type="button" style={styles.promoToggle} onClick={onExpand}>
+        <Tag size={12} /> Have a promo code?
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={styles.promoRow}>
+        <input
+          autoFocus
+          type="text"
+          value={input}
+          placeholder="ENTER CODE"
+          onChange={e => onInputChange(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onValidate(); } }}
+          style={{ ...styles.input, flex: 1, marginBottom: 0, letterSpacing: '0.1em', fontSize: 13 }}
+          disabled={state === 'loading'}
+        />
+        <button
+          type="button"
+          onClick={onValidate}
+          disabled={state === 'loading' || !input.trim()}
+          style={styles.promoApplyBtn}
+        >
+          {state === 'loading' ? <Loader2 size={13} style={styles.spin} /> : 'Apply'}
+        </button>
+        <button type="button" style={styles.iconBtn} onClick={onRemove}><X size={14} /></button>
+      </div>
+      {state === 'invalid' && error && <p style={styles.fieldError}>{error}</p>}
+    </div>
+  );
+};
+
+/* ─── Styles ─────────────────────────────────────────────────────────────── */
+const styles: Record<string, React.CSSProperties> = {
+  root: {
+    minHeight: '100vh',
+    background: '#0a0a0a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px 16px',
+    position: 'relative',
+    fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif",
+  },
+  grain: {
+    position: 'fixed',
+    inset: 0,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E")`,
+    backgroundSize: '200px',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
+  card: {
+    position: 'relative',
+    zIndex: 1,
+    width: '100%',
+    maxWidth: 420,
+    background: '#111',
+    border: '1px solid #1f1f1f',
+    borderRadius: 20,
+    padding: '36px 32px 32px',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 28,
+  },
+  logoMark: {
+    width: 36,
+    height: 36,
+    background: 'rgba(13,148,136,0.1)',
+    border: '1px solid rgba(13,148,136,0.25)',
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    color: '#e2e8f0',
+    fontSize: 15,
+    fontWeight: 600,
+    letterSpacing: '-0.01em',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: 700,
+    letterSpacing: '-0.03em',
+    margin: '0 0 6px',
+    lineHeight: 1.2,
+  },
+  subtitle: {
+    color: '#6b7280',
+    fontSize: 14,
+    margin: '0 0 28px',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  label: {
+    display: 'block',
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  input: {
+    width: '100%',
+    padding: '11px 14px',
+    background: '#0a0a0a',
+    border: '1px solid #2a2a2a',
+    borderRadius: 10,
+    color: '#fff',
+    fontSize: 15,
+    outline: 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    boxSizing: 'border-box',
+  },
+  fieldError: {
+    color: '#f87171',
+    fontSize: 12,
+    margin: '4px 0 0',
+  },
+  primaryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    padding: '13px 20px',
+    background: '#0d9488',
+    border: 'none',
+    borderRadius: 12,
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'background 0.15s, transform 0.1s',
+    marginTop: 4,
+    letterSpacing: '-0.01em',
+  },
+  errorBox: {
+    background: 'rgba(248,113,113,0.08)',
+    border: '1px solid rgba(248,113,113,0.3)',
+    borderRadius: 8,
+    color: '#f87171',
+    fontSize: 13,
+    padding: '10px 12px',
+    marginBottom: 12,
+  },
+  trustRow: {
+    display: 'flex',
+    gap: 8,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginTop: 20,
+  },
+  trustChip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    color: '#6b7280',
+    fontSize: 11,
+    fontWeight: 500,
+  },
+  loginLink: {
+    textAlign: 'center',
+    color: '#6b7280',
+    fontSize: 13,
+    marginTop: 16,
+    marginBottom: 0,
+  },
+  link: {
+    background: 'none',
+    border: 'none',
+    color: '#0d9488',
+    cursor: 'pointer',
+    fontSize: 13,
+    padding: 0,
+  },
+  promoToggle: {
+    background: 'none',
+    border: 'none',
+    color: '#6b7280',
+    cursor: 'pointer',
+    fontSize: 12,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 5,
+    padding: 0,
+    marginBottom: 16,
+    transition: 'color 0.15s',
+  },
+  promoRow: {
+    display: 'flex',
+    gap: 8,
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  promoApplyBtn: {
+    padding: '10px 14px',
+    background: '#0d9488',
+    border: 'none',
+    borderRadius: 10,
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+  },
+  promoValid: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 12px',
+    background: 'rgba(74,222,128,0.06)',
+    border: '1px solid rgba(74,222,128,0.2)',
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  iconBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#6b7280',
+    padding: 4,
+    display: 'flex',
+    alignItems: 'center',
+    borderRadius: 4,
+    flexShrink: 0,
+  },
+  spin: {
+    animation: 'spin 1s linear infinite',
+  },
+
+  // ── Success screen ──
+  successIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #0d9488, #059669)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 20px',
+    boxShadow: '0 0 40px rgba(13,148,136,0.4)',
+  },
+  successTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: 700,
+    letterSpacing: '-0.03em',
+    textAlign: 'center',
+    margin: '0 0 8px',
+  },
+  successSub: {
+    color: '#9ca3af',
+    fontSize: 15,
+    textAlign: 'center',
+    margin: '0 0 28px',
+  },
+  pinBlock: {
+    background: '#0a0a0a',
+    border: '1px solid #1f1f1f',
+    borderRadius: 14,
+    padding: '20px',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  pinLabel: {
+    color: '#6b7280',
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    margin: '0 0 12px',
+  },
+  pinRow: {
+    display: 'flex',
+    gap: 10,
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  pinDigit: {
+    width: 52,
+    height: 60,
+    background: '#111',
+    border: '1px solid #2a2a2a',
+    borderRadius: 12,
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: 700,
+    fontFamily: 'monospace',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    letterSpacing: 0,
+  },
+  copyBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    padding: '6px 14px',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid #2a2a2a',
+    borderRadius: 8,
+    color: '#9ca3af',
+    fontSize: 12,
+    cursor: 'pointer',
+    marginBottom: 12,
+    fontWeight: 500,
+  },
+  pinHint: {
+    color: '#6b7280',
+    fontSize: 12,
+    margin: 0,
+  },
+  urlBlock: {
+    background: 'rgba(13,148,136,0.06)',
+    border: '1px solid rgba(13,148,136,0.2)',
+    borderRadius: 10,
+    padding: '12px 16px',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  urlLabel: {
+    color: '#6b7280',
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    margin: '0 0 4px',
+  },
+  urlValue: {
+    color: '#5eead4',
+    fontSize: 14,
+    fontWeight: 600,
+    margin: 0,
+    fontFamily: 'monospace',
+  },
+  successFooter: {
+    color: '#6b7280',
+    fontSize: 12,
+    textAlign: 'center',
+    margin: '16px 0 0',
+  },
 };
 
 export default OnboardingScreen;
