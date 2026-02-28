@@ -112,85 +112,81 @@ async function provisionTenants(emit) {
 // ─── Order Creation (tenant pool + RLS) ────────────────────
 
 async function createOrdersForTenant(tenantInfo, count, emit) {
-  const conn = await tenantSql.reserve();
   const orderIds = [];
   const timings = [];
   let errors = 0;
   const errorMessages = [];
 
-  try {
-    for (let i = 0; i < count; i++) {
-      const start = Date.now();
-      try {
-        // Each order in its own explicit transaction with transaction-scoped
-        // set_config. This is critical for Neon's PgBouncer (transaction mode):
-        // session-scoped set_config can be lost between autocommit queries
-        // because PgBouncer may route them to different backend connections.
-        const orderId = await conn.begin(async (tx) => {
-          await tx`SELECT set_config('app.tenant_id', ${tenantInfo.id}, true)`;
+  for (let i = 0; i < count; i++) {
+    const start = Date.now();
+    try {
+      // Each order in its own explicit transaction via tenantSql.begin().
+      // This is critical for Neon's PgBouncer (transaction mode): session-scoped
+      // set_config can be lost between autocommit queries because PgBouncer may
+      // route them to different backend connections. Using begin() + set_config
+      // with true (transaction-scoped) guarantees all queries hit the same backend.
+      const orderId = await tenantSql.begin(async (tx) => {
+        await tx`SELECT set_config('app.tenant_id', ${tenantInfo.id}, true)`;
 
-          const employeeId = pick(tenantInfo.employeeIds);
-          const numItems = Math.floor(Math.random() * 3) + 1;
-          let itemsTotal = 0;
-          const items = [];
+        const employeeId = pick(tenantInfo.employeeIds);
+        const numItems = Math.floor(Math.random() * 3) + 1;
+        let itemsTotal = 0;
+        const items = [];
 
-          for (let j = 0; j < numItems; j++) {
-            const itemId = pick(tenantInfo.itemIds);
-            const qty = Math.floor(Math.random() * 2) + 1;
-            const [item] = await tx`SELECT id, name, price FROM menu_items WHERE id = ${itemId}`;
-            if (!item) {
-              if (errorMessages.length < 3) errorMessages.push(`menu_item ${itemId} not visible via RLS`);
-              continue;
-            }
-            const unitPrice = Number(item.price);
-            itemsTotal += unitPrice * qty;
-            items.push({ menu_item_id: item.id, item_name: item.name, quantity: qty, unit_price: unitPrice });
+        for (let j = 0; j < numItems; j++) {
+          const itemId = pick(tenantInfo.itemIds);
+          const qty = Math.floor(Math.random() * 2) + 1;
+          const [item] = await tx`SELECT id, name, price FROM menu_items WHERE id = ${itemId}`;
+          if (!item) {
+            if (errorMessages.length < 3) errorMessages.push(`menu_item ${itemId} not visible via RLS`);
+            continue;
           }
+          const unitPrice = Number(item.price);
+          itemsTotal += unitPrice * qty;
+          items.push({ menu_item_id: item.id, item_name: item.name, quantity: qty, unit_price: unitPrice });
+        }
 
-          if (items.length === 0) {
-            throw new Error('no menu items visible through RLS');
-          }
+        if (items.length === 0) {
+          throw new Error('no menu items visible through RLS');
+        }
 
-          const total = itemsTotal;
-          const tax = Math.round((total - total / (1 + TAX_RATE)) * 100) / 100;
-          const subtotal = Math.round((total - tax) * 100) / 100;
+        const total = itemsTotal;
+        const tax = Math.round((total - total / (1 + TAX_RATE)) * 100) / 100;
+        const subtotal = Math.round((total - tax) * 100) / 100;
 
-          const dateStr = new Date().toISOString().split('T')[0];
-          const datePrefix = parseInt(dateStr.replace(/-/g, '')) * 1000;
+        const dateStr = new Date().toISOString().split('T')[0];
+        const datePrefix = parseInt(dateStr.replace(/-/g, '')) * 1000;
 
-          const [counter] = await tx`
-            INSERT INTO daily_order_counter (tenant_id, date_key, last_seq)
-            VALUES (${tenantInfo.id}, ${dateStr}::date, 1)
-            ON CONFLICT (tenant_id, date_key) DO UPDATE SET last_seq = daily_order_counter.last_seq + 1
-            RETURNING last_seq`;
+        const [counter] = await tx`
+          INSERT INTO daily_order_counter (tenant_id, date_key, last_seq)
+          VALUES (${tenantInfo.id}, ${dateStr}::date, 1)
+          ON CONFLICT (tenant_id, date_key) DO UPDATE SET last_seq = daily_order_counter.last_seq + 1
+          RETURNING last_seq`;
 
-          const orderNumber = datePrefix + counter.last_seq;
+        const orderNumber = datePrefix + counter.last_seq;
 
-          const [order] = await tx`
-            INSERT INTO orders (tenant_id, order_number, employee_id, status, subtotal, tax, total, payment_status, source)
-            VALUES (${tenantInfo.id}, ${orderNumber}, ${employeeId}, 'pending', ${subtotal}, ${tax}, ${total}, 'unpaid', ${CHAOS_SOURCE})
-            RETURNING id`;
+        const [order] = await tx`
+          INSERT INTO orders (tenant_id, order_number, employee_id, status, subtotal, tax, total, payment_status, source)
+          VALUES (${tenantInfo.id}, ${orderNumber}, ${employeeId}, 'pending', ${subtotal}, ${tax}, ${total}, 'unpaid', ${CHAOS_SOURCE})
+          RETURNING id`;
 
-          for (const item of items) {
-            await tx`
-              INSERT INTO order_items (tenant_id, order_id, menu_item_id, item_name, quantity, unit_price)
-              VALUES (${tenantInfo.id}, ${order.id}, ${item.menu_item_id}, ${item.item_name}, ${item.quantity}, ${item.unit_price})`;
-          }
+        for (const item of items) {
+          await tx`
+            INSERT INTO order_items (tenant_id, order_id, menu_item_id, item_name, quantity, unit_price)
+            VALUES (${tenantInfo.id}, ${order.id}, ${item.menu_item_id}, ${item.item_name}, ${item.quantity}, ${item.unit_price})`;
+        }
 
-          return order.id;
-        });
+        return order.id;
+      });
 
-        orderIds.push(orderId);
-        timings.push(Date.now() - start);
-      } catch (err) {
-        errors++;
-        timings.push(Date.now() - start);
-        if (errorMessages.length < 3) errorMessages.push(err.message);
-        console.error(`[ChaosAgent] Order error for ${tenantInfo.id}:`, err.message);
-      }
+      orderIds.push(orderId);
+      timings.push(Date.now() - start);
+    } catch (err) {
+      errors++;
+      timings.push(Date.now() - start);
+      if (errorMessages.length < 3) errorMessages.push(err.message);
+      console.error(`[ChaosAgent] Order error for ${tenantInfo.id}:`, err.message);
     }
-  } finally {
-    conn.release();
   }
 
   return { tenantId: tenantInfo.id, orderIds, timings, errors, errorMessages };
@@ -213,18 +209,12 @@ async function verifyIsolation(tenants, orderResults, emit) {
 
     // 1. Query via tenant-scoped connection — should see only its own orders
     //    Use explicit transaction with transaction-scoped set_config (PgBouncer-safe)
-    const conn = await tenantSql.reserve();
-    let scopedCount = 0;
-    try {
-      scopedCount = await conn.begin(async (tx) => {
-        await tx`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
-        const [row] = await tx`
-          SELECT COUNT(*)::int AS cnt FROM orders WHERE source = ${CHAOS_SOURCE}`;
-        return row.cnt;
-      });
-    } finally {
-      conn.release();
-    }
+    const scopedCount = await tenantSql.begin(async (tx) => {
+      await tx`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      const [row] = await tx`
+        SELECT COUNT(*)::int AS cnt FROM orders WHERE source = ${CHAOS_SOURCE}`;
+      return row.cnt;
+    });
 
     if (scopedCount !== expectedCount) {
       breaches.push({
@@ -257,26 +247,21 @@ async function verifyIsolation(tenants, orderResults, emit) {
 
     // 3. Verify no chaos orders from OTHER tenants are visible through this tenant's RLS
     const otherTenantIds = tenants.map(t => t.id).filter(id => id !== tenantId);
-    const conn2 = await tenantSql.reserve();
-    try {
-      const leakedCnt = await conn2.begin(async (tx) => {
-        await tx`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
-        const [leaked] = await tx`
-          SELECT COUNT(*)::int AS cnt FROM orders
-          WHERE source = ${CHAOS_SOURCE} AND tenant_id = ANY(${otherTenantIds})`;
-        return leaked.cnt;
+    const leakedCnt = await tenantSql.begin(async (tx) => {
+      await tx`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+      const [leaked] = await tx`
+        SELECT COUNT(*)::int AS cnt FROM orders
+        WHERE source = ${CHAOS_SOURCE} AND tenant_id = ANY(${otherTenantIds})`;
+      return leaked.cnt;
+    });
+    if (leakedCnt > 0) {
+      breaches.push({
+        type: 'rls_leak',
+        severity: 'CRITICAL',
+        tenantId,
+        leakedCount: leakedCnt,
+        message: `CRITICAL: Tenant ${tenantId} can see ${leakedCnt} orders from other tenants through RLS`,
       });
-      if (leakedCnt > 0) {
-        breaches.push({
-          type: 'rls_leak',
-          severity: 'CRITICAL',
-          tenantId,
-          leakedCount: leakedCnt,
-          message: `CRITICAL: Tenant ${tenantId} can see ${leakedCnt} orders from other tenants through RLS`,
-        });
-      }
-    } finally {
-      conn2.release();
     }
   }
 
@@ -291,34 +276,27 @@ async function checkConnectionPool(tenants, emit) {
   const tenantIds = tenants.map(t => t.id);
   const anomalies = [];
 
-  // With Neon's PgBouncer (transaction mode), session-level settings aren't
-  // reliably tied to client connections. Still check a few connections for
-  // any stale tenant_id that might persist within a transaction scope.
+  // With PgBouncer (transaction mode), session-level settings aren't reliably
+  // tied to client connections. Check a few connections for stale tenant_id.
   const checkCount = Math.min(tenantSql.options?.max || 30, 10);
   const checked = new Set();
 
   for (let i = 0; i < checkCount; i++) {
     try {
-      const conn = await tenantSql.reserve({ timeout: 1 });
-      try {
-        const result = await conn.begin(async (tx) => {
-          const [cfg] = await tx`SELECT pg_backend_pid() AS pid, current_setting('app.tenant_id', true) AS tid`;
-          // Reset stale tenant_id within the transaction
-          await tx`SELECT set_config('app.tenant_id', '', true)`;
-          return cfg;
-        });
-        if (!checked.has(result.pid)) {
-          checked.add(result.pid);
-          if (result.tid && tenantIds.includes(result.tid)) {
-            anomalies.push({
-              pid: result.pid,
-              staleTenantId: result.tid,
-              message: `Connection PID ${result.pid} still has app.tenant_id=${result.tid} after chaos run`,
-            });
-          }
+      const result = await tenantSql.begin(async (tx) => {
+        const [cfg] = await tx`SELECT pg_backend_pid() AS pid, current_setting('app.tenant_id', true) AS tid`;
+        await tx`SELECT set_config('app.tenant_id', '', true)`;
+        return cfg;
+      });
+      if (!checked.has(result.pid)) {
+        checked.add(result.pid);
+        if (result.tid && tenantIds.includes(result.tid)) {
+          anomalies.push({
+            pid: result.pid,
+            staleTenantId: result.tid,
+            message: `Connection PID ${result.pid} still has app.tenant_id=${result.tid} after chaos run`,
+          });
         }
-      } finally {
-        conn.release();
       }
     } catch {
       break;
