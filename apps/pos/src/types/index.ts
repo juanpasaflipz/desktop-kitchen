@@ -33,6 +33,7 @@ export interface MenuItem {
   image_url?: string;
   active: boolean;
   prep_time_minutes?: number;
+  is_example?: boolean;
 }
 
 /* Virtual Brand Types */

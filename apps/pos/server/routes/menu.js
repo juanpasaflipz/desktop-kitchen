@@ -190,7 +190,7 @@ router.get('/items', async (req, res) => {
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     let query = `
-      SELECT id, category_id, name, price, description, image_url, active, prep_time_minutes
+      SELECT id, category_id, name, price, description, image_url, active, prep_time_minutes, is_example
       FROM menu_items
       ${whereClause}
     `;

@@ -32,6 +32,7 @@ import ReceiptModal from '../components/pos/ReceiptModal';
 import { formatPrice, TAX_RATE, TAX_LABEL } from '../utils/currency';
 import { useAISuggestions } from '../hooks/useAISuggestions';
 import AISuggestionBanner from '../components/AISuggestionBanner';
+import SetupChecklistBanner from '../components/SetupChecklistBanner';
 import ModifierModal from '../components/ModifierModal';
 import ComboBuilder from '../components/ComboBuilder';
 import SplitPaymentModal from '../components/SplitPaymentModal';
@@ -733,6 +734,10 @@ const POSScreen: React.FC = () => {
           onCloseNavMenu={() => setShowNavMenu(false)}
           onLogout={handleLogout}
         />
+
+        {currentEmployee && ['admin', 'manager'].includes(currentEmployee.role) && (
+          <SetupChecklistBanner />
+        )}
 
         <AISuggestionBanner
           suggestions={cartSuggestions}

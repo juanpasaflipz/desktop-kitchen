@@ -74,7 +74,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
   description TEXT,
   image_url TEXT,
   active BOOLEAN DEFAULT true,
-  prep_time_minutes INTEGER DEFAULT 5
+  prep_time_minutes INTEGER DEFAULT 5,
+  is_example BOOLEAN DEFAULT false
 );
 
 -- Orders
