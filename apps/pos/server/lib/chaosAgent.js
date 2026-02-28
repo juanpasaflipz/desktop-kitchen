@@ -161,18 +161,27 @@ async function createOrdersForTenant(tenantInfo, count, emit) {
 
         const orderNumber = datePrefix + counter.last_seq;
 
-        const [order] = await conn`
-          INSERT INTO orders (tenant_id, order_number, employee_id, status, subtotal, tax, total, payment_status, source)
-          VALUES (${tenantInfo.id}, ${orderNumber}, ${employeeId}, 'pending', ${subtotal}, ${tax}, ${total}, 'unpaid', ${CHAOS_SOURCE})
-          RETURNING id`;
+        // Use savepoint so order + items are atomic — prevents phantom orders on item INSERT failure
+        await conn`SAVEPOINT chaos_order`;
+        try {
+          const [order] = await conn`
+            INSERT INTO orders (tenant_id, order_number, employee_id, status, subtotal, tax, total, payment_status, source)
+            VALUES (${tenantInfo.id}, ${orderNumber}, ${employeeId}, 'pending', ${subtotal}, ${tax}, ${total}, 'unpaid', ${CHAOS_SOURCE})
+            RETURNING id`;
 
-        for (const item of items) {
-          await conn`
-            INSERT INTO order_items (tenant_id, order_id, menu_item_id, item_name, quantity, unit_price)
-            VALUES (${tenantInfo.id}, ${order.id}, ${item.menu_item_id}, ${item.item_name}, ${item.quantity}, ${item.unit_price})`;
+          for (const item of items) {
+            await conn`
+              INSERT INTO order_items (tenant_id, order_id, menu_item_id, item_name, quantity, unit_price)
+              VALUES (${tenantInfo.id}, ${order.id}, ${item.menu_item_id}, ${item.item_name}, ${item.quantity}, ${item.unit_price})`;
+          }
+
+          await conn`RELEASE SAVEPOINT chaos_order`;
+          orderIds.push(order.id);
+        } catch (spErr) {
+          await conn`ROLLBACK TO SAVEPOINT chaos_order`;
+          throw spErr;
         }
 
-        orderIds.push(order.id);
         timings.push(Date.now() - start);
       } catch (err) {
         errors++;
@@ -277,34 +286,32 @@ async function checkConnectionPool(tenants, emit) {
   const tenantIds = tenants.map(t => t.id);
   const anomalies = [];
 
-  const rows = await adminSql`
-    SELECT pid, usename, application_name,
-           (SELECT setting FROM pg_settings WHERE name = 'app.tenant_id' LIMIT 0) AS note
-    FROM pg_stat_activity
-    WHERE state = 'idle' AND usename = ${process.env.PG_APP_USER || 'app_user'}`;
+  // Reserve all idle connections from the pool, check for stale tenant_id, and reset
+  const poolSize = tenantSql.options?.max || 30;
+  const checked = new Set();
 
-  // Check for connections that still have a chaos tenant_id set
-  // We do this by briefly reserving and checking each idle connection
-  // This is a best-effort check — connections may have been returned cleanly
-  for (const row of rows) {
+  for (let i = 0; i < poolSize; i++) {
     try {
-      const conn = await tenantSql.reserve();
+      const conn = await tenantSql.reserve({ timeout: 1 });
       try {
-        const [cfg] = await conn`SELECT current_setting('app.tenant_id', true) AS tid`;
-        if (cfg.tid && tenantIds.includes(cfg.tid)) {
-          anomalies.push({
-            pid: row.pid,
-            staleTenanId: cfg.tid,
-            message: `Connection PID ${row.pid} still has app.tenant_id=${cfg.tid} after chaos run`,
-          });
+        const [cfg] = await conn`SELECT pg_backend_pid() AS pid, current_setting('app.tenant_id', true) AS tid`;
+        if (!checked.has(cfg.pid)) {
+          checked.add(cfg.pid);
+          if (cfg.tid && tenantIds.includes(cfg.tid)) {
+            anomalies.push({
+              pid: cfg.pid,
+              staleTenantId: cfg.tid,
+              message: `Connection PID ${cfg.pid} still has app.tenant_id=${cfg.tid} after chaos run`,
+            });
+          }
         }
-        // Reset it
+        // Always reset stale tenant_id
         await conn`SELECT set_config('app.tenant_id', '', false)`;
       } finally {
         conn.release();
       }
     } catch {
-      // Pool exhausted or connection error — skip
+      // No more idle connections available — done checking
       break;
     }
   }
