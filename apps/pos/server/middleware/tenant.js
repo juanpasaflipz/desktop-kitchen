@@ -3,7 +3,7 @@ import { getTenant, getTenantBySubdomain } from '../tenants.js';
 
 // Subdomains that belong to the platform itself and should NOT be resolved as tenants.
 const RESERVED_SUBDOMAINS = new Set([
-  'pos', 'app', 'api', 'admin', 'www', 'es', 'docs', 'staging',
+  'pos', 'app', 'api', 'admin', 'www', 'es', 'docs', 'staging', 'sales',
 ]);
 
 /**
@@ -17,9 +17,11 @@ const RESERVED_SUBDOMAINS = new Set([
  *
  * When a tenant is resolved:
  *   - Reserves a dedicated connection from tenantSql pool (with timeout)
- *   - Sets `app.tenant_id` session variable for RLS
+ *   - Starts an explicit transaction (BEGIN) for PgBouncer safety
+ *   - Sets `app.tenant_id` as transaction-scoped variable for RLS
  *   - Stores connection in AsyncLocalStorage so run/get/all/exec auto-use it
- *   - Releases connection on response finish
+ *   - COMMITs and releases connection on response finish
+ *   - ROLLBACKs and releases on premature close
  */
 export async function tenantMiddleware(req, res, next) {
   let tenantId = null;
@@ -98,21 +100,31 @@ export async function tenantMiddleware(req, res, next) {
       return res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
     }
 
-    // Set the RLS session variable
-    await conn`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
+    // Start an explicit transaction and set tenant_id as transaction-scoped.
+    // This is PgBouncer-safe: even in transaction mode, set_config(..., true)
+    // is guaranteed to persist for all queries within the same transaction.
+    // Without BEGIN, autocommit queries may be routed to different backends
+    // by PgBouncer, losing the session-scoped setting.
+    await conn`BEGIN`;
+    await conn`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
 
     // Double-release guard
     let released = false;
-    const releaseConn = () => {
+    const releaseConn = (shouldCommit) => {
       if (!released) {
         released = true;
-        conn.release();
+        const finish = shouldCommit
+          ? conn`COMMIT`.catch(() => conn`ROLLBACK`.catch(() => {}))
+          : conn`ROLLBACK`.catch(() => {});
+        finish.finally(() => conn.release());
       }
     };
 
-    // Release on response finish or close
-    res.on('finish', releaseConn);
-    res.on('close', releaseConn);
+    // COMMIT on successful response, ROLLBACK on premature close
+    res.on('finish', () => releaseConn(true));
+    res.on('close', () => {
+      if (!res.writableFinished) releaseConn(false);
+    });
 
     // Attach tenant metadata to request
     req.tenant = {
