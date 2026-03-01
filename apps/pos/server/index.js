@@ -44,8 +44,9 @@ import salesRoutes from './routes/sales.js';
 import onboardingRoutes from './routes/onboarding.js';
 import belvoWebhook from './routes/webhooks/belvo.js';
 import plaidWebhook from './routes/webhooks/plaid.js';
-import { initAI } from './ai/index.js';
+import { initAI, shutdownAI } from './ai/index.js';
 import { startBankingSyncScheduler } from './services/banking/SyncScheduler.js';
+import { shutdown as shutdownDb } from './db/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -200,7 +201,50 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-// Start server (async IIFE)
+// ==================== Graceful Shutdown ====================
+
+let server;
+let shuttingDown = false;
+
+async function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`\n[Shutdown] ${signal} received — shutting down gracefully...`);
+
+  // 1. Stop accepting new connections
+  if (server) {
+    server.close(() => {
+      console.log('[Shutdown] HTTP server closed');
+    });
+  }
+
+  // 2. Stop AI scheduler (clears all intervals)
+  shutdownAI();
+
+  // 3. Close database connection pools
+  await shutdownDb();
+  console.log('[Shutdown] Database pools closed');
+
+  // 4. Exit cleanly
+  console.log('[Shutdown] Goodbye');
+  process.exit(0);
+}
+
+// Give shutdown 10s before force-killing (Railway sends SIGTERM, waits, then SIGKILL)
+function shutdownWithTimeout(signal) {
+  const timer = setTimeout(() => {
+    console.error('[Shutdown] Timed out after 10s — forcing exit');
+    process.exit(1);
+  }, 10_000);
+  timer.unref(); // Don't keep process alive just for the timer
+  gracefulShutdown(signal);
+}
+
+process.on('SIGTERM', () => shutdownWithTimeout('SIGTERM'));
+process.on('SIGINT', () => shutdownWithTimeout('SIGINT'));
+
+// ==================== Start Server ====================
+
 (async () => {
   try {
     await initDb();
@@ -211,7 +255,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
     // Banking sync scheduler
     startBankingSyncScheduler();
 
-    app.listen(PORT, '0.0.0.0', () => {
+    server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Desktop Kitchen POS server running on port ${PORT}`);
       console.log(`Database: Neon Postgres`);
     });

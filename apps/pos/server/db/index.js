@@ -166,15 +166,12 @@ export async function initDb() {
 
 // ==================== Shutdown ====================
 
-async function shutdown() {
+export async function shutdown() {
   try {
     await adminSql.end({ timeout: 5 });
     await tenantSql.end({ timeout: 5 });
   } catch {}
 }
-
-process.on('SIGINT', async () => { await shutdown(); process.exit(); });
-process.on('SIGTERM', async () => { await shutdown(); process.exit(); });
 
 // No-ops for backward compatibility
 export function saveDb() {}
