@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 desktop-kitchen/
 ├── apps/
 │   ├── pos/           # POS system (Vite + Express)
+│   ├── sales/         # Sales rep dashboard (Vite + React, static SPA)
 │   ├── marketing/     # Desktop Kitchen marketing landing (Next.js + i18n)
 │   ├── landing/       # Legacy restaurant landing page (Next.js + i18n) — OFF LIMITS
 │   └── docs/          # Documentation site (Docusaurus 3)
@@ -83,6 +84,27 @@ npm run serve            # Serve production build locally
 **Deployment**: Vercel (Root Directory: `apps/docs`)
 
 **Structure**: Three doc sections — Getting Started, Feature Guides, Admin/Owner Guide. Sidebar config in `sidebars.js`. Docs served at root (`/`) via `routeBasePath: '/'`. i18n ready for `en` and `es`.
+
+### Sales (`apps/sales/`)
+
+Sales rep dashboard for tracking prospects and commissions. Static Vite + React 18 + TypeScript + Tailwind SPA. Backend API lives in the POS server (`/api/sales/*`).
+
+**Commands** (run from `apps/sales/`):
+```bash
+npm run dev              # Vite dev server on :5174 (proxies /api to :3001)
+npm run build            # TypeScript check + production build (outputs to /dist)
+npm run preview          # Preview production build locally
+```
+
+**URL**: `sales.desktop.kitchen`
+**Deployment**: Vercel (Root Directory: `apps/sales`)
+
+**DNS setup**: Add a CNAME record for `sales.desktop.kitchen` pointing to `cname.vercel-dns.com` in Cloudflare (DNS-only, no proxy).
+
+**Architecture**: Static SPA deployed on Vercel. API calls (`/api/sales/*`) are rewritten by `vercel.json` to `pos.desktop.kitchen` (Railway). No server-side code in this app. Auth via JWT (sales_reps table, separate from employee/owner auth).
+
+**Environment variables** (set in Vercel dashboard):
+- `VITE_API_URL` — Leave empty (Vercel rewrites handle proxying). Only set if you need to point directly to a different backend (e.g., `https://pos.desktop.kitchen`).
 
 ## POS Architecture
 

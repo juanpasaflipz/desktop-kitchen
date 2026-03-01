@@ -40,6 +40,7 @@ import credentialsRoutes from './routes/credentials.js';
 import stressTestRoutes from './routes/stress-test.js';
 import chaosRoutes from './routes/chaos.js';
 import bankingRoutes from './routes/banking.js';
+import salesRoutes from './routes/sales.js';
 import belvoWebhook from './routes/webhooks/belvo.js';
 import plaidWebhook from './routes/webhooks/plaid.js';
 import { initAI } from './ai/index.js';
@@ -135,6 +136,9 @@ app.post('/api/payments/mp/webhook', mpWebhook);
 
 // Promo code validation (public, no tenant context needed)
 app.get('/api/billing/promo/validate', promoValidateHandler);
+
+// Sales team commission tracking (platform-level, uses adminSql)
+app.use('/api/sales', salesRoutes);
 
 // Lead capture (public, no tenant context needed)
 app.use('/api/leads', leadsRoutes);
