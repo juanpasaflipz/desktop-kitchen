@@ -1414,6 +1414,20 @@ export async function getMenuBoardData(): Promise<any> {
   return apiRequest('/menu-board/data');
 }
 
+/* ==================== Onboarding ==================== */
+
+export interface OnboardingStatus {
+  has_menu_items: boolean;
+  has_extra_staff: boolean;
+  has_branding: boolean;
+  has_delivery: boolean;
+  real_order_count: number;
+}
+
+export async function getOnboardingStatus(): Promise<OnboardingStatus> {
+  return apiRequest<OnboardingStatus>('/onboarding/status');
+}
+
 /* ==================== Billing Endpoints (Owner JWT Auth) ==================== */
 
 function ownerHeaders(): Record<string, string> {

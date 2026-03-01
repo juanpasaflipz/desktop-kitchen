@@ -56,7 +56,7 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
                 </span>
               )}
               <p className="text-neutral-600">
-                {formatDateTime(new Date(order.created_at))}
+                {formatDateTime(order.created_at ? new Date(order.created_at) : new Date())}
               </p>
               {order.employee_name && (
                 <p className="text-neutral-600">{t('receipt.cashier', { name: order.employee_name })}</p>

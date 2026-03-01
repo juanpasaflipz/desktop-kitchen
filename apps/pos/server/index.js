@@ -41,6 +41,7 @@ import stressTestRoutes from './routes/stress-test.js';
 import chaosRoutes from './routes/chaos.js';
 import bankingRoutes from './routes/banking.js';
 import salesRoutes from './routes/sales.js';
+import onboardingRoutes from './routes/onboarding.js';
 import belvoWebhook from './routes/webhooks/belvo.js';
 import plaidWebhook from './routes/webhooks/plaid.js';
 import { initAI } from './ai/index.js';
@@ -180,6 +181,7 @@ app.use('/api/cfdi', cfdiRoutes);
 app.use('/api/credentials', credentialsRoutes);
 app.use('/api/stress-test', stressTestRoutes);
 app.use('/api/banking', bankingRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Serve index.html for all other routes (SPA)
 app.get('*', (req, res) => {

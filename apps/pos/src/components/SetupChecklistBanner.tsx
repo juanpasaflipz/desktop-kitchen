@@ -1,34 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMenuItems, getOrders, getDeliveryPlatforms, getEmployees } from '../api';
-import { useBranding } from '../context/BrandingContext';
-import { CheckCircle2, Circle, X, Rocket } from 'lucide-react';
+import { getOnboardingStatus } from '../api';
+import { CheckCircle2, ChevronDown, ChevronUp, X, Rocket, PartyPopper, ArrowRight } from 'lucide-react';
 
-interface ChecklistItem {
+interface Step {
   key: string;
   label: string;
+  description: string;
   route: string;
   done: boolean;
 }
 
 const STORAGE_KEY = 'setup_checklist_dismissed';
 const CREATED_AT_KEY = 'setup_checklist_created';
+const COLLAPSED_KEY = 'setup_checklist_collapsed';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 const SetupChecklistBanner: React.FC = () => {
   const navigate = useNavigate();
-  const { branding } = useBranding();
-  const [items, setItems] = useState<ChecklistItem[] | null>(null);
+  const [steps, setSteps] = useState<Step[] | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === '1');
+  const [celebrating, setCelebrating] = useState(false);
 
   useEffect(() => {
-    // Check if already dismissed
     if (localStorage.getItem(STORAGE_KEY) === '1') {
       setDismissed(true);
       return;
     }
 
-    // Auto-dismiss after 7 days from first seen
     let createdAt = localStorage.getItem(CREATED_AT_KEY);
     if (!createdAt) {
       createdAt = String(Date.now());
@@ -39,106 +39,187 @@ const SetupChecklistBanner: React.FC = () => {
       return;
     }
 
-    // Fetch setup status
     let cancelled = false;
     (async () => {
       try {
-        const [menuItemsRes, ordersRes, platformsRes, employeesRes] = await Promise.all([
-          getMenuItems().catch(() => []),
-          getOrders().catch(() => []),
-          getDeliveryPlatforms().catch(() => []),
-          getEmployees().catch(() => []),
-        ]);
-
+        const status = await getOnboardingStatus();
         if (cancelled) return;
 
-        // Hide banner if 5+ real orders — tenant is past onboarding
-        const realOrders = ordersRes.filter(o => o.status !== 'cancelled');
-        if (realOrders.length >= 5) {
+        if (status.real_order_count >= 5) {
           setDismissed(true);
           return;
         }
 
-        // Check each item
-        const hasRealMenuItems = menuItemsRes.some(i => !i.is_example);
-        const hasDelivery = platformsRes.length > 0;
-        const hasBranding = !!branding?.primaryColor && branding.primaryColor !== '#0d9488';
-        const hasExtraStaff = employeesRes.length > 1;
-        const hasTestOrder = realOrders.length > 0;
-
-        setItems([
-          { key: 'menu', label: 'Add a menu item', route: '/admin/menu', done: hasRealMenuItems },
-          { key: 'delivery', label: 'Set up delivery platforms', route: '/admin/delivery', done: hasDelivery },
-          { key: 'branding', label: 'Customize branding', route: '/admin/branding', done: hasBranding },
-          { key: 'staff', label: 'Add a staff member', route: '/admin/employees', done: hasExtraStaff },
-          { key: 'order', label: 'Take a test order', route: '', done: hasTestOrder },
+        setSteps([
+          { key: 'menu', label: 'Add your menu', description: 'Create categories and add your real dishes, drinks, and extras', route: '/admin/menu', done: status.has_menu_items },
+          { key: 'staff', label: 'Add staff', description: 'Create PINs for your cashiers, bartenders, and kitchen staff', route: '/admin/employees', done: status.has_extra_staff },
+          { key: 'branding', label: 'Customize branding', description: 'Set your restaurant colors and logo so the POS feels like yours', route: '/admin/branding', done: status.has_branding },
+          { key: 'delivery', label: 'Set up delivery', description: 'Connect Uber Eats, Rappi, or DidiFood to track all orders in one place', route: '/admin/delivery', done: status.has_delivery },
+          { key: 'order', label: 'Take a test order', description: 'Ring up a quick order to see the full flow in action', route: '', done: status.real_order_count > 0 },
         ]);
       } catch {
-        // Don't show banner on error
         setDismissed(true);
       }
     })();
 
     return () => { cancelled = true; };
-  }, [branding]);
+  }, []);
 
-  const handleDismiss = () => {
+  // Celebration: when all steps are done, show for 5s then auto-dismiss
+  useEffect(() => {
+    if (!steps) return;
+    const allDone = steps.every(s => s.done);
+    if (!allDone) return;
+
+    setCelebrating(true);
+    const timer = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, '1');
+      setDismissed(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [steps]);
+
+  const handleDismiss = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, '1');
     setDismissed(true);
-  };
+  }, []);
 
-  if (dismissed || !items) return null;
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
+      return next;
+    });
+  }, []);
 
-  const doneCount = items.filter(i => i.done).length;
+  const handleStepAction = useCallback((step: Step) => {
+    if (step.done) return;
+    if (step.key === 'order') {
+      // Collapse the banner so the POS is revealed for test ordering
+      setCollapsed(true);
+      localStorage.setItem(COLLAPSED_KEY, '1');
+      return;
+    }
+    if (step.route) navigate(step.route);
+  }, [navigate]);
 
-  // Hide when all items checked
-  if (doneCount === items.length) return null;
+  if (dismissed || !steps) return null;
+
+  const doneCount = steps.filter(s => s.done).length;
+  const progress = (doneCount / steps.length) * 100;
+  const nextStep = steps.find(s => !s.done);
+
+  // Celebration state
+  if (celebrating) {
+    return (
+      <div className="mx-4 mt-3 bg-neutral-900 border border-brand-600 rounded-xl px-5 py-4">
+        <div className="flex items-center justify-center gap-3">
+          <PartyPopper size={22} className="text-brand-400" />
+          <span className="text-white text-base font-semibold">
+            All set! You're ready to go.
+          </span>
+          <PartyPopper size={22} className="text-brand-400" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-4 mt-3 bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 animate-in slide-in-from-top">
-      {/* Header row */}
-      <div className="flex items-center gap-2 mb-2">
-        <Rocket size={16} className="text-brand-400 flex-shrink-0" />
-        <span className="text-white text-sm font-semibold flex-1">
-          Get started — {doneCount}/{items.length} complete
+    <div className="mx-4 mt-3 bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+      {/* Header — always visible */}
+      <button
+        onClick={toggleCollapsed}
+        className="w-full flex items-center gap-3 px-5 py-3 touch-manipulation"
+      >
+        <Rocket size={18} className="text-brand-400 flex-shrink-0" />
+        <span className="text-white text-sm font-semibold flex-1 text-left">
+          Get started — {doneCount}/{steps.length} complete
         </span>
+        {collapsed ? (
+          <ChevronDown size={16} className="text-neutral-400" />
+        ) : (
+          <ChevronUp size={16} className="text-neutral-400" />
+        )}
         <button
-          onClick={handleDismiss}
+          onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
           className="text-neutral-500 hover:text-neutral-300 transition-colors p-1 touch-manipulation"
+          aria-label="Dismiss checklist"
         >
           <X size={14} />
         </button>
+      </button>
+
+      {/* Progress bar — always visible */}
+      <div className="px-5 pb-3">
+        <div className="h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-brand-500 rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-1 bg-neutral-800 rounded-full mb-3 overflow-hidden">
-        <div
-          className="h-full bg-brand-500 rounded-full transition-all duration-500"
-          style={{ width: `${(doneCount / items.length) * 100}%` }}
-        />
-      </div>
+      {/* Step list — collapsible */}
+      {!collapsed && (
+        <div className="px-4 pb-4 space-y-2">
+          {steps.map((step, i) => {
+            const isNext = step === nextStep;
+            return (
+              <div
+                key={step.key}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                  step.done
+                    ? 'bg-neutral-800/40'
+                    : isNext
+                      ? 'bg-brand-950/50 border border-brand-800/60'
+                      : 'bg-neutral-800/60'
+                }`}
+              >
+                {/* Step indicator */}
+                {step.done ? (
+                  <CheckCircle2 size={22} className="text-brand-500 flex-shrink-0" />
+                ) : (
+                  <div className={`w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                    isNext
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-neutral-700 text-neutral-400'
+                  }`}>
+                    {i + 1}
+                  </div>
+                )}
 
-      {/* Checklist items */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        {items.map(item => (
-          <button
-            key={item.key}
-            onClick={() => item.route && !item.done && navigate(item.route)}
-            disabled={item.done || !item.route}
-            className={`flex items-center gap-1.5 text-xs transition-colors touch-manipulation ${
-              item.done
-                ? 'text-neutral-500 line-through cursor-default'
-                : 'text-neutral-300 hover:text-brand-400 cursor-pointer'
-            }`}
-          >
-            {item.done
-              ? <CheckCircle2 size={13} className="text-brand-500 flex-shrink-0" />
-              : <Circle size={13} className="text-neutral-600 flex-shrink-0" />
-            }
-            {item.label}
-          </button>
-        ))}
-      </div>
+                {/* Label + description */}
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-medium ${
+                    step.done ? 'text-neutral-500 line-through' : 'text-white'
+                  }`}>
+                    {step.label}
+                  </div>
+                  {!step.done && (
+                    <div className="text-xs text-neutral-400 mt-0.5">
+                      {step.description}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action button */}
+                {!step.done && (
+                  <button
+                    onClick={() => handleStepAction(step)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors touch-manipulation flex-shrink-0 ${
+                      isNext
+                        ? 'bg-brand-600 hover:bg-brand-500 text-white'
+                        : 'bg-neutral-700 hover:bg-neutral-600 text-neutral-200'
+                    }`}
+                  >
+                    Go <ArrowRight size={12} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
