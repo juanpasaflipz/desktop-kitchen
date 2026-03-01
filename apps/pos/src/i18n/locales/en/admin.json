@@ -68,7 +68,13 @@
     "failedFetch": "Failed to fetch employees",
     "failedAdd": "Failed to add employee",
     "failedUpdate": "Failed to update employee",
-    "failedToggle": "Failed to toggle employee"
+    "failedToggle": "Failed to toggle employee",
+    "resetPin": "Reset PIN",
+    "pinResetTitle": "PIN Reset Successful",
+    "newPin": "New PIN",
+    "copyPin": "Copy PIN",
+    "copied": "Copied!",
+    "done": "Done"
   },
   "permissions": {
     "title": "Role Permissions",

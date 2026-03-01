@@ -68,7 +68,13 @@
     "failedFetch": "Error al cargar empleados",
     "failedAdd": "Error al agregar empleado",
     "failedUpdate": "Error al actualizar empleado",
-    "failedToggle": "Error al cambiar estado del empleado"
+    "failedToggle": "Error al cambiar estado del empleado",
+    "resetPin": "Restablecer PIN",
+    "pinResetTitle": "PIN Restablecido",
+    "newPin": "Nuevo PIN",
+    "copyPin": "Copiar PIN",
+    "copied": "¡Copiado!",
+    "done": "Listo"
   },
   "permissions": {
     "title": "Permisos por Rol",

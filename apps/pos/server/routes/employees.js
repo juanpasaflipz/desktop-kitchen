@@ -6,6 +6,7 @@ import { all, get, run, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { checkLimit } from '../planLimits.js';
 import { audit } from '../lib/auditLog.js';
+import { sendPinEmail } from '../helpers/email.js';
 import { BCRYPT_ROUNDS, JWT_SECRET } from '../lib/constants.js';
 
 const pinLoginLimiter = rateLimit({
@@ -72,6 +73,11 @@ router.post('/', async (req, res) => {
       resourceId: String(result.lastInsertRowid),
       ip: req.ip,
     });
+
+    // Fire-and-forget PIN email if the name looks like an email
+    if (name.includes('@')) {
+      sendPinEmail(name, pin, req.tenant?.name || 'Desktop Kitchen', req.tenant?.subdomain).catch(() => {});
+    }
 
     res.status(201).json({
       id: result.lastInsertRowid,
