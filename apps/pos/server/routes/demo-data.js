@@ -21,14 +21,12 @@ router.get('/status', async (req, res) => {
       return res.json({ allowed: false, reason: 'Demo data is only available for trial accounts' });
     }
 
-    const [[orderCount], [customerCount], [deliveryCount], [snapshotCount], [financialCount], [wasteCount], [vendorCount]] = await Promise.all([
+    const [[orderCount], [customerCount], [deliveryCount], [snapshotCount], [financialCount]] = await Promise.all([
       adminSql`SELECT COUNT(*)::int AS c FROM orders WHERE tenant_id = ${tenantId} AND source = ${DEMO_SOURCE}`,
       adminSql`SELECT COUNT(*)::int AS c FROM loyalty_customers WHERE tenant_id = ${tenantId} AND demo_batch_id IS NOT NULL`,
       adminSql`SELECT COUNT(*)::int AS c FROM delivery_orders WHERE tenant_id = ${tenantId} AND order_id IN (SELECT id FROM orders WHERE tenant_id = ${tenantId} AND source = ${DEMO_SOURCE})`,
       adminSql`SELECT COUNT(*)::int AS c FROM ai_hourly_snapshots WHERE tenant_id = ${tenantId} AND demo_batch_id IS NOT NULL`,
       adminSql`SELECT COUNT(*)::int AS c FROM financial_actuals WHERE tenant_id = ${tenantId} AND demo_batch_id IS NOT NULL`,
-      adminSql`SELECT COUNT(*)::int AS c FROM waste_log WHERE tenant_id = ${tenantId} AND demo_batch_id IS NOT NULL`,
-      adminSql`SELECT COUNT(*)::int AS c FROM vendors WHERE tenant_id = ${tenantId} AND demo_batch_id IS NOT NULL`,
     ]);
 
     res.json({
@@ -40,8 +38,6 @@ router.get('/status', async (req, res) => {
         delivery_orders: deliveryCount.c,
         ai_snapshots: snapshotCount.c,
         financial_actuals: financialCount.c,
-        waste_log: wasteCount.c,
-        vendors: vendorCount.c,
       },
     });
   } catch (error) {
