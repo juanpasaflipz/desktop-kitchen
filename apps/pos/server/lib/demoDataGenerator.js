@@ -56,18 +56,24 @@ function randFloat(min, max) {
  */
 function randomTimestamp(dateRangeDays) {
   const now = new Date();
-  const msBack = randInt(1, dateRangeDays) * 24 * 60 * 60 * 1000;
+  // Include today (0) so "Hoy" reports have data; weight toward recent days
+  const daysBack = randInt(0, dateRangeDays);
+  const msBack = daysBack * 24 * 60 * 60 * 1000;
   const date = new Date(now.getTime() - msBack);
 
   // Weighted hour distribution
   const r = Math.random();
   let hour;
-  if (r < 0.05) hour = randInt(8, 10);        // 5% early morning
-  else if (r < 0.15) hour = randInt(10, 11);   // 10% late morning
-  else if (r < 0.45) hour = randInt(12, 14);   // 30% lunch peak
-  else if (r < 0.55) hour = randInt(15, 17);   // 10% afternoon
-  else if (r < 0.85) hour = randInt(19, 21);   // 30% dinner peak
-  else hour = randInt(17, 18);                 // 15% early evening
+  if (daysBack === 0) {
+    // Today: only generate hours up to current hour (no future timestamps)
+    const maxHour = Math.max(now.getHours() - 1, 8);
+    hour = randInt(8, maxHour);
+  } else if (r < 0.05) hour = randInt(8, 10);        // 5% early morning
+  else if (r < 0.15) hour = randInt(10, 11);          // 10% late morning
+  else if (r < 0.45) hour = randInt(12, 14);          // 30% lunch peak
+  else if (r < 0.55) hour = randInt(15, 17);          // 10% afternoon
+  else if (r < 0.85) hour = randInt(19, 21);          // 30% dinner peak
+  else hour = randInt(17, 18);                        // 15% early evening
 
   date.setHours(hour, randInt(0, 59), randInt(0, 59));
   return date;
