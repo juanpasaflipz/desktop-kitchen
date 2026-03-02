@@ -1,10 +1,8 @@
 import { ImageResponse } from "@vercel/og";
-import type { NextRequest } from "next/server";
+import type { NextApiRequest } from "next";
 
-export const config = { runtime: "edge" };
-
-export default function handler(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+export default function handler(req: NextApiRequest) {
+  const searchParams = new URLSearchParams(req.url?.split("?")[1] || "");
   const locale = searchParams.get("locale") || "en";
   const isSpanish = locale === "es";
 
