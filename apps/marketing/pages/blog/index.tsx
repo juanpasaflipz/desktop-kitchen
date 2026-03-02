@@ -55,6 +55,7 @@ export default function BlogIndex() {
       locale={locale || "en"}
       langSwitchDomain={t.langSwitchDomain}
       langSwitchLabel={t.langSwitch}
+      path="/blog"
     >
       <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
         {/* Page header */}

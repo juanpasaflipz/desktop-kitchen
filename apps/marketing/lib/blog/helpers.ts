@@ -1,12 +1,18 @@
 import { BlogPost } from "./types";
 
+const monthsEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const monthsEs = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
 export function formatDate(isoDate: string, locale: string): string {
-  const date = new Date(isoDate);
-  return date.toLocaleDateString(locale === "es" ? "es-MX" : "en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // Deterministic formatter — avoids hydration mismatch between
+  // Node.js (build) and browser (client) locale implementations
+  const [y, m, d] = isoDate.split("-");
+  const monthIdx = parseInt(m, 10) - 1;
+  const day = parseInt(d, 10);
+  if (locale === "es") {
+    return `${day} de ${monthsEs[monthIdx]} de ${y}`;
+  }
+  return `${monthsEn[monthIdx]} ${day}, ${y}`;
 }
 
 export function getPostBySlug(posts: BlogPost[], slug: string): BlogPost | undefined {

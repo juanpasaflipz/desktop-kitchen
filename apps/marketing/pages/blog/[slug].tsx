@@ -79,7 +79,41 @@ export default function PostPage({ slug }: PostPageProps) {
   const colors = getCategoryColors(cat.color);
   const headings = getHeadings(post);
   const related = getRelatedPosts(posts, post.slug, post.relatedSlugs);
-  const postUrl = typeof window !== "undefined" ? window.location.href : "";
+  const isSpanish = (locale || "en") === "es";
+  const domain = isSpanish ? "es.desktop.kitchen" : "www.desktop.kitchen";
+  const postPath = `/blog/${slug}`;
+  const postUrl = `https://${domain}${postPath}`;
+
+  const articleJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    url: postUrl,
+    datePublished: post.date,
+    inLanguage: isSpanish ? "es-MX" : "en",
+    author: {
+      "@type": "Organization",
+      name: post.author.name,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Desktop Kitchen",
+      url: "https://www.desktop.kitchen",
+      logo: { "@type": "ImageObject", url: `https://${domain}/logo.svg` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+  };
+
+  const breadcrumbJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Desktop Kitchen", item: `https://${domain}` },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `https://${domain}/blog` },
+      { "@type": "ListItem", position: 3, name: post.title, item: postUrl },
+    ],
+  };
 
   return (
     <BlogLayout
@@ -88,6 +122,10 @@ export default function PostPage({ slug }: PostPageProps) {
       locale={locale || "en"}
       langSwitchDomain={t.langSwitchDomain}
       langSwitchLabel={t.langSwitch}
+      path={postPath}
+      ogType="article"
+      publishedTime={post.date}
+      jsonLd={[articleJsonLd, breadcrumbJsonLd]}
     >
       {/* Hero */}
       <div className="relative">

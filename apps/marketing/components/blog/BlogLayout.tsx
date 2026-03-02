@@ -8,6 +8,10 @@ export function BlogLayout({
   locale,
   langSwitchDomain,
   langSwitchLabel,
+  path = "/blog",
+  ogType = "website",
+  publishedTime,
+  jsonLd,
 }: {
   children: React.ReactNode;
   title: string;
@@ -15,18 +19,51 @@ export function BlogLayout({
   locale: string;
   langSwitchDomain: string;
   langSwitchLabel: string;
+  path?: string;
+  ogType?: "website" | "article";
+  publishedTime?: string;
+  jsonLd?: Record<string, unknown>[];
 }) {
+  const isSpanish = locale === "es";
+  const domain = isSpanish ? "es.desktop.kitchen" : "www.desktop.kitchen";
+  const altDomain = isSpanish ? "www.desktop.kitchen" : "es.desktop.kitchen";
+  const canonicalUrl = `https://${domain}${path}`;
+  const ogImageUrl = `https://${domain}/api/og?locale=${locale}`;
+
   return (
     <>
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
+        <link rel="canonical" href={canonicalUrl} />
+        <link rel="alternate" hrefLang="en" href={`https://www.desktop.kitchen${path}`} />
+        <link rel="alternate" hrefLang="es" href={`https://es.desktop.kitchen${path}`} />
+        <link rel="alternate" hrefLang="x-default" href={`https://www.desktop.kitchen${path}`} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
+        <meta property="og:type" content={ogType} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:locale" content={isSpanish ? "es_MX" : "en_US"} />
+        <meta property="og:locale:alternate" content={isSpanish ? "en_US" : "es_MX"} />
+        <meta property="og:site_name" content="Desktop Kitchen" />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        {publishedTime && <meta property="article:published_time" content={publishedTime} />}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={ogImageUrl} />
       </Head>
+
+      {/* Structured Data */}
+      {jsonLd?.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
 
       {/* Top accent bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-teal-600 z-50" />
@@ -92,7 +129,7 @@ export function BlogLayout({
               {locale === "es" ? "Demo en Vivo" : "Live Demo"}
             </a>
           </div>
-          <p className="mt-6 text-xs text-white/15">
+          <p className="mt-6 text-xs text-white/15" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Desktop Kitchen.{" "}
             {locale === "es" ? "Todos los derechos reservados." : "All rights reserved."}
           </p>

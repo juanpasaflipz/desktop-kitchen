@@ -160,6 +160,35 @@
   "ctaSub": "Join restaurants already using Desktop Kitchen to streamline operations and grow revenue.",
   "ctaButton": "Start Your Free Trial",
 
+  "faqLabel": "FAQ",
+  "faqHeadline": "GOT QUESTIONS?",
+  "faqItems": [
+    {
+      "q": "What is a restaurant POS system?",
+      "a": "A restaurant POS (point of sale) system is software that manages orders, payments, inventory, and sales reports from a single platform. Desktop Kitchen is a modern POS designed specifically for quick-service restaurants, ghost kitchens, and delivery-first operators."
+    },
+    {
+      "q": "Does Desktop Kitchen integrate with Uber Eats, Rappi, and DiDi Food?",
+      "a": "Yes. Desktop Kitchen pulls orders from Uber Eats, Rappi, and DiDi Food into a single screen. You can see per-platform commissions, set markup rules, and get real-time delivery P&L reports."
+    },
+    {
+      "q": "Do I need special hardware to use Desktop Kitchen?",
+      "a": "No. Desktop Kitchen runs in any web browser — tablet, laptop, PC, or phone. No special hardware or dedicated POS terminals required."
+    },
+    {
+      "q": "How much does Desktop Kitchen cost?",
+      "a": "Desktop Kitchen has a free-forever plan with up to 50 daily transactions. Paid plans start at $29 USD/month with unlimited transactions, delivery platform integration, and inventory management."
+    },
+    {
+      "q": "What is a ghost kitchen?",
+      "a": "A ghost kitchen (also called a dark kitchen or cloud kitchen) is a restaurant that operates exclusively for delivery, with no dine-in space. Desktop Kitchen is ideal for ghost kitchens because it lets you manage multiple virtual brands, track per-platform commissions, and analyze profitability by brand."
+    },
+    {
+      "q": "Can I run multiple virtual brands from one kitchen?",
+      "a": "Yes. With the Pro plan you can run up to 3 virtual brands, and the Ghost Kitchen plan supports unlimited brands — all from a single kitchen, with separate menus, markup rules, and P&L tracking per brand."
+    }
+  ],
+
   "footerBrand": "Desktop Kitchen",
   "footerDocs": "Documentation",
   "footerDemo": "Live Demo",

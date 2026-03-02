@@ -514,9 +514,14 @@ const Home: NextPage = () => {
         <meta property="og:url" content={isSpanish ? "https://es.desktop.kitchen" : "https://www.desktop.kitchen"} />
         <meta property="og:locale" content={isSpanish ? "es_MX" : "en_US"} />
         <meta property="og:locale:alternate" content={isSpanish ? "en_US" : "es_MX"} />
+        <meta property="og:image" content={`https://${isSpanish ? "es" : "www"}.desktop.kitchen/api/og?locale=${locale}`} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={t.ogTitle} />
         <meta name="twitter:description" content={t.twitterDescription} />
+        <meta name="twitter:image" content={`https://${isSpanish ? "es" : "www"}.desktop.kitchen/api/og?locale=${locale}`} />
 
         {/* Additional SEO meta tags for Spanish page targeting Mexico */}
         {isSpanish && (
