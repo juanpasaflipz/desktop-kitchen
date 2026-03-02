@@ -1,7 +1,7 @@
 /**
- * Owner persona tests (~25 tests)
+ * Owner persona tests (~32 tests)
  * Tests registration, owner login, token refresh, password reset,
- * account management, branding, and billing.
+ * account management (CRUD + validation), branding, and billing.
  */
 import { describe, it, expect } from 'vitest';
 import { pub, authApi, admin, rawRequest } from '../setup/helpers.js';
@@ -167,15 +167,20 @@ describe('Owner', () => {
 
   // ==================== Account ====================
   describe('Account', () => {
-    it('GET /api/account returns owner info', async () => {
+    it('GET /api/account returns plan, usage.employees, usage.menu_items', async () => {
       const state = getTestState();
       const api = authApi(state.tenantAlpha.ownerToken);
       const res = await api.get('/api/account');
-      // Account route uses requireOwner, tenantId from token
-      expect([200, 401]).toContain(res.status);
-      if (res.status === 200) {
-        expect(res.data).toHaveProperty('id');
-      }
+      expect(res.status).toBe(200);
+      expect(res.data).toHaveProperty('id');
+      expect(res.data).toHaveProperty('plan');
+      expect(res.data).toHaveProperty('email');
+      expect(res.data.usage).toHaveProperty('employees');
+      expect(res.data.usage.employees).toHaveProperty('current');
+      expect(res.data.usage.employees).toHaveProperty('limit');
+      expect(res.data.usage).toHaveProperty('menu_items');
+      expect(res.data.usage.menu_items).toHaveProperty('current');
+      expect(res.data.usage.menu_items).toHaveProperty('limit');
     });
 
     it('PUT /api/account updates account name', async () => {
@@ -184,7 +189,37 @@ describe('Owner', () => {
       const res = await api.put('/api/account', {
         name: 'Updated Alpha Restaurant',
       });
-      expect([200, 401]).toContain(res.status);
+      expect(res.status).toBe(200);
+      expect(res.data).toHaveProperty('name');
+    });
+
+    it('PUT /api/account rejects invalid email → 400', async () => {
+      const state = getTestState();
+      const api = authApi(state.tenantAlpha.ownerToken);
+      const res = await api.put('/api/account', {
+        email: 'not-an-email',
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toContain('Invalid email');
+    });
+
+    it('PUT /api/account rejects empty body → 400', async () => {
+      const state = getTestState();
+      const api = authApi(state.tenantAlpha.ownerToken);
+      const res = await api.put('/api/account', {});
+      expect(res.status).toBe(400);
+      expect(res.data.error).toContain('No valid fields');
+    });
+
+    it('PUT /api/account/password rejects wrong current_password → 401', async () => {
+      const state = getTestState();
+      const api = authApi(state.tenantAlpha.ownerToken);
+      const res = await api.put('/api/account/password', {
+        current_password: 'WrongPassword!',
+        new_password: 'NewPassword2026!',
+      });
+      expect(res.status).toBe(401);
+      expect(res.data.error).toContain('Current password is incorrect');
     });
   });
 
@@ -213,6 +248,33 @@ describe('Owner', () => {
 
   // ==================== Billing ====================
   describe('Billing', () => {
+    it('GET /api/billing returns plan + subscription_status', async () => {
+      const state = getTestState();
+      const api = authApi(state.tenantAlpha.ownerToken);
+      const res = await api.get('/api/billing');
+      expect(res.status).toBe(200);
+      expect(res.data).toHaveProperty('plan');
+      expect(res.data).toHaveProperty('subscription_status');
+    });
+
+    it('POST /api/billing/checkout rejects invalid plan → 400', async () => {
+      const state = getTestState();
+      const api = authApi(state.tenantAlpha.ownerToken);
+      const res = await api.post('/api/billing/checkout', {
+        plan: 'nonexistent_plan',
+      });
+      expect(res.status).toBe(400);
+      expect(res.data.error).toContain('Invalid plan');
+    });
+
+    it('POST /api/billing/portal rejects without stripe_customer_id → 400', async () => {
+      const state = getTestState();
+      const api = authApi(state.tenantAlpha.ownerToken);
+      const res = await api.post('/api/billing/portal');
+      expect(res.status).toBe(400);
+      expect(res.data.error).toContain('No billing account');
+    });
+
     it('GET /api/billing/promo/validate validates promo code', async () => {
       const res = await pub.get('/api/billing/promo/validate?code=TESTPROMO');
       expect([200, 404]).toContain(res.status);
