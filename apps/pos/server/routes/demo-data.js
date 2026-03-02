@@ -101,6 +101,16 @@ router.delete('/', async (req, res) => {
 
     const deleted = {};
 
+    // Ensure demo_batch_id columns exist (they're added by generateDemoData,
+    // but may not exist if clearing old data created before the column was introduced)
+    await Promise.all([
+      adminSql`ALTER TABLE inventory_counts ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE shrinkage_alerts ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE delivery_markup_rules ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+    ]);
+
     await adminSql.begin(async (sql) => {
       // ─── Order-related child tables ─────────────────────────
       const r1 = await sql.unsafe(`
