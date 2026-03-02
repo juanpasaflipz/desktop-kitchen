@@ -30,7 +30,7 @@ import {
   Gauge,
   Landmark,
 } from 'lucide-react';
-import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal } from '../api';
+import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal, getDemoDataStatus, generateDemoData, clearDemoData, DemoDataStatus } from '../api';
 import { SalesReport, InventoryItem } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
@@ -51,6 +51,9 @@ export default function AdminPanel() {
   const [billingLoading, setBillingLoading] = useState<string | null>(null);
   const [billingError, setBillingError] = useState<string | null>(null);
   const [showCancelledBanner, setShowCancelledBanner] = useState(false);
+  const [demoStatus, setDemoStatus] = useState<DemoDataStatus | null>(null);
+  const [demoAction, setDemoAction] = useState<'generate' | 'clear' | null>(null);
+  const [demoError, setDemoError] = useState<string | null>(null);
 
   const isPro = plan === 'pro' || plan === 'ghost_kitchen';
 
@@ -102,6 +105,11 @@ export default function AdminPanel() {
         ]);
         setDailyStats(stats);
         setLowStockItems(lowStock);
+
+        // Fetch demo data status for trial tenants (non-blocking)
+        if (plan === 'trial') {
+          getDemoDataStatus().then(setDemoStatus).catch(() => {});
+        }
 
         // Fetch confirmed bank deposits for pro+ tenants (non-blocking)
         if (plan === 'pro' || plan === 'ghost_kitchen') {
@@ -330,6 +338,95 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+
+        {/* Demo Data — trial tenants only */}
+        {plan === 'trial' && demoStatus?.allowed && (
+          <div className="bg-neutral-900 border border-amber-800/50 rounded-lg p-6 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-10 h-10 bg-amber-600/10 rounded-lg">
+                <Sparkles className="text-amber-500" size={22} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Demo Data</h2>
+                <p className="text-xs text-neutral-400">Populate this account with realistic sample data for demos</p>
+              </div>
+            </div>
+
+            {demoError && (
+              <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 mb-4">
+                <p className="text-red-300 text-sm">{demoError}</p>
+              </div>
+            )}
+
+            {demoStatus.hasDemo && demoStatus.counts ? (
+              <div>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <span className="px-3 py-1.5 bg-brand-900/30 text-brand-400 text-sm rounded-lg font-medium">
+                    {demoStatus.counts.orders} orders
+                  </span>
+                  <span className="px-3 py-1.5 bg-brand-900/30 text-brand-400 text-sm rounded-lg font-medium">
+                    {demoStatus.counts.customers} loyalty customers
+                  </span>
+                  <span className="px-3 py-1.5 bg-brand-900/30 text-brand-400 text-sm rounded-lg font-medium">
+                    {demoStatus.counts.delivery_orders} delivery orders
+                  </span>
+                  <span className="px-3 py-1.5 bg-brand-900/30 text-brand-400 text-sm rounded-lg font-medium">
+                    {demoStatus.counts.ai_snapshots} AI snapshots
+                  </span>
+                  <span className="px-3 py-1.5 bg-brand-900/30 text-brand-400 text-sm rounded-lg font-medium">
+                    {demoStatus.counts.financial_actuals} financial records
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mb-3">Reports, analytics, loyalty, and delivery data are populated. Clear when done.</p>
+                <button
+                  onClick={async () => {
+                    setDemoAction('clear');
+                    setDemoError(null);
+                    try {
+                      await clearDemoData();
+                      const s = await getDemoDataStatus();
+                      setDemoStatus(s);
+                    } catch (e) {
+                      setDemoError(e instanceof Error ? e.message : 'Failed to clear');
+                    } finally {
+                      setDemoAction(null);
+                    }
+                  }}
+                  disabled={demoAction !== null}
+                  className="px-5 py-2.5 border border-red-700 text-red-400 font-medium rounded-lg hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                >
+                  {demoAction === 'clear' ? 'Clearing...' : 'Clear Demo Data'}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-neutral-400 mb-4">
+                  Generate 150 orders, loyalty customers, delivery orders, AI analytics, and financial data spanning 30 days.
+                  Perfect for showing prospects the full capabilities of the system.
+                </p>
+                <button
+                  onClick={async () => {
+                    setDemoAction('generate');
+                    setDemoError(null);
+                    try {
+                      await generateDemoData();
+                      const s = await getDemoDataStatus();
+                      setDemoStatus(s);
+                    } catch (e) {
+                      setDemoError(e instanceof Error ? e.message : 'Failed to generate');
+                    } finally {
+                      setDemoAction(null);
+                    }
+                  }}
+                  disabled={demoAction !== null}
+                  className="px-5 py-2.5 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
+                >
+                  {demoAction === 'generate' ? 'Generating...' : 'Populate Demo Data'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Bank Sync Failure Banner */}
         {isPro && <BankSyncBanner />}

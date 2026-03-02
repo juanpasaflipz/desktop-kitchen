@@ -193,15 +193,7 @@ export default function ManagerDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {filteredMyProspects.map(p => (
-                    <ProspectCard
-                      key={p.id}
-                      prospect={p}
-                      onStatusChange={handleStatusChange}
-                      onProspectUpdated={updated => {
-                        setMyProspects(prev => prev.map(x => x.id === updated.id ? updated : x))
-                        setProspects(prev => prev.map(x => x.id === updated.id ? updated : x))
-                      }}
-                    />
+                    <ProspectCard key={p.id} prospect={p} onStatusChange={handleStatusChange} />
                   ))}
                 </div>
               )}
@@ -354,13 +346,7 @@ export default function ManagerDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filteredProspects.map(p => (
-                  <ProspectCard
-                    key={p.id}
-                    prospect={p}
-                    onStatusChange={handleStatusChange}
-                    onProspectUpdated={updated => setProspects(prev => prev.map(x => x.id === updated.id ? updated : x))}
-                    showRep
-                  />
+                  <ProspectCard key={p.id} prospect={p} onStatusChange={handleStatusChange} showRep />
                 ))}
               </div>
             )}

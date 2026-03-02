@@ -1,7 +1,6 @@
 import { MapPin, Clock } from 'lucide-react'
 import type { Prospect, ProspectStatus } from '../types'
 import StatusBadge from './StatusBadge'
-import DemoDataButton from './DemoDataButton'
 
 const statusOptions: { value: ProspectStatus; label: string }[] = [
   { value: 'visited', label: 'Visited' },
@@ -15,11 +14,10 @@ const statusOptions: { value: ProspectStatus; label: string }[] = [
 interface Props {
   prospect: Prospect
   onStatusChange: (id: string, status: ProspectStatus) => void
-  onProspectUpdated?: (updated: Prospect) => void
   showRep?: boolean
 }
 
-export default function ProspectCard({ prospect, onStatusChange, onProspectUpdated, showRep }: Props) {
+export default function ProspectCard({ prospect, onStatusChange, showRep }: Props) {
   const timeAgo = formatTimeAgo(prospect.updated_at)
 
   return (
@@ -57,8 +55,6 @@ export default function ProspectCard({ prospect, onStatusChange, onProspectUpdat
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
-
-      <DemoDataButton prospect={prospect} onProspectUpdated={onProspectUpdated} />
     </div>
   )
 }

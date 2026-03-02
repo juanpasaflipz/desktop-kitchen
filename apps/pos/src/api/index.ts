@@ -2198,3 +2198,30 @@ export async function deleteCredentials(service: string): Promise<{ success: boo
   return res.json();
 }
 
+/* ==================== Demo Data Endpoints ==================== */
+
+export interface DemoDataStatus {
+  allowed: boolean;
+  reason?: string;
+  hasDemo?: boolean;
+  counts?: {
+    orders: number;
+    customers: number;
+    delivery_orders: number;
+    ai_snapshots: number;
+    financial_actuals: number;
+  };
+}
+
+export async function getDemoDataStatus(): Promise<DemoDataStatus> {
+  return apiRequest<DemoDataStatus>('/demo-data/status');
+}
+
+export async function generateDemoData(): Promise<{ run_id: string; summary: Record<string, number> }> {
+  return apiRequest('/demo-data/generate', { method: 'POST' });
+}
+
+export async function clearDemoData(): Promise<{ deleted: Record<string, number> }> {
+  return apiRequest('/demo-data', { method: 'DELETE' });
+}
+

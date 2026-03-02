@@ -41,6 +41,7 @@ import credentialsRoutes from './routes/credentials.js';
 import stressTestRoutes from './routes/stress-test.js';
 import chaosRoutes from './routes/chaos.js';
 import bankingRoutes from './routes/banking.js';
+import demoDataRoutes from './routes/demo-data.js';
 import salesRoutes from './routes/sales.js';
 import onboardingRoutes from './routes/onboarding.js';
 import belvoWebhook from './routes/webhooks/belvo.js';
@@ -183,6 +184,7 @@ app.use('/api/pricing', pricingRoutes);
 app.use('/api/cfdi', cfdiRoutes);
 app.use('/api/credentials', credentialsRoutes);
 app.use('/api/stress-test', stressTestRoutes);
+app.use('/api/demo-data', demoDataRoutes);
 app.use('/api/banking', bankingRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 

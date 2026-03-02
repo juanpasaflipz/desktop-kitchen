@@ -107,12 +107,7 @@ export default function RepDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {filtered.map(p => (
-                <ProspectCard
-                  key={p.id}
-                  prospect={p}
-                  onStatusChange={handleStatusChange}
-                  onProspectUpdated={updated => setProspects(prev => prev.map(x => x.id === updated.id ? updated : x))}
-                />
+                <ProspectCard key={p.id} prospect={p} onStatusChange={handleStatusChange} />
               ))}
             </div>
           )}
