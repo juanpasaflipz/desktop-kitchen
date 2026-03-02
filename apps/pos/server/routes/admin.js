@@ -547,7 +547,11 @@ router.delete('/tenants/:id', async (req, res) => {
         await sql.unsafe(`DELETE FROM ${t} WHERE tenant_id = $1`, [tid]);
       }
 
-      // Layer 3
+      // Layer 3 — re-delete AI tables first to handle race with background AI scheduler
+      // (scheduler may re-insert ai_item_pairs referencing menu_items between layers)
+      await sql.unsafe(`DELETE FROM ai_item_pairs WHERE tenant_id = $1`, [tid]);
+      await sql.unsafe(`DELETE FROM ai_restock_log WHERE tenant_id = $1`, [tid]);
+      await sql.unsafe(`DELETE FROM ai_inventory_velocity WHERE tenant_id = $1`, [tid]);
       const layer3 = [
         'orders', 'menu_items', 'virtual_brands', 'combo_definitions',
         'modifier_groups', 'delivery_platforms', 'printers',
@@ -556,10 +560,7 @@ router.delete('/tenants/:id', async (req, res) => {
         await sql.unsafe(`DELETE FROM ${t} WHERE tenant_id = $1`, [tid]);
       }
 
-      // Layer 4 — re-delete AI tables to handle race with background AI scheduler
-      await sql.unsafe(`DELETE FROM ai_restock_log WHERE tenant_id = $1`, [tid]);
-      await sql.unsafe(`DELETE FROM ai_item_pairs WHERE tenant_id = $1`, [tid]);
-      await sql.unsafe(`DELETE FROM ai_inventory_velocity WHERE tenant_id = $1`, [tid]);
+      // Layer 4
       const layer4 = [
         'menu_categories', 'inventory_items', 'vendors', 'employees', 'loyalty_customers',
       ];
