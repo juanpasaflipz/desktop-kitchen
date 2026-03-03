@@ -522,8 +522,7 @@ router.get('/manager/reps', requireManager, async (req, res) => {
         COALESCE((SELECT SUM(commission_amount_usd) FROM commissions WHERE sales_rep_id = sr.id AND status = 'paid'), 0)
           AS paid_commissions_total
       FROM sales_reps sr
-      WHERE sr.is_active = true
-      ORDER BY sr.full_name
+      ORDER BY sr.is_active DESC, sr.full_name
     `;
 
     res.json(reps);
@@ -885,6 +884,24 @@ router.patch('/manager/reps/:id/set-password', requireManager, async (req, res) 
   } catch (error) {
     console.error('[sales] PATCH /manager/reps/:id/set-password error:', error);
     res.status(500).json({ error: 'Failed to set password' });
+  }
+});
+
+// PATCH /api/sales/manager/reps/:id/toggle-active — deactivate/reactivate a rep
+router.patch('/manager/reps/:id/toggle-active', requireManager, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rep] = await adminSql`
+      UPDATE sales_reps SET is_active = NOT is_active WHERE id = ${id}
+      RETURNING id, full_name, email, is_active
+    `;
+    if (!rep) {
+      return res.status(404).json({ error: 'Sales rep not found' });
+    }
+    res.json(rep);
+  } catch (error) {
+    console.error('[sales] PATCH /manager/reps/:id/toggle-active error:', error);
+    res.status(500).json({ error: 'Failed to update rep status' });
   }
 });
 

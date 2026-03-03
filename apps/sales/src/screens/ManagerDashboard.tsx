@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Users, Target, TrendingUp, DollarSign, Plus, Key } from 'lucide-react'
+import { Users, Target, TrendingUp, DollarSign, Plus, Key, UserX, UserCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import * as api from '../api'
 import type { RepWithStats, Prospect, Commission, ProspectStatus } from '../types'
@@ -270,16 +270,33 @@ export default function ManagerDashboard() {
 
             <div className="space-y-3">
               {reps.map(r => (
-                <div key={r.id} className="bg-neutral-900 border border-neutral-700 rounded-xl p-4">
+                <div key={r.id} className={`bg-neutral-900 border rounded-xl p-4 ${r.is_active ? 'border-neutral-700' : 'border-red-900/50 opacity-60'}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{r.full_name}</p>
-                      <p className="text-xs text-neutral-400">{r.email}</p>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{r.full_name}</p>
+                        <p className="text-xs text-neutral-400">{r.email}</p>
+                      </div>
+                      {!r.is_active && (
+                        <span className="px-2 py-0.5 bg-red-900/40 text-red-300 text-xs rounded-full">Inactivo</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {r.is_manager && (
                         <span className="px-2 py-0.5 bg-purple-900/40 text-purple-300 text-xs rounded-full">Manager</span>
                       )}
+                      <button
+                        onClick={async () => {
+                          if (!confirm(r.is_active ? `Desactivar a ${r.full_name}?` : `Reactivar a ${r.full_name}?`)) return
+                          await api.toggleRepActive(r.id)
+                          const updated = await api.getManagerReps()
+                          setReps(updated)
+                        }}
+                        className={`p-1.5 rounded-lg transition-colors ${r.is_active ? 'text-neutral-400 hover:text-red-400 hover:bg-red-900/20' : 'text-red-400 hover:text-green-400 hover:bg-green-900/20'}`}
+                        title={r.is_active ? 'Desactivar' : 'Reactivar'}
+                      >
+                        {r.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      </button>
                       <button
                         onClick={() => setPasswordModal({ id: r.id, name: r.full_name })}
                         className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"

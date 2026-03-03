@@ -103,6 +103,11 @@ export const setRepPassword = (id: string, password: string) =>
     body: JSON.stringify({ password }),
   })
 
+export const toggleRepActive = (id: string) =>
+  request<import('./types').SalesRep>(`/api/sales/manager/reps/${id}/toggle-active`, {
+    method: 'PATCH',
+  })
+
 export const getVelocity = (months?: number) => {
   const q = new URLSearchParams()
   if (months) q.set('months', String(months))

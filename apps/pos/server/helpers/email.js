@@ -134,10 +134,28 @@ export async function sendSalesRepWelcomeEmail(email, fullName, password) {
             </ul>
 
             <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:20px 0">
+              <h3 style="color:#0d9488;margin:0 0 8px">POS Demo</h3>
+              <p style="color:#374151;margin:0 0 8px;font-size:14px">Usa estas credenciales para explorar el sistema y hacer demos a prospectos:</p>
+              <p style="margin:0 0 4px;font-size:14px"><strong>URL:</strong> <a href="https://pos.desktop.kitchen" style="color:#0d9488">pos.desktop.kitchen</a></p>
+              <p style="margin:0 0 4px;font-size:14px"><strong>Correo:</strong> admin@bobbys.com</p>
+              <p style="margin:0 0 4px;font-size:14px"><strong>Contrase\u00f1a:</strong> demo54321</p>
+              <p style="margin:0;font-size:14px"><strong>PIN:</strong> 1234</p>
+            </div>
+
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:20px 0">
               <h3 style="color:#0d9488;margin:0 0 8px">Paquete de bienvenida</h3>
-              <p style="color:#374151;margin:0;font-size:14px">Adjunto encontrar\u00e1s dos documentos importantes para comenzar:</p>
+              <p style="color:#374151;margin:0;font-size:14px">Adjunto encontrar\u00e1s un documento importante para comenzar:</p>
               <ul style="color:#374151;font-size:14px;line-height:1.8;padding-left:20px;margin-bottom:0">
                 <li><strong>Script de Ventas</strong> \u2014 gu\u00eda para tus visitas a restaurantes</li>
+              </ul>
+            </div>
+
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:20px 0">
+              <h3 style="color:#0d9488;margin:0 0 8px">Enlaces \u00fatiles</h3>
+              <ul style="color:#374151;font-size:14px;line-height:2;padding-left:20px;margin:0">
+                <li><a href="https://es.desktop.kitchen" style="color:#0d9488">es.desktop.kitchen</a> \u2014 Sitio web (espa\u00f1ol)</li>
+                <li><a href="https://es.desktop.kitchen/blog" style="color:#0d9488">es.desktop.kitchen/blog</a> \u2014 Blog</li>
+                <li><a href="https://www.desktop.kitchen/investors" style="color:#0d9488">www.desktop.kitchen/investors</a> \u2014 Inversionistas</li>
               </ul>
             </div>
 
