@@ -128,13 +128,13 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
             {invoiceUrl && !invoiceIssued && (
               <div className="text-center py-3 border-t pt-3">
                 <QRCodeSVG value={invoiceUrl} size={120} className="mx-auto" />
-                <p className="text-xs text-neutral-500 mt-2">Escanea para solicitar tu factura</p>
+                <p className="text-xs text-neutral-500 mt-2">Scan to request your invoice</p>
               </div>
             )}
 
             {invoiceIssued && (
               <div className="text-center py-2 bg-green-50 rounded-lg">
-                <p className="text-green-700 text-sm font-semibold">Factura emitida</p>
+                <p className="text-green-700 text-sm font-semibold">Invoice issued</p>
               </div>
             )}
 
@@ -156,7 +156,7 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, onClose, onPrint }) 
                 onClick={() => setShowInvoiceModal(true)}
                 className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all"
               >
-                Facturar
+                Invoice
               </button>
             )}
             <button

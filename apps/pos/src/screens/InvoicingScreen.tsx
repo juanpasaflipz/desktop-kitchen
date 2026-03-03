@@ -41,7 +41,7 @@ export default function InvoicingScreen() {
       setConfig(configRes.config);
       setCatalogs(catalogsRes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar datos');
+      setError(err instanceof Error ? err.message : 'Error loading data');
     } finally {
       setLoading(false);
     }
@@ -57,9 +57,9 @@ export default function InvoicingScreen() {
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'config', label: 'Configuracion CFDI', icon: <Settings size={18} /> },
-    { id: 'issue', label: 'Emitir Factura', icon: <FileText size={18} /> },
-    { id: 'list', label: 'Lista de Facturas', icon: <ListOrdered size={18} /> },
+    { id: 'config', label: 'CFDI Settings', icon: <Settings size={18} /> },
+    { id: 'issue', label: 'Issue Invoice', icon: <FileText size={18} /> },
+    { id: 'list', label: 'Invoice List', icon: <ListOrdered size={18} /> },
   ];
 
   return (
@@ -75,7 +75,7 @@ export default function InvoicingScreen() {
           </Link>
           <FileText className="text-brand-500" size={28} />
           <h1 className="text-3xl font-black tracking-tighter">
-            Facturacion Electronica
+            Electronic Invoicing
           </h1>
         </div>
       </div>

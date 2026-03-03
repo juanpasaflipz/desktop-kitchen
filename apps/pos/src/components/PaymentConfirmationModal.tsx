@@ -13,9 +13,9 @@ interface PaymentConfirmationModalProps {
 }
 
 const METHODS: { key: PaymentMethod; icon: string; label: string }[] = [
-  { key: 'cash', icon: '\uD83D\uDCB5', label: 'Efectivo' },
-  { key: 'card', icon: '\uD83D\uDCB3', label: 'Tarjeta' },
-  { key: 'transfer', icon: '\uD83D\uDCF2', label: 'Transferencia' },
+  { key: 'cash', icon: '\uD83D\uDCB5', label: 'Cash' },
+  { key: 'card', icon: '\uD83D\uDCB3', label: 'Card' },
+  { key: 'transfer', icon: '\uD83D\uDCF2', label: 'Transfer' },
 ];
 
 const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
@@ -50,7 +50,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
         setReference('');
       }, 1200);
     } catch (err) {
-      setError('Error al procesar el pago. Intenta de nuevo.');
+      setError('Error processing payment. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -81,14 +81,14 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-white text-xl font-bold">Pago confirmado</p>
+            <p className="text-white text-xl font-bold">Payment confirmed</p>
           </div>
         )}
 
         {/* Header */}
         <div className="bg-brand-600 text-white p-6 text-center">
           <p className="text-sm text-brand-200 font-semibold mb-1">
-            {order.order_number ? `Orden #${order.order_number}` : 'Confirmar pago'}
+            {order.order_number ? `Order #${order.order_number}` : 'Confirm payment'}
           </p>
           <p className="text-5xl font-bold tracking-tight">
             {formatPrice(order.total)}
@@ -127,7 +127,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
               type="text"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              placeholder="Referencia (opcional)"
+              placeholder="Reference (optional)"
               className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-brand-600 text-sm"
             />
           )}
@@ -150,7 +150,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
             ) : (
-              'Confirmar Pago'
+              'Confirm Payment'
             )}
           </button>
 
@@ -160,7 +160,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
             disabled={loading || success}
             className="w-full py-3 text-neutral-400 text-sm font-semibold hover:text-white transition-all"
           >
-            Cancelar
+            Cancel
           </button>
         </div>
       </div>

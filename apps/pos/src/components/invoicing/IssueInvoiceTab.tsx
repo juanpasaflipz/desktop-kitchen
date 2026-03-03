@@ -16,13 +16,13 @@ import { formatPrice } from '../../utils/currency';
 const paymentMethodLabel = (method: string | null | undefined): string => {
   switch (method) {
     case 'card':
-      return 'Tarjeta';
+      return 'Card';
     case 'cash':
-      return 'Efectivo';
+      return 'Cash';
     case 'split':
-      return 'Pago dividido';
+      return 'Split payment';
     case 'crypto':
-      return 'Criptomoneda';
+      return 'Cryptocurrency';
     default:
       return 'N/A';
   }
@@ -59,14 +59,14 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
 
       const id = parseInt(orderNumber.trim(), 10);
       if (isNaN(id)) {
-        onError('Ingresa un numero de orden valido');
+        onError('Enter a valid order number');
         return;
       }
 
       const order = await getOrder(id);
       setFoundOrder(order);
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Orden no encontrada');
+      onError(err instanceof Error ? err.message : 'Order not found');
     } finally {
       setSearchingOrder(false);
     }
@@ -101,7 +101,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
           !receptorForm.tax_regime ||
           !receptorForm.postal_code
         ) {
-          onError('Completa todos los datos del receptor');
+          onError('Complete all recipient fields');
           setIssuing(false);
           return;
         }
@@ -116,9 +116,9 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
 
       const invoice = await issueCfdiInvoice(payload);
       setIssuedInvoice(invoice);
-      onSuccess('Factura emitida correctamente');
+      onSuccess('Invoice issued successfully');
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Error al emitir factura');
+      onError(err instanceof Error ? err.message : 'Error issuing invoice');
     } finally {
       setIssuing(false);
     }
@@ -128,7 +128,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
     <div className="space-y-6">
       {/* Order Search */}
       <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Buscar Orden</h3>
+        <h3 className="text-lg font-bold text-white mb-4">Search Order</h3>
         <div className="flex gap-3">
           <input
             type="text"
@@ -137,7 +137,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSearchOrder();
             }}
-            placeholder="ID de la orden (ej. 42)"
+            placeholder="Order ID (e.g. 42)"
             className="flex-1 bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
           />
           <button
@@ -150,7 +150,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
             ) : (
               <Search size={16} />
             )}
-            Buscar
+            Search
           </button>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
       {foundOrder && (
         <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
           <h3 className="text-lg font-bold text-white mb-4">
-            Orden #{foundOrder.order_number}
+            Order #{foundOrder.order_number}
           </h3>
 
           <div className="overflow-x-auto mb-4">
@@ -167,16 +167,16 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
               <thead className="bg-neutral-800">
                 <tr>
                   <th className="px-4 py-2 text-left text-sm font-semibold text-neutral-300">
-                    Producto
+                    Product
                   </th>
                   <th className="px-4 py-2 text-right text-sm font-semibold text-neutral-300">
-                    Cant.
+                    Qty.
                   </th>
                   <th className="px-4 py-2 text-right text-sm font-semibold text-neutral-300">
-                    Precio
+                    Price
                   </th>
                   <th className="px-4 py-2 text-right text-sm font-semibold text-neutral-300">
-                    Importe
+                    Amount
                   </th>
                 </tr>
               </thead>
@@ -207,7 +207,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
               <span className="text-white">{formatPrice(foundOrder.subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-400">IVA (16%)</span>
+              <span className="text-neutral-400">Tax / IVA (16%)</span>
               <span className="text-white">{formatPrice(foundOrder.tax)}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-neutral-700 pt-2">
@@ -215,7 +215,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
               <span className="text-brand-500">{formatPrice(foundOrder.total)}</span>
             </div>
             <div className="flex justify-between text-sm pt-1">
-              <span className="text-neutral-400">Metodo de Pago</span>
+              <span className="text-neutral-400">Payment Method</span>
               <span className="text-neutral-300">
                 {paymentMethodLabel(foundOrder.payment_method)}
               </span>
@@ -227,7 +227,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
       {/* Receptor Data */}
       {foundOrder && !issuedInvoice && (
         <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
-          <h3 className="text-lg font-bold text-white mb-4">Datos del Receptor</h3>
+          <h3 className="text-lg font-bold text-white mb-4">Recipient Information</h3>
 
           <label className="flex items-center gap-3 mb-6 cursor-pointer">
             <input
@@ -236,7 +236,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
               onChange={(e) => setPublicoGeneral(e.target.checked)}
               className="w-5 h-5 rounded border-neutral-600 bg-neutral-800 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
             />
-            <span className="text-white font-medium">Publico en General</span>
+            <span className="text-white font-medium">General Public</span>
             <span className="text-neutral-500 text-sm">
               (RFC: XAXX010101000)
             </span>
@@ -262,7 +262,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
 
               <div>
                 <label className="block text-sm font-medium text-neutral-400 mb-1">
-                  Razon Social <span className="text-red-400">*</span>
+                  Legal Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -270,14 +270,14 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
                   onChange={(e) =>
                     setReceptorForm({ ...receptorForm, name: e.target.value.toUpperCase() })
                   }
-                  placeholder="NOMBRE O RAZON SOCIAL"
+                  placeholder="LEGAL NAME"
                   className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none uppercase"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-neutral-400 mb-1">
-                  Regimen Fiscal <span className="text-red-400">*</span>
+                  Tax Regime <span className="text-red-400">*</span>
                 </label>
                 <select
                   value={receptorForm.tax_regime}
@@ -286,7 +286,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
                   }
                   className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
                 >
-                  <option value="">Seleccionar...</option>
+                  <option value="">Select...</option>
                   {catalogs?.taxRegimes.map((r) => (
                     <option key={r.code} value={r.code}>
                       {r.code} - {r.name}
@@ -297,7 +297,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
 
               <div>
                 <label className="block text-sm font-medium text-neutral-400 mb-1">
-                  Codigo Postal <span className="text-red-400">*</span>
+                  Postal Code <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -314,7 +314,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-neutral-400 mb-1">
-                  Uso de CFDI
+                  CFDI Usage
                 </label>
                 <select
                   value={receptorForm.uso_cfdi}
@@ -341,12 +341,12 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
             {issuing ? (
               <>
                 <Loader2 size={20} className="animate-spin" />
-                Emitiendo Factura...
+                Issuing Invoice...
               </>
             ) : (
               <>
                 <FileText size={20} />
-                Emitir Factura
+                Issue Invoice
               </>
             )}
           </button>
@@ -359,7 +359,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
           <div className="flex items-center gap-3 mb-4">
             <CheckCircle className="text-green-400" size={24} />
             <h3 className="text-lg font-bold text-green-400">
-              Factura Emitida Exitosamente
+              Invoice Issued Successfully
             </h3>
           </div>
 
@@ -371,13 +371,13 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
               </span>
             </div>
             <div className="flex justify-between p-3 bg-neutral-900 rounded-lg">
-              <span className="text-neutral-400 text-sm">Folio</span>
+              <span className="text-neutral-400 text-sm">Folio #</span>
               <span className="text-white text-sm">
                 {issuedInvoice.series}-{issuedInvoice.folio}
               </span>
             </div>
             <div className="flex justify-between p-3 bg-neutral-900 rounded-lg">
-              <span className="text-neutral-400 text-sm">Receptor</span>
+              <span className="text-neutral-400 text-sm">Recipient</span>
               <span className="text-white text-sm">
                 {issuedInvoice.receptor_rfc} — {issuedInvoice.receptor_name}
               </span>
@@ -399,7 +399,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
                 className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors text-sm font-medium"
               >
                 <Download size={16} />
-                Descargar PDF
+                Download PDF
               </a>
             )}
             {issuedInvoice.xml_url && (
@@ -410,7 +410,7 @@ export default function IssueInvoiceTab({ catalogs, onError, onSuccess }: IssueI
                 className="flex items-center gap-2 px-4 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors text-sm font-medium border border-neutral-700"
               >
                 <Download size={16} />
-                Descargar XML
+                Download XML
               </a>
             )}
           </div>

@@ -21,22 +21,22 @@ const SERVICE_ICONS: Record<string, string> = {
 };
 
 const SERVICE_DESCRIPTIONS: Record<string, string> = {
-  mercadopago: 'Cobra con terminal Point directo desde el POS. Requiere app OAuth propia en el portal de MP.',
-  stripe: 'Procesa pagos con tarjeta en linea. Usa tu propia cuenta Stripe para recibir fondos directamente.',
-  twilio: 'Envia SMS de lealtad, recaptura de clientes y notificaciones automaticas.',
-  facturapi: 'Emite facturas CFDI 4.0 desde el POS usando tu propia cuenta FacturAPI.',
-  xai: 'Habilita sugerencias AI, analisis de inventario y pricing inteligente con Grok.',
-  uber_eats: 'Recibe pedidos de Uber Eats directo en tu POS. Requiere cuenta de restaurante en Uber Eats.',
-  rappi: 'Integra tu restaurante con Rappi para recibir y gestionar pedidos desde el POS.',
-  didi_food: 'Conecta con DiDi Food para recibir pedidos y sincronizar tu menu automaticamente.',
+  mercadopago: 'Charge with Point terminal directly from the POS. Requires your own OAuth app in the MP portal.',
+  stripe: 'Process online card payments. Use your own Stripe account to receive funds directly.',
+  twilio: 'Send loyalty SMS, customer recapture messages, and automatic notifications.',
+  facturapi: 'Issue CFDI 4.0 invoices from the POS using your own FacturAPI account.',
+  xai: 'Enable AI suggestions, inventory analysis, and smart pricing with Grok.',
+  uber_eats: 'Receive Uber Eats orders directly in your POS. Requires an Uber Eats restaurant account.',
+  rappi: 'Integrate your restaurant with Rappi to receive and manage orders from the POS.',
+  didi_food: 'Connect with DiDi Food to receive orders and sync your menu automatically.',
 };
 
 const SERVICE_GROUPS: { label: string; keys: string[] }[] = [
-  { label: 'Pagos', keys: ['mercadopago', 'stripe'] },
+  { label: 'Payments', keys: ['mercadopago', 'stripe'] },
   { label: 'Delivery', keys: ['uber_eats', 'rappi', 'didi_food'] },
-  { label: 'Comunicaciones', keys: ['twilio'] },
-  { label: 'Facturacion', keys: ['facturapi'] },
-  { label: 'Inteligencia Artificial', keys: ['xai'] },
+  { label: 'Communications', keys: ['twilio'] },
+  { label: 'Invoicing', keys: ['facturapi'] },
+  { label: 'Artificial Intelligence', keys: ['xai'] },
 ];
 
 interface ServiceCardProps {
@@ -85,7 +85,7 @@ function ServiceCard({ serviceKey, schema, stored, onSave, onDelete }: ServiceCa
       setEditing(false);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: any) {
-      setError(err.message || 'Error al guardar');
+      setError(err.message || 'Error saving');
     } finally {
       setSaving(false);
     }
@@ -102,7 +102,7 @@ function ServiceCard({ serviceKey, schema, stored, onSave, onDelete }: ServiceCa
       setConfirmDelete(false);
       setEditing(false);
     } catch (err: any) {
-      setError(err.message || 'Error al eliminar');
+      setError(err.message || 'Error deleting');
     } finally {
       setSaving(false);
     }
@@ -119,12 +119,12 @@ function ServiceCard({ serviceKey, schema, stored, onSave, onDelete }: ServiceCa
           <div className="flex items-center gap-2">
             {hasStored && (
               <span className="text-xs font-semibold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
-                Configurado
+                Configured
               </span>
             )}
             {saved && (
               <span className="text-xs font-semibold text-teal-400 flex items-center gap-1">
-                <Check size={12} /> Guardado
+                <Check size={12} /> Saved
               </span>
             )}
           </div>
@@ -139,13 +139,13 @@ function ServiceCard({ serviceKey, schema, stored, onSave, onDelete }: ServiceCa
               onClick={() => setEditing(true)}
               className="px-4 py-2 bg-neutral-800 text-neutral-200 text-sm font-semibold rounded-lg hover:bg-neutral-700 transition-colors"
             >
-              {hasStored ? 'Editar credenciales' : 'Configurar'}
+              {hasStored ? 'Edit credentials' : 'Configure'}
             </button>
             {hasStored && (
               <button
                 onClick={() => setConfirmDelete(true)}
                 className="p-2 text-neutral-600 hover:text-red-400 transition-colors"
-                title="Eliminar credenciales"
+                title="Delete credentials"
               >
                 <Trash2 size={16} />
               </button>
@@ -192,14 +192,14 @@ function ServiceCard({ serviceKey, schema, stored, onSave, onDelete }: ServiceCa
                 disabled={saving}
                 className="px-5 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Guardando...' : 'Guardar'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={() => { setEditing(false); setError(''); }}
                 disabled={saving}
                 className="px-4 py-2 text-neutral-400 text-sm font-medium hover:text-white transition-colors"
               >
-                Cancelar
+                Cancel
               </button>
             </div>
           </div>
@@ -208,20 +208,20 @@ function ServiceCard({ serviceKey, schema, stored, onSave, onDelete }: ServiceCa
         {/* Delete confirmation */}
         {confirmDelete && (
           <div className="mt-3 bg-red-900/20 border border-red-800/40 rounded-lg p-3 flex items-center justify-between">
-            <p className="text-red-300 text-sm">Eliminar todas las credenciales de {schema.label}?</p>
+            <p className="text-red-300 text-sm">Delete all credentials for {schema.label}?</p>
             <div className="flex gap-2">
               <button
                 onClick={handleDelete}
                 disabled={saving}
                 className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                Eliminar
+                Delete
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
                 className="px-3 py-1.5 text-neutral-400 text-xs font-medium hover:text-white"
               >
-                Cancelar
+                Cancel
               </button>
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function IntegrationsScreen() {
         if (err.message?.includes('401') || err.message?.includes('403')) {
           setError('');
         } else {
-          setError(err.message || 'Error al cargar');
+          setError(err.message || 'Error loading');
         }
       } finally {
         setLoading(false);
@@ -283,8 +283,8 @@ export default function IntegrationsScreen() {
             <ArrowLeft size={24} />
           </Link>
           <div>
-            <h1 className="text-3xl font-black tracking-tighter">Integraciones</h1>
-            <p className="text-neutral-400 text-sm mt-0.5">Conecta tus propias cuentas de pago, delivery, SMS, facturacion e IA</p>
+            <h1 className="text-3xl font-black tracking-tighter">Integrations</h1>
+            <p className="text-neutral-400 text-sm mt-0.5">Connect your own payment, delivery, SMS, invoicing, and AI accounts</p>
           </div>
         </div>
       </div>
@@ -293,9 +293,9 @@ export default function IntegrationsScreen() {
         {!hasOwnerToken ? (
           <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-8 text-center">
             <Lock className="mx-auto text-neutral-600 mb-3" size={40} />
-            <h2 className="text-white text-lg font-bold mb-2">Autenticacion de propietario requerida</h2>
+            <h2 className="text-white text-lg font-bold mb-2">Owner authentication required</h2>
             <p className="text-neutral-400 text-sm">
-              Inicia sesion como propietario de la cuenta para administrar las integraciones y credenciales.
+              Sign in as the account owner to manage integrations and credentials.
             </p>
           </div>
         ) : loading ? (
@@ -314,7 +314,7 @@ export default function IntegrationsScreen() {
           <div className="space-y-6">
             <div className="bg-neutral-800/50 border border-neutral-700/50 rounded-lg p-4">
               <p className="text-neutral-300 text-sm">
-                Cada servicio usa primero tus credenciales propias. Si no las configuras, se usaran las credenciales de la plataforma (si estan disponibles).
+                Each service uses your own credentials first. If not configured, platform credentials will be used (if available).
               </p>
             </div>
             {SERVICE_GROUPS.map((group) => {

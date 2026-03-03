@@ -563,7 +563,7 @@ const POSScreen: React.FC = () => {
         const order = await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() });
         setPreCreatedOrderId(order.id);
       } catch (err) {
-        addToast(err instanceof Error ? err.message : 'Error al crear orden', 'error');
+        addToast(err instanceof Error ? err.message : 'Error creating order', 'error');
         return;
       }
     } else {
@@ -668,7 +668,7 @@ const POSScreen: React.FC = () => {
       setPaymentOrder(fullOrder);
       setShowPaymentConfirmation(true);
     } catch {
-      addToast('Error al cargar la orden', 'error');
+      addToast('Error loading order', 'error');
     }
   };
 
@@ -676,7 +676,7 @@ const POSScreen: React.FC = () => {
     if (paymentOrder) {
       setUnpaidOrders((prev) => prev.filter((o) => o.id !== paymentOrder.id));
       const methodLabels: Record<string, string> = { cash: '\uD83D\uDCB5', card: '\uD83D\uDCB3', transfer: '\uD83D\uDCF2' };
-      addToast(`Orden #${paymentOrder.order_number} — Pagado ${methodLabels[method] || ''}`, 'success');
+      addToast(`Order #${paymentOrder.order_number} — Paid ${methodLabels[method] || ''}`, 'success');
     }
     setPaymentOrder(null);
     setShowPaymentConfirmation(false);
@@ -696,7 +696,7 @@ const POSScreen: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-950 overflow-hidden">
+    <div className={`flex h-screen bg-neutral-950 overflow-hidden ${plan === 'trial' ? 'pb-12' : ''}`}>
       {/* Left Sidebar - Categories */}
       <CategorySidebar
         categories={visibleCategories}
@@ -952,7 +952,7 @@ const POSScreen: React.FC = () => {
             clearCart();
             setShowPaymentModal(false);
             setPreCreatedOrderId(null);
-            addToast('Pago confirmado por terminal MP', 'success');
+            addToast('Payment confirmed by MP terminal', 'success');
           }}
           onCancel={() => { setShowPaymentModal(false); setPreCreatedOrderId(null); }}
           isProcessing={isProcessingPayment}
@@ -990,7 +990,7 @@ const POSScreen: React.FC = () => {
       )}
 
       {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 space-y-2 z-40 pointer-events-none">
+      <div className={`fixed right-4 space-y-2 z-[60] pointer-events-none ${plan === 'trial' ? 'bottom-16' : 'bottom-4'}`}>
         {toasts.map((toast) => (
           <div
             key={toast.id}

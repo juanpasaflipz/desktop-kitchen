@@ -15,6 +15,7 @@ import { resolveTenant, type TenantInfo } from './lib/tenantResolver';
 import { useDeviceType } from './hooks/useDeviceType';
 import { setCurrentEmployeeId, setCurrentEmployeeToken } from './api';
 import DemoLoadingScreen from './components/DemoLoadingScreen';
+import UpgradeCTABar from './components/UpgradeCTABar';
 
 // Screens - these will be created as separate components
 // For now, we'll create placeholder components
@@ -327,6 +328,7 @@ const TenantRoutes: React.FC = () => {
   }
 
   return (
+    <>
     <Routes>
       {/* Login Route - accessible to everyone */}
       <Route path="/" element={<LoginScreen />} />
@@ -626,6 +628,8 @@ const TenantRoutes: React.FC = () => {
         }
       />
     </Routes>
+    <UpgradeCTABar />
+    </>
   );
 };
 
@@ -682,7 +686,7 @@ function useDemoToken() {
           }));
         }
 
-        sessionStorage.setItem('is_demo', 'true');
+        sessionStorage.setItem('is_demo', '1');
         setDemoReady(true);
       } catch {
         setShowDemoScreen(false);

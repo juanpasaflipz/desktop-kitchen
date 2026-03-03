@@ -23,7 +23,7 @@ function InvoiceStatusBadge({ status }: { status: CfdiInvoice['status'] }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-900/30 text-green-400 border border-green-800">
         <CheckCircle size={12} />
-        Vigente
+        Valid
       </span>
     );
   }
@@ -31,14 +31,14 @@ function InvoiceStatusBadge({ status }: { status: CfdiInvoice['status'] }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-900/30 text-red-400 border border-red-800">
         <XCircle size={12} />
-        Cancelada
+        Cancelled
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-900/30 text-amber-400 border border-amber-800">
       <AlertTriangle size={12} />
-      Cancelaci&oacute;n Pendiente
+      Cancellation Pending
     </span>
   );
 }
@@ -84,7 +84,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
       setInvoices(res.invoices);
       setInvoiceTotal(res.total);
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Error al cargar facturas');
+      onError(err instanceof Error ? err.message : 'Error loading invoices');
     }
   };
 
@@ -108,9 +108,9 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
         prev.map((inv) => (inv.id === updatedInvoice.id ? updatedInvoice : inv))
       );
       setCancellingInvoice(null);
-      onSuccess('Factura cancelada correctamente');
+      onSuccess('Invoice cancelled successfully');
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Error al cancelar factura');
+      onError(err instanceof Error ? err.message : 'Error cancelling invoice');
     }
   };
 
@@ -129,7 +129,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleInvoiceSearch();
               }}
-              placeholder="Buscar por RFC, folio o numero de orden..."
+              placeholder="Search by RFC, folio, or order number..."
               className="flex-1 bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
             />
             <button
@@ -147,9 +147,9 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
             }}
             className="bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
           >
-            <option value="">Todos los estados</option>
-            <option value="valid">Vigente</option>
-            <option value="cancelled">Cancelada</option>
+            <option value="">All statuses</option>
+            <option value="valid">Valid</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
       </div>
@@ -161,28 +161,28 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
             <thead className="bg-neutral-800">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-300">
-                  Folio
+                  Folio #
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-300">
-                  Orden
+                  Order
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-300">
                   RFC
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-300">
-                  Receptor
+                  Recipient
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-300">
                   Total
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-neutral-300">
-                  Estado
+                  Status
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-neutral-300">
-                  Fecha
+                  Date
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-neutral-300">
-                  Acciones
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -193,7 +193,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
                     colSpan={8}
                     className="px-4 py-12 text-center text-neutral-500"
                   >
-                    No se encontraron facturas
+                    No invoices found
                   </td>
                 </tr>
               ) : (
@@ -241,7 +241,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
                             href={inv.xml_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            title="Descargar XML"
+                            title="Download XML"
                             className="p-2 hover:bg-neutral-700 rounded-lg transition-colors text-neutral-400 hover:text-white"
                           >
                             <Download size={16} />
@@ -250,7 +250,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
                         {inv.status === 'valid' && (
                           <button
                             onClick={() => setCancellingInvoice(inv)}
-                            title="Cancelar factura"
+                            title="Cancel invoice"
                             className="p-2 hover:bg-red-900/30 rounded-lg transition-colors text-neutral-400 hover:text-red-400"
                           >
                             <XCircle size={16} />
@@ -269,9 +269,9 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-800">
             <p className="text-sm text-neutral-400">
-              Mostrando {(invoicePage - 1) * INVOICES_PER_PAGE + 1} -{' '}
-              {Math.min(invoicePage * INVOICES_PER_PAGE, invoiceTotal)} de{' '}
-              {invoiceTotal} facturas
+              Showing {(invoicePage - 1) * INVOICES_PER_PAGE + 1} -{' '}
+              {Math.min(invoicePage * INVOICES_PER_PAGE, invoiceTotal)} of{' '}
+              {invoiceTotal} invoices
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -280,7 +280,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
                 className="flex items-center gap-1 px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded-lg hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 <ChevronLeft size={16} />
-                Anterior
+                Previous
               </button>
               <span className="text-sm text-neutral-400">
                 {invoicePage} / {totalPages}
@@ -292,7 +292,7 @@ export default function InvoiceListTab({ catalogs, onError, onSuccess }: Invoice
                 disabled={invoicePage >= totalPages}
                 className="flex items-center gap-1 px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded-lg hover:bg-neutral-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                Siguiente
+                Next
                 <ChevronRight size={16} />
               </button>
             </div>

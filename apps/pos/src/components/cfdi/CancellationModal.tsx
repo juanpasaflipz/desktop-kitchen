@@ -64,7 +64,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
         <div className="flex items-center justify-between p-4 border-b border-neutral-700">
           <div className="flex items-center gap-2">
             <FileX className="w-5 h-5 text-red-400" />
-            <h2 className="text-lg font-bold text-white">Cancelar Factura</h2>
+            <h2 className="text-lg font-bold text-white">Cancel Invoice</h2>
           </div>
           <button
             onClick={onClose}
@@ -78,15 +78,15 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
           {/* Invoice details */}
           <div className="bg-neutral-800 rounded-lg p-3 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-neutral-400">Folio</span>
+              <span className="text-neutral-400">Folio #</span>
               <span className="text-white font-medium">{invoice.series}{invoice.folio}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-400">RFC Receptor</span>
+              <span className="text-neutral-400">Recipient RFC</span>
               <span className="text-white font-medium">{invoice.receptor_rfc}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-400">Receptor</span>
+              <span className="text-neutral-400">Recipient</span>
               <span className="text-white font-medium truncate ml-4">{invoice.receptor_name}</span>
             </div>
             <div className="flex justify-between">
@@ -102,7 +102,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
           {/* SAT Motive dropdown */}
           <div>
             <label className="block text-xs font-medium text-neutral-400 mb-1">
-              Motivo de cancelacion (SAT)
+              Cancellation reason (SAT)
             </label>
             <select
               value={selectedMotive}
@@ -112,7 +112,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
               }}
               className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 appearance-none"
             >
-              <option value="" className="bg-neutral-800">Seleccionar motivo...</option>
+              <option value="" className="bg-neutral-800">Select reason...</option>
               {CANCELLATION_MOTIVES.map((motive) => (
                 <option key={motive.code} value={motive.code} className="bg-neutral-800">
                   {motive.code} - {motive.label}
@@ -125,7 +125,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
           {requiresSubstitute && (
             <div>
               <label className="block text-xs font-medium text-neutral-400 mb-1">
-                UUID del sustituto
+                Substitute UUID
               </label>
               <input
                 type="text"
@@ -135,7 +135,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
                 className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg text-white placeholder-neutral-500 text-sm font-mono focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
               />
               <p className="text-xs text-neutral-500 mt-1">
-                UUID de la factura que sustituye a esta.
+                UUID of the invoice that replaces this one.
               </p>
             </div>
           )}
@@ -144,7 +144,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
           <div className="flex gap-2 bg-amber-900/20 border border-amber-800 rounded-lg p-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-amber-300 text-xs leading-relaxed">
-              La cancelacion ante el SAT es irreversible. Asegurate de seleccionar el motivo correcto.
+              Cancellation with the SAT is irreversible. Make sure to select the correct reason.
             </p>
           </div>
 
@@ -154,14 +154,14 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ invoice, onCancel
               onClick={onClose}
               className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-600 transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={!isFormValid}
               className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Confirmar Cancelacion
+              Confirm Cancellation
             </button>
           </div>
         </div>

@@ -19,7 +19,7 @@ function ConfigStatusBadge({ config }: { config: CfdiConfig | null }) {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-800 text-neutral-400 border border-neutral-700">
         <span className="w-2 h-2 rounded-full bg-neutral-500" />
-        Sin Configurar
+        Not Configured
       </span>
     );
   }
@@ -27,14 +27,14 @@ function ConfigStatusBadge({ config }: { config: CfdiConfig | null }) {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-800">
         <span className="w-2 h-2 rounded-full bg-green-400" />
-        Activo
+        Active
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-900/30 text-amber-400 border border-amber-800">
       <span className="w-2 h-2 rounded-full bg-amber-400" />
-      CSD Requerido
+      CSD Required
     </span>
   );
 }
@@ -106,12 +106,12 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
       setSavingConfig(true);
 
       if (!cfdiForm.rfc || !cfdiForm.legal_name || !cfdiForm.tax_regime || !cfdiForm.postal_code) {
-        onError('Todos los campos obligatorios deben estar completos');
+        onError('All required fields must be completed');
         return;
       }
 
       if (!/^\d{5}$/.test(cfdiForm.postal_code)) {
-        onError('El codigo postal debe tener 5 digitos');
+        onError('Postal code must be 5 digits');
         return;
       }
 
@@ -125,9 +125,9 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
         invoice_link_expiry_hours: cfdiForm.invoice_link_expiry_hours,
       });
       onConfigUpdate(res.config);
-      onSuccess('Configuracion guardada correctamente');
+      onSuccess('Configuration saved successfully');
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Error al guardar configuracion');
+      onError(err instanceof Error ? err.message : 'Error saving configuration');
     } finally {
       setSavingConfig(false);
     }
@@ -135,7 +135,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
   const handleUploadCSD = async () => {
     if (!cerFile || !keyFile || !csdPassword) {
-      onError('Debes seleccionar ambos archivos (.cer y .key) e ingresar la contrasena');
+      onError('You must select both files (.cer and .key) and enter the password');
       return;
     }
 
@@ -154,9 +154,9 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
       setCsdPassword('');
       if (cerInputRef.current) cerInputRef.current.value = '';
       if (keyInputRef.current) keyInputRef.current.value = '';
-      onSuccess(res.message || 'CSD cargado correctamente');
+      onSuccess(res.message || 'CSD uploaded successfully');
     } catch (err) {
-      onError(err instanceof Error ? err.message : 'Error al cargar CSD');
+      onError(err instanceof Error ? err.message : 'Error uploading CSD');
     } finally {
       setUploadingCSD(false);
     }
@@ -171,7 +171,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
     } catch (err) {
       setTestResult({
         success: false,
-        error: err instanceof Error ? err.message : 'Error de conexion',
+        error: err instanceof Error ? err.message : 'Connection error',
       });
     } finally {
       setTesting(false);
@@ -184,9 +184,9 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
       <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white">Estado de la Configuracion</h2>
+            <h2 className="text-lg font-bold text-white">Configuration Status</h2>
             <p className="text-neutral-400 text-sm mt-1">
-              CFDI 4.0 — Facturacion electronica del SAT
+              CFDI 4.0 — SAT Electronic Invoicing
             </p>
           </div>
           <ConfigStatusBadge config={config} />
@@ -195,7 +195,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
       {/* CFDI Form */}
       <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Datos del Emisor</h3>
+        <h3 className="text-lg font-bold text-white mb-4">Issuer Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
@@ -213,27 +213,27 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
-              Razon Social <span className="text-red-400">*</span>
+              Legal Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={cfdiForm.legal_name}
               onChange={(e) => setCfdiForm({ ...cfdiForm, legal_name: e.target.value.toUpperCase() })}
-              placeholder="MI EMPRESA SA DE CV"
+              placeholder="MY COMPANY SA DE CV"
               className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none uppercase"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
-              Regimen Fiscal <span className="text-red-400">*</span>
+              Tax Regime <span className="text-red-400">*</span>
             </label>
             <select
               value={cfdiForm.tax_regime}
               onChange={(e) => setCfdiForm({ ...cfdiForm, tax_regime: e.target.value })}
               className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
             >
-              <option value="">Seleccionar...</option>
+              <option value="">Select...</option>
               {catalogs?.taxRegimes.map((r) => (
                 <option key={r.code} value={r.code}>
                   {r.code} - {r.name}
@@ -244,7 +244,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
-              Codigo Postal <span className="text-red-400">*</span>
+              Postal Code <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -261,7 +261,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
-              Uso de CFDI por defecto
+              Default CFDI Usage
             </label>
             <select
               value={cfdiForm.default_uso_cfdi}
@@ -278,7 +278,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
-              Serie de Factura
+              Invoice Series
             </label>
             <input
               type="text"
@@ -292,7 +292,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">
-              Expiracion del Enlace (horas)
+              Link Expiration (hours)
             </label>
             <input
               type="number"
@@ -317,10 +317,10 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
           {savingConfig ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Guardando...
+              Saving...
             </>
           ) : (
-            'Guardar Configuracion'
+            'Save Configuration'
           )}
         </button>
       </div>
@@ -332,11 +332,11 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
             <Shield className="text-brand-500" size={22} />
             <div>
               <h3 className="text-lg font-bold text-white">
-                Certificado de Sello Digital (CSD)
+                Digital Seal Certificate (CSD)
               </h3>
               {config.csd_uploaded && config.csd_valid_until && (
                 <p className="text-neutral-400 text-sm">
-                  Valido hasta:{' '}
+                  Valid until:{' '}
                   <span className="text-green-400">
                     {formatDate(config.csd_valid_until)}
                   </span>
@@ -348,7 +348,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">
-                Archivo .cer
+                .cer File
               </label>
               <input
                 ref={cerInputRef}
@@ -361,7 +361,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
             <div>
               <label className="block text-sm font-medium text-neutral-400 mb-1">
-                Archivo .key
+                .key File
               </label>
               <input
                 ref={keyInputRef}
@@ -374,13 +374,13 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-neutral-400 mb-1">
-                Contrasena del CSD
+                CSD Password
               </label>
               <input
                 type="password"
                 value={csdPassword}
                 onChange={(e) => setCsdPassword(e.target.value)}
-                placeholder="Contrasena de la llave privada"
+                placeholder="Private key password"
                 className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 border border-neutral-700 focus:border-brand-500 focus:outline-none"
               />
             </div>
@@ -394,12 +394,12 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
             {uploadingCSD ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Cargando...
+                Uploading...
               </>
             ) : (
               <>
                 <Upload size={16} />
-                Cargar CSD
+                Upload CSD
               </>
             )}
           </button>
@@ -409,7 +409,7 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
       {/* Test Connection */}
       {config && (
         <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
-          <h3 className="text-lg font-bold text-white mb-4">Probar Conexion</h3>
+          <h3 className="text-lg font-bold text-white mb-4">Test Connection</h3>
           <button
             onClick={handleTestConnection}
             disabled={testing}
@@ -418,12 +418,12 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
             {testing ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Probando...
+                Testing...
               </>
             ) : (
               <>
                 <RefreshCw size={16} />
-                Probar Conexion
+                Test Connection
               </>
             )}
           </button>
@@ -440,16 +440,16 @@ export default function ConfigTab({ config, catalogs, onConfigUpdate, onError, o
                 <div className="flex items-center gap-2">
                   <CheckCircle className="text-green-400" size={18} />
                   <span className="text-green-300 text-sm">
-                    Conexion exitosa
+                    Connection successful
                     {testResult.expires_at &&
-                      ` — CSD valido hasta ${formatDate(testResult.expires_at)}`}
+                      ` — CSD valid until ${formatDate(testResult.expires_at)}`}
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <XCircle className="text-red-400" size={18} />
                   <span className="text-red-300 text-sm">
-                    Error: {testResult.error || 'No se pudo conectar'}
+                    Error: {testResult.error || 'Could not connect'}
                   </span>
                 </div>
               )}

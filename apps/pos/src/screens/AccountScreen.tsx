@@ -247,14 +247,14 @@ export default function AccountScreen() {
       if (result.valid) {
         setPromoState('valid');
         setPromoCode(result.code || code);
-        setPromoDescription(result.discount_description || 'Descuento aplicado');
+        setPromoDescription(result.discount_description || 'Discount applied');
       } else {
         setPromoState('invalid');
-        setPromoError(result.message || 'Código inválido o expirado');
+        setPromoError(result.message || 'Invalid or expired code');
       }
     } catch {
       setPromoState('invalid');
-      setPromoError('Error al validar el código');
+      setPromoError('Error validating code');
     }
   };
 
@@ -662,7 +662,7 @@ export default function AccountScreen() {
               <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Smartphone className="text-brand-500" size={22} />
-                  <h2 className="text-lg font-bold text-white">Pagos — Mercado Pago Point</h2>
+                  <h2 className="text-lg font-bold text-white">Payments — Mercado Pago Point</h2>
                 </div>
 
                 {(() => {
@@ -676,17 +676,17 @@ export default function AccountScreen() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-neutral-400">
                           <WifiOff size={16} />
-                          <span className="text-sm">No conectado</span>
+                          <span className="text-sm">Not connected</span>
                         </div>
                         <p className="text-neutral-400 text-sm">
-                          Conecta tu terminal Mercado Pago Point para cobrar directo desde el POS sin entrada manual.
+                          Connect your Mercado Pago Point terminal to charge directly from the POS without manual entry.
                         </p>
                         <a
                           href="/api/payments/mp/connect"
                           className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009ee3] text-white text-sm font-bold rounded-lg hover:bg-[#0082c0] transition-colors"
                         >
                           <Smartphone size={16} />
-                          Conectar Mercado Pago
+                          Connect Mercado Pago
                         </a>
                       </div>
                     );
@@ -696,12 +696,12 @@ export default function AccountScreen() {
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Wifi size={16} className="text-green-400" />
-                        <span className="text-sm font-semibold text-green-400">Conectado</span>
+                        <span className="text-sm font-semibold text-green-400">Connected</span>
                         <span className="text-xs text-neutral-500 ml-2">ID: {mpUserId}</span>
                       </div>
 
                       <div>
-                        <label className="block text-neutral-400 text-sm mb-1.5">Terminal predeterminada</label>
+                        <label className="block text-neutral-400 text-sm mb-1.5">Default terminal</label>
                         <div className="flex items-center gap-2">
                           <select
                             value={mpDefaultTerminal || (account as any).mp_default_terminal_id || ''}
@@ -718,7 +718,7 @@ export default function AccountScreen() {
                             }}
                             className="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-brand-500"
                           >
-                            <option value="">Seleccionar terminal...</option>
+                            <option value="">Select terminal...</option>
                             {mpTerminals.map(t => (
                               <option key={t.id} value={t.id}>
                                 {t.external_pos_id || t.id}

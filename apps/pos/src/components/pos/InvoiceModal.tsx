@@ -93,7 +93,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
       setModalState('success');
       onInvoiceIssued(invoice);
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Error al emitir la factura. Intenta de nuevo.');
+      setErrorMessage(err?.message || 'Error issuing invoice. Please try again.');
       setModalState('error');
     }
   }, [order.id, publicoGeneral, rfc, razonSocial, regimenFiscal, codigoPostal, usoCfdi, onInvoiceIssued]);
@@ -132,7 +132,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-brand-400" />
             <h2 className="text-lg font-bold text-white">
-              Facturar Orden #{order.order_number}
+              Invoice Order #{order.order_number}
             </h2>
           </div>
           <button
@@ -153,7 +153,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                 <span>{formatPrice(order.subtotal)}</span>
               </div>
               <div className="flex justify-between text-neutral-400">
-                <span>IVA (16%)</span>
+                <span>Tax / IVA (16%)</span>
                 <span>{formatPrice(order.tax)}</span>
               </div>
               <div className="flex justify-between text-white font-bold mt-1 pt-1 border-t border-neutral-700">
@@ -174,7 +174,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                 <div className="w-10 h-6 bg-neutral-700 rounded-full peer-checked:bg-brand-600 transition-colors" />
                 <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
               </div>
-              <span className="text-white text-sm font-medium">Publico en General</span>
+              <span className="text-white text-sm font-medium">General Public</span>
             </label>
 
             {/* Customer fields (shown when not publico general) */}
@@ -195,25 +195,25 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
 
                 {/* Razon Social */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Razon Social</label>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1">Legal Name</label>
                   <input
                     type="text"
                     value={razonSocial}
                     onChange={(e) => setRazonSocial(e.target.value)}
-                    placeholder="Nombre o Razon Social"
+                    placeholder="Name or Legal Name"
                     className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
 
                 {/* Regimen Fiscal */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Regimen Fiscal</label>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1">Tax Regime</label>
                   <select
                     value={regimenFiscal}
                     onChange={(e) => setRegimenFiscal(e.target.value)}
                     className="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg text-white text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 appearance-none"
                   >
-                    <option value="" className="bg-neutral-800">Seleccionar regimen...</option>
+                    <option value="" className="bg-neutral-800">Select regime...</option>
                     {taxRegimes.map((regime) => (
                       <option key={regime.code} value={regime.code} className="bg-neutral-800">
                         {regime.code} - {regime.name}
@@ -224,7 +224,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
 
                 {/* Codigo Postal */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Codigo Postal</label>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1">Postal Code</label>
                   <input
                     type="text"
                     value={codigoPostal}
@@ -238,7 +238,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
 
                 {/* Uso de CFDI */}
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Uso de CFDI</label>
+                  <label className="block text-xs font-medium text-neutral-400 mb-1">CFDI Usage</label>
                   <select
                     value={usoCfdi}
                     onChange={(e) => setUsoCfdi(e.target.value)}
@@ -260,7 +260,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
               disabled={!isFormValid}
               className="w-full py-3 rounded-lg font-bold text-sm transition-colors bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Emitir CFDI
+              Issue CFDI
             </button>
           </div>
         )}
@@ -269,7 +269,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
         {modalState === 'loading' && (
           <div className="p-8 flex flex-col items-center gap-4">
             <Loader2 className="w-10 h-10 text-brand-400 animate-spin" />
-            <p className="text-neutral-300 text-sm">Emitiendo factura ante el SAT...</p>
+            <p className="text-neutral-300 text-sm">Issuing invoice with SAT...</p>
           </div>
         )}
 
@@ -280,12 +280,12 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
               <div className="w-12 h-12 rounded-full bg-green-600/20 flex items-center justify-center">
                 <Check className="w-6 h-6 text-green-400" />
               </div>
-              <p className="text-green-400 font-bold text-sm">Factura emitida correctamente</p>
+              <p className="text-green-400 font-bold text-sm">Invoice issued successfully</p>
             </div>
 
             <div className="bg-neutral-800 rounded-lg p-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-neutral-400">Folio</span>
+                <span className="text-neutral-400">Folio #</span>
                 <span className="text-white font-medium">{issuedInvoice.series}{issuedInvoice.folio}</span>
               </div>
               <div>
@@ -293,7 +293,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                 <span className="text-brand-400 font-mono text-xs break-all">{issuedInvoice.uuid_fiscal}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-neutral-400">RFC Receptor</span>
+                <span className="text-neutral-400">Recipient RFC</span>
                 <span className="text-white font-medium">{issuedInvoice.receptor_rfc}</span>
               </div>
               <div className="flex justify-between">
@@ -312,7 +312,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-bold text-sm bg-brand-600 hover:bg-brand-700 text-white transition-colors"
                 >
                   <Download className="w-4 h-4" />
-                  Descargar PDF
+                  Download PDF
                 </a>
               )}
 
@@ -325,12 +325,12 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                   {copied ? (
                     <>
                       <Check className="w-4 h-4 text-green-400" />
-                      <span className="text-green-400">Link copiado</span>
+                      <span className="text-green-400">Link copied</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-4 h-4" />
-                      Copiar Link de Factura
+                      Copy Invoice Link
                     </>
                   )}
                 </button>
@@ -341,7 +341,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                 onClick={onClose}
                 className="w-full py-2.5 rounded-lg font-bold text-sm text-neutral-400 hover:text-white transition-colors"
               >
-                Cerrar
+                Close
               </button>
             </div>
           </div>
@@ -354,7 +354,7 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
               <div className="w-12 h-12 rounded-full bg-red-600/20 flex items-center justify-center">
                 <AlertCircle className="w-6 h-6 text-red-400" />
               </div>
-              <p className="text-red-400 font-bold text-sm">Error al emitir factura</p>
+              <p className="text-red-400 font-bold text-sm">Error issuing invoice</p>
             </div>
 
             <div className="bg-red-900/20 border border-red-800 rounded-lg p-3">
@@ -366,13 +366,13 @@ const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose, onInvoiceIs
                 onClick={() => setModalState('form')}
                 className="w-full py-2.5 rounded-lg font-bold text-sm bg-brand-600 hover:bg-brand-700 text-white transition-colors"
               >
-                Reintentar
+                Retry
               </button>
               <button
                 onClick={onClose}
                 className="w-full py-2.5 rounded-lg font-bold text-sm text-neutral-400 hover:text-white transition-colors"
               >
-                Cerrar
+                Close
               </button>
             </div>
           </div>
