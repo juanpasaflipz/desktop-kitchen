@@ -565,8 +565,8 @@ router.get('/delivery-margins', async (req, res) => {
         dp.commission_percent,
         COUNT(o.id) as order_count,
         ROUND(SUM(o.subtotal), 2) as revenue,
-        ROUND(SUM(dor.delivery_fee), 2) as total_delivery_fees,
-        ROUND(SUM(dor.platform_commission), 2) as total_commission
+        ROUND(SUM(CASE WHEN o.id IS NOT NULL THEN dor.delivery_fee ELSE 0 END), 2) as total_delivery_fees,
+        ROUND(SUM(CASE WHEN o.id IS NOT NULL THEN dor.platform_commission ELSE 0 END), 2) as total_commission
       FROM delivery_platforms dp
       LEFT JOIN delivery_orders dor ON dp.id = dor.platform_id
       LEFT JOIN orders o ON dor.order_id = o.id

@@ -30,13 +30,14 @@ const LAST_NAMES = [
 ];
 
 // Financial line items (scaled for ~$175k/month revenue)
+// Manual financial lines — seeded as % of monthly revenue with realistic variance
+// (food_cost, stripe_fees, delivery_commissions are auto-calculated at report time, so skip them)
 const FINANCIAL_LINES = [
-  { category: 'food_cost', label: 'Food Cost', min: 45000, max: 60000 },
-  { category: 'labor', label: 'Labor', min: 35000, max: 50000 },
-  { category: 'rent', label: 'Rent', min: 15000, max: 20000 },
-  { category: 'utilities', label: 'Utilities', min: 5000, max: 9000 },
-  { category: 'supplies', label: 'Supplies', min: 3000, max: 7000 },
-  { category: 'marketing', label: 'Marketing', min: 2000, max: 5000 },
+  { category: 'labor', targetPercent: 25, varianceMin: -0.03, varianceMax: 0.05 },
+  { category: 'rent', targetPercent: 10, varianceMin: -0.01, varianceMax: 0.01 },   // rent is fixed-ish
+  { category: 'utilities', targetPercent: 4, varianceMin: -0.01, varianceMax: 0.02 },
+  { category: 'supplies', targetPercent: 3, varianceMin: -0.01, varianceMax: 0.03 },
+  { category: 'marketing', targetPercent: 2, varianceMin: -0.01, varianceMax: 0.04 },
 ];
 
 // Financial targets (Budget vs Actual percentages)
@@ -94,6 +95,22 @@ const REFUND_REASONS = [
   'Quality issue',
   'Duplicate charge',
   'Late delivery',
+];
+
+// Monterrey addresses for delivery orders
+const MONTERREY_ADDRESSES = [
+  'Av. Constitución 500, Centro, 64000 Monterrey, N.L.',
+  'Calzada del Valle 400, Del Valle, 66220 San Pedro Garza García, N.L.',
+  'Av. Vasconcelos 300, Residencial San Agustín, 66260 San Pedro, N.L.',
+  'Blvd. Antonio L. Rodríguez 2500, Santa María, 64650 Monterrey, N.L.',
+  'Av. Lázaro Cárdenas 1000, Valle del Mirador, 64750 Monterrey, N.L.',
+  'Av. Insurgentes 2500, Vista Hermosa, 64620 Monterrey, N.L.',
+  'Calle Morelos 200, Barrio Antiguo, 64000 Monterrey, N.L.',
+  'Av. Eugenio Garza Sada 2501, Tecnológico, 64849 Monterrey, N.L.',
+  'Av. Alfonso Reyes 600, Contry, 64860 Monterrey, N.L.',
+  'Av. Revolución 1500, Primavera, 64830 Monterrey, N.L.',
+  'Calle Hidalgo 400, Centro, 64000 Monterrey, N.L.',
+  'Av. Gonzalitos 500, Mitras Centro, 64460 Monterrey, N.L.',
 ];
 
 // Category role keyword matching
@@ -217,6 +234,15 @@ export async function generateDemoData(adminSql, {
     'ALTER TABLE vendors ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
     'ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
     'ALTER TABLE menu_item_ingredients ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE pricing_guardrails ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE pricing_experiments ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE price_history ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE virtual_brands ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE virtual_brand_items ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE delivery_recapture ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE tenant_credentials ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
+    'ALTER TABLE ai_suggestion_events ADD COLUMN IF NOT EXISTS demo_batch_id UUID',
   ];
   for (const ddl of schemaAdditions) {
     await adminSql.unsafe(ddl);
@@ -264,6 +290,9 @@ export async function generateDemoData(adminSql, {
     waste_log: 0, inventory_counts: 0, shrinkage_alerts: 0,
     vendors: 0, purchase_orders: 0, purchase_order_items: 0,
     refunds: 0,
+    virtual_brands: 0, virtual_brand_items: 0, delivery_recapture: 0,
+    pricing_guardrails: 0, pricing_rules: 0, pricing_experiments: 0, price_history: 0,
+    ai_suggestion_events: 0, tenant_credentials: 0,
   };
 
   // ─── 0. Seed Recipes (menu_item_ingredients) ──────────────
@@ -325,6 +354,7 @@ export async function generateDemoData(adminSql, {
   // ─── 1. Generate Orders ──────────────────────────────────
 
   const generatedOrders = []; // { id, total, created_at, items[], employee_id }
+  const deliveryOrderIds = []; // { id, platform } for recapture linking
 
   for (let i = 0; i < orderCount; i++) {
     const created_at = randomTimestamp(dateRangeDays);
@@ -428,17 +458,31 @@ export async function generateDemoData(adminSql, {
     // Insert delivery order if applicable
     if (isDelivery && platform) {
       const commission = Math.round(total * (Number(platform.commission_percent) / 100) * 100) / 100;
-      await adminSql.unsafe(`
+      const daysBack = (Date.now() - created_at.getTime()) / (24 * 60 * 60 * 1000);
+      let deliveryStatus;
+      if (daysBack <= 3) {
+        const sr = Math.random();
+        if (sr < 0.60) deliveryStatus = 'delivered';
+        else if (sr < 0.80) deliveryStatus = 'ready_for_pickup';
+        else if (sr < 0.95) deliveryStatus = 'confirmed';
+        else deliveryStatus = 'received';
+      } else {
+        deliveryStatus = 'delivered';
+      }
+      const [delOrder] = await adminSql.unsafe(`
         INSERT INTO delivery_orders (tenant_id, order_id, platform_id, external_order_id,
-                                     customer_name, platform_status, platform_commission, created_at)
-        VALUES ($1, $2, $3, $4, $5, 'delivered', $6, $7)
+                                     customer_name, delivery_address, platform_status, platform_commission, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id
       `, [
         tenantId, orderId, platform.id,
         `DEL-${platform.name.toUpperCase()}-${randInt(10000, 99999)}`,
         `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
-        commission, created_at.toISOString(),
+        pick(MONTERREY_ADDRESSES),
+        deliveryStatus, commission, created_at.toISOString(),
       ]);
       summary.delivery_orders++;
+      deliveryOrderIds.push({ id: delOrder.id, platform: platform.name });
     }
 
     generatedOrders.push({
@@ -478,9 +522,13 @@ export async function generateDemoData(adminSql, {
     for (let i = 0; i < customerCount; i++) {
       const firstName = pick(FIRST_NAMES);
       const lastName = pick(LAST_NAMES);
+      // Backdate signup across 12 months for "Signups by Month" chart
+      const signupDate = new Date();
+      signupDate.setMonth(signupDate.getMonth() - randInt(0, 11));
+      signupDate.setDate(randInt(1, 28));
       const [cust] = await adminSql.unsafe(`
-        INSERT INTO loyalty_customers (tenant_id, name, phone, sms_opt_in, orders_count, total_spent, demo_batch_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO loyalty_customers (tenant_id, name, phone, sms_opt_in, orders_count, total_spent, demo_batch_id, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id
       `, [
         tenantId,
@@ -490,6 +538,7 @@ export async function generateDemoData(adminSql, {
         randInt(1, 20),
         randFloat(200, 5000),
         batchId,
+        signupDate.toISOString(),
       ]);
       customers.push(cust.id);
       summary.loyalty_customers++;
@@ -732,15 +781,25 @@ export async function generateDemoData(adminSql, {
   // ─── 5. Generate Financial Data ──────────────────────────
 
   if (includeFinancials) {
-    // Financial actuals — monthly for past 3-6 months
-    const months = randInt(3, 6);
-    const now = new Date();
-    for (let m = 0; m < months; m++) {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - m, 1);
-      const yearMonth = monthDate.toISOString().slice(0, 7);
+    // Get monthly revenue from demo orders to derive realistic financial actuals
+    const monthlyRevenue = await adminSql.unsafe(`
+      SELECT to_char(created_at, 'YYYY-MM') as period, COALESCE(SUM(subtotal), 0) as revenue
+      FROM orders
+      WHERE tenant_id = $1 AND payment_status = 'paid'
+      GROUP BY to_char(created_at, 'YYYY-MM')
+    `, [tenantId]);
 
+    const revenueByMonth = {};
+    for (const row of monthlyRevenue) {
+      revenueByMonth[row.period] = Number(row.revenue);
+    }
+
+    // Seed actuals for each month that has order revenue
+    for (const [yearMonth, revenue] of Object.entries(revenueByMonth)) {
       for (const line of FINANCIAL_LINES) {
-        const amount = randFloat(line.min, line.max);
+        // Actual = revenue * (target% + small variance)
+        const effectivePercent = (line.targetPercent + randFloat(line.varianceMin * 100, line.varianceMax * 100)) / 100;
+        const amount = Math.round(revenue * effectivePercent * 100) / 100;
         await adminSql.unsafe(`
           INSERT INTO financial_actuals (tenant_id, period, category, amount, demo_batch_id)
           VALUES ($1, $2, $3, $4, $5)
@@ -976,7 +1035,451 @@ export async function generateDemoData(adminSql, {
     }
   }
 
-  // ─── 10. Auto-Trigger AI Pipeline ─────────────────────────
+  // ─── 10. Virtual Brands ─────────────────────────────────
+
+  if (includeDelivery && deliveryPlatforms.length > 0 && menuItems.length >= 8) {
+    const brandConfigs = [
+      { name: 'Burger Express', color: '#DC2626', description: 'Fast premium burgers delivered fresh', markupPct: 10, slug: 'burger-express', keywords: ['burger', 'hamburguesa', 'fries', 'papas'] },
+      { name: 'Wings & More', color: '#EA580C', description: 'Crispy chicken wings and sides', markupPct: 12, slug: 'wings-and-more', keywords: ['wing', 'chicken', 'pollo', 'alitas'] },
+    ];
+
+    for (const cfg of brandConfigs) {
+      const platformForBrand = pick(deliveryPlatforms);
+      const [brand] = await adminSql.unsafe(`
+        INSERT INTO virtual_brands (tenant_id, name, platform_id, description, display_type, primary_color, slug, show_in_pos, active, demo_batch_id)
+        VALUES ($1, $2, $3, $4, 'delivery', $5, $6, false, true, $7)
+        RETURNING id
+      `, [tenantId, cfg.name, platformForBrand.id, cfg.description, cfg.color, cfg.slug, batchId]);
+      summary.virtual_brands++;
+
+      // Find matching items by keyword, fallback to random selection
+      let brandItems = menuItems.filter(m => cfg.keywords.some(kw => m.name.toLowerCase().includes(kw)));
+      if (brandItems.length < 5) {
+        brandItems = shuffle(menuItems).slice(0, randInt(6, 8));
+      } else {
+        brandItems = brandItems.slice(0, 8);
+      }
+
+      for (const item of brandItems) {
+        const basePrice = Number(item.price);
+        const markupPrice = Math.round(basePrice * (1 + cfg.markupPct / 100) * 100) / 100;
+        await adminSql.unsafe(`
+          INSERT INTO virtual_brand_items (tenant_id, virtual_brand_id, menu_item_id, custom_price, active, demo_batch_id)
+          VALUES ($1, $2, $3, $4, true, $5)
+          ON CONFLICT (tenant_id, virtual_brand_id, menu_item_id) DO NOTHING
+        `, [tenantId, brand.id, item.id, markupPrice, batchId]);
+        summary.virtual_brand_items++;
+      }
+    }
+  }
+
+  // ─── 11. Delivery Recapture ─────────────────────────────
+
+  if (includeDelivery && deliveryOrderIds.length > 0) {
+    const recaptureCount = randInt(10, 15);
+    for (let i = 0; i < recaptureCount && i < deliveryOrderIds.length; i++) {
+      const del = deliveryOrderIds[i];
+      const statusRoll = Math.random();
+      let smsSentAt = null;
+      let converted = false;
+
+      if (statusRoll < 0.60) {
+        // unsent — leave defaults
+      } else if (statusRoll < 0.90) {
+        smsSentAt = randomTimestamp(dateRangeDays).toISOString();
+      } else {
+        smsSentAt = randomTimestamp(dateRangeDays).toISOString();
+        converted = true;
+      }
+
+      await adminSql.unsafe(`
+        INSERT INTO delivery_recapture (tenant_id, customer_phone, customer_name, platform, last_delivery_order_id, sms_sent_at, converted, demo_batch_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        tenantId, generatePhone(), `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
+        del.platform.toLowerCase().replace(/[\s-]/g, '_'),
+        del.id, smsSentAt, converted, batchId,
+      ]);
+      summary.delivery_recapture++;
+    }
+  }
+
+  // ─── 12. Dynamic Pricing — Guardrails ─────────────────────
+
+  await adminSql.unsafe(`
+    INSERT INTO pricing_guardrails (tenant_id, min_change_percent, max_change_percent, max_daily_changes, require_approval_above, protected_item_ids, cooldown_hours, demo_batch_id)
+    VALUES ($1, -20, 15, 10, 10, '[]', 24, $2)
+    ON CONFLICT (tenant_id) DO NOTHING
+  `, [tenantId, batchId]);
+  summary.pricing_guardrails++;
+
+  // ─── 13. Dynamic Pricing — Rules ──────────────────────────
+
+  const ruleIds = [];
+  const cat1 = menuCategories[0];
+  const cat2 = menuCategories.length > 1 ? menuCategories[1] : menuCategories[0];
+
+  const pricingRuleDefs = [
+    { name: 'Happy Hour', rule_type: 'happy_hour', conditions: { hours: '16-18', days: [1, 2, 3, 4, 5] }, adj: -15, applies_to: { scope: 'all' }, desc: 'Weekday happy hour 4-6pm' },
+    { name: 'Martes de Tacos', rule_type: 'day_of_week', conditions: { days: [2], hours: '11-22' }, adj: -10, applies_to: { scope: 'categories', ids: [cat1?.id] }, desc: 'Tuesday taco discount all day' },
+    { name: 'Peak Dinner', rule_type: 'demand_based', conditions: { demand_threshold: 1.5, direction: 'above' }, adj: 8, applies_to: { scope: 'all' }, desc: 'Dynamic surge during dinner peak' },
+    { name: 'Weekend Brunch', rule_type: 'day_of_week', conditions: { days: [0, 6], hours: '10-13' }, adj: -5, applies_to: { scope: 'categories', ids: [cat2?.id] }, desc: 'Weekend brunch special' },
+  ];
+
+  for (const rule of pricingRuleDefs) {
+    const [r] = await adminSql.unsafe(`
+      INSERT INTO pricing_rules (tenant_id, name, rule_type, description, conditions, adjustment_type, adjustment_value, applies_to, active, auto_apply, priority, demo_batch_id)
+      VALUES ($1, $2, $3, $4, $5, 'percent', $6, $7, true, true, $8, $9)
+      RETURNING id
+    `, [tenantId, rule.name, rule.rule_type, rule.desc, JSON.stringify(rule.conditions), rule.adj, JSON.stringify(rule.applies_to), ruleIds.length, batchId]);
+    ruleIds.push(r.id);
+    summary.pricing_rules++;
+  }
+
+  // ─── 14. Dynamic Pricing — Experiments ────────────────────
+
+  if (menuItems.length >= 2) {
+    const sortedItems = [...menuItems].sort((a, b) => Number(b.price) - Number(a.price));
+    const expItem1 = sortedItems[0];
+    const expItem2 = sortedItems[1];
+
+    // Completed experiment (3 weeks ago → 1 week ago)
+    const exp1Start = new Date(); exp1Start.setDate(exp1Start.getDate() - 21);
+    const exp1End = new Date(); exp1End.setDate(exp1End.getDate() - 7);
+    const basePrice1 = Number(expItem1.price);
+    const variantB1 = Math.round(basePrice1 * 1.125 * 100) / 100;
+
+    await adminSql.unsafe(`
+      INSERT INTO pricing_experiments (tenant_id, name, description, menu_item_id, variant_a_price, variant_b_price, split_percent, status, start_date, end_date, results, demo_batch_id)
+      VALUES ($1, $2, $3, $4, $5, $6, 50, 'completed', $7, $8, $9, $10)
+    `, [
+      tenantId, `Premium Price Test: ${expItem1.name}`, 'Test +12.5% price increase on top seller',
+      expItem1.id, basePrice1, variantB1,
+      exp1Start.toISOString(), exp1End.toISOString(),
+      JSON.stringify({
+        winner: 'b', confidence: 0.92,
+        variant_a: { orders: 45, revenue: Math.round(45 * basePrice1 * 100) / 100 },
+        variant_b: { orders: 42, revenue: Math.round(42 * variantB1 * 100) / 100 },
+      }),
+      batchId,
+    ]);
+    summary.pricing_experiments++;
+
+    // Running experiment (5 days ago → ongoing)
+    const exp2Start = new Date(); exp2Start.setDate(exp2Start.getDate() - 5);
+    const basePrice2 = Number(expItem2.price);
+    const variantB2 = Math.round(basePrice2 * 0.9 * 100) / 100;
+
+    await adminSql.unsafe(`
+      INSERT INTO pricing_experiments (tenant_id, name, description, menu_item_id, variant_a_price, variant_b_price, split_percent, status, start_date, end_date, results, demo_batch_id)
+      VALUES ($1, $2, $3, $4, $5, $6, 50, 'running', $7, NULL, $8, $9)
+    `, [
+      tenantId, `Discount Test: ${expItem2.name}`, 'Test 10% discount to increase volume',
+      expItem2.id, basePrice2, variantB2,
+      exp2Start.toISOString(),
+      JSON.stringify({
+        variant_a: { orders: 18, revenue: Math.round(18 * basePrice2 * 100) / 100 },
+        variant_b: { orders: 22, revenue: Math.round(22 * variantB2 * 100) / 100 },
+      }),
+      batchId,
+    ]);
+    summary.pricing_experiments++;
+  }
+
+  // ─── 15. Dynamic Pricing — Price History ──────────────────
+
+  const priceSources = [
+    { source: 'manual', weight: 0.30 },
+    { source: 'ai_suggestion', weight: 0.25 },
+    { source: 'scheduled_rule', weight: 0.20 },
+    { source: 'ab_test', weight: 0.15 },
+    { source: 'revert', weight: 0.10 },
+  ];
+
+  const priceReasons = [
+    'Weekend promotion adjustment', 'AI-recommended price optimization',
+    'Scheduled happy hour rule', 'A/B test result applied',
+    'Reverted to original price', 'Manual menu update',
+    'High-demand surge pricing', 'Low-demand discount',
+    'Cost increase pass-through', 'Competitor price match',
+  ];
+
+  const historyCount = randInt(8, 12);
+  for (let h = 0; h < historyCount; h++) {
+    const item = pick(menuItems);
+    const basePrice = Number(item.price);
+    const changePct = randFloat(-15, 15);
+    const newPrice = Math.round(basePrice * (1 + changePct / 100) * 100) / 100;
+    const { source } = pickWeighted(priceSources);
+    const daysAgo = randInt(0, 14);
+    const histDate = new Date();
+    histDate.setDate(histDate.getDate() - daysAgo);
+    histDate.setHours(randInt(8, 20), randInt(0, 59), 0);
+
+    const ruleId = source === 'scheduled_rule' && ruleIds.length > 0 ? pick(ruleIds) : null;
+
+    await adminSql.unsafe(`
+      INSERT INTO price_history (tenant_id, menu_item_id, old_price, new_price, change_percent, reason, source, pricing_rule_id, revenue_before_daily, revenue_after_daily, created_at, demo_batch_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `, [
+      tenantId, item.id, basePrice, newPrice, Math.round(changePct * 100) / 100,
+      pick(priceReasons), source, ruleId,
+      randFloat(800, 3000), randFloat(850, 3200),
+      histDate.toISOString(), batchId,
+    ]);
+    summary.price_history++;
+  }
+
+  // ─── 16. AI Suggestion Events ─────────────────────────────
+
+  {
+    const eventCount = randInt(25, 35);
+    const eventTypes = ['upsell', 'inventory_push', 'combo_upgrade', 'dynamic_pricing', 'waste_alert', 'cost_optimization', 'staff_scheduling', 'seasonal_menu'];
+    const eventActions = [
+      { action: 'accepted', weight: 0.65 },
+      { action: 'dismissed', weight: 0.35 },
+    ];
+
+    for (let e = 0; e < eventCount; e++) {
+      const suggType = pick(eventTypes);
+      const { action } = pickWeighted(eventActions);
+      const ts = randomTimestamp(dateRangeDays);
+      const employee = pick(employees);
+      const order = generatedOrders.length > 0 ? pick(generatedOrders) : null;
+
+      await adminSql.unsafe(`
+        INSERT INTO ai_suggestion_events (tenant_id, suggestion_type, suggestion_data, action, employee_id, order_id, created_at, demo_batch_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        tenantId, suggType,
+        JSON.stringify({ type: suggType, message: `AI ${suggType.replace(/_/g, ' ')} suggestion`, confidence: randFloat(0.6, 0.95) }),
+        action, employee.id, order?.id || null,
+        ts.toISOString(), batchId,
+      ]);
+      summary.ai_suggestion_events++;
+    }
+  }
+
+  // ─── 17. Waste Alert Suggestions in AI Cache ─────────────
+
+  if (inventoryItems.length > 0) {
+    const wasteAlertCount = randInt(5, 8);
+    const wasteAlertItems = shuffle(inventoryItems).slice(0, wasteAlertCount);
+    const wasteReasonsList = ['spoilage', 'prep_error', 'expired'];
+
+    for (const item of wasteAlertItems) {
+      const wastePct = randFloat(16, 35);
+      const topReason = pick(wasteReasonsList);
+      await adminSql.unsafe(`
+        INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+        VALUES ($1, 'waste_alert', $2, $3, $4, NOW() + INTERVAL '48 hours', $5)
+      `, [
+        tenantId, `waste-${item.id}`,
+        JSON.stringify({
+          inventory_item_id: item.id,
+          item_name: item.name,
+          waste_rate_percent: wastePct,
+          top_reason: topReason,
+          message: `${item.name}: tasa de desperdicio ${wastePct.toFixed(1)}% — principal causa: ${topReason === 'spoilage' ? 'deterioro' : topReason === 'prep_error' ? 'error de preparación' : 'caducidad'}`,
+          recommended_action: wastePct > 25
+            ? 'Reducir pedido semanal y revisar almacenamiento'
+            : 'Ajustar par levels y capacitar personal',
+        }),
+        wastePct > 25 ? randInt(85, 95) : randInt(70, 84),
+        batchId,
+      ]);
+      summary.ai_suggestion_cache++;
+    }
+  }
+
+  // ─── 18. Additional AI Examples ───────────────────────────
+
+  {
+    // Seasonal menu suggestions
+    const seasonalItems = shuffle(menuItems).slice(0, randInt(2, 3));
+    for (const item of seasonalItems) {
+      await adminSql.unsafe(`
+        INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+        VALUES ($1, 'seasonal_menu', $2, $3, $4, NOW() + INTERVAL '72 hours', $5)
+      `, [
+        tenantId, `seasonal-${item.id}`,
+        JSON.stringify({
+          menu_item_id: item.id,
+          item_name: item.name,
+          suggestion: `Promote ${item.name} as seasonal special — trending ingredient costs are down 12%`,
+          expected_lift: `${randInt(8, 20)}% more orders`,
+          confidence: randFloat(0.7, 0.9),
+        }),
+        randInt(65, 80),
+        batchId,
+      ]);
+      summary.ai_suggestion_cache++;
+    }
+
+    // Cost optimization suggestions
+    const costItems = shuffle(menuItems).slice(0, randInt(2, 4));
+    for (const item of costItems) {
+      const currentMargin = randFloat(25, 40);
+      const suggestedMargin = currentMargin + randFloat(3, 8);
+      await adminSql.unsafe(`
+        INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+        VALUES ($1, 'cost_optimization', $2, $3, $4, NOW() + INTERVAL '48 hours', $5)
+      `, [
+        tenantId, `cost-opt-${item.id}`,
+        JSON.stringify({
+          menu_item_id: item.id,
+          item_name: item.name,
+          current_margin_percent: Math.round(currentMargin * 10) / 10,
+          suggested_margin_percent: Math.round(suggestedMargin * 10) / 10,
+          action: `Substitute supplier for ${item.name} to increase margin from ${currentMargin.toFixed(1)}% to ${suggestedMargin.toFixed(1)}%`,
+          potential_monthly_savings: `$${randInt(500, 2000)} MXN`,
+        }),
+        randInt(70, 85),
+        batchId,
+      ]);
+      summary.ai_suggestion_cache++;
+    }
+
+    // Staff scheduling suggestions
+    const schedConfigs = [
+      { label: 'weekday lunch', window: '12:00-14:00' },
+      { label: 'Friday dinner', window: '19:00-22:00' },
+      { label: 'Saturday peak', window: '13:00-21:00' },
+    ];
+    const schedCount = randInt(2, 3);
+    for (let sh = 0; sh < schedCount; sh++) {
+      const cfg = schedConfigs[sh];
+      await adminSql.unsafe(`
+        INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+        VALUES ($1, 'staff_scheduling', $2, $3, $4, NOW() + INTERVAL '24 hours', $5)
+      `, [
+        tenantId, `staff-${sh}`,
+        JSON.stringify({
+          time_window: cfg.window,
+          label: cfg.label,
+          current_staff: randInt(2, 4),
+          recommended_staff: randInt(4, 6),
+          avg_wait_increase: `${randFloat(3, 8).toFixed(1)} min`,
+          message: `${cfg.label.charAt(0).toUpperCase() + cfg.label.slice(1)} shows ${randInt(25, 45)}% understaffing — add ${randInt(1, 2)} more staff`,
+        }),
+        randInt(60, 80),
+        batchId,
+      ]);
+      summary.ai_suggestion_cache++;
+    }
+
+    // Revenue opportunity suggestion
+    await adminSql.unsafe(`
+      INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+      VALUES ($1, 'revenue_opportunity', $2, $3, $4, NOW() + INTERVAL '24 hours', $5)
+    `, [
+      tenantId, 'rev-delivery-gap',
+      JSON.stringify({
+        insight: 'Delivery orders average 23% higher ticket than POS orders',
+        action: 'Increase delivery menu visibility and add combo deals for delivery platforms',
+        potential_impact: `+$${randInt(5000, 15000)} MXN/month`,
+        confidence: randFloat(0.75, 0.92),
+      }),
+      randInt(80, 95),
+      batchId,
+    ]);
+    summary.ai_suggestion_cache++;
+
+    // Peak hour optimization
+    await adminSql.unsafe(`
+      INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+      VALUES ($1, 'peak_optimization', $2, $3, $4, NOW() + INTERVAL '24 hours', $5)
+    `, [
+      tenantId, 'peak-lunch-opt',
+      JSON.stringify({
+        insight: 'Lunch rush (12-2pm) has 35% longer ticket times than dinner',
+        action: 'Pre-prep high-demand items before 11:30am and add a dedicated expeditor',
+        potential_impact: `${randInt(15, 25)}% faster service, +$${randInt(3000, 8000)} MXN/month`,
+        confidence: randFloat(0.80, 0.95),
+      }),
+      randInt(75, 90),
+      batchId,
+    ]);
+    summary.ai_suggestion_cache++;
+
+    // Menu engineering suggestion
+    const lowPerformer = pick(menuItems);
+    await adminSql.unsafe(`
+      INSERT INTO ai_suggestion_cache (tenant_id, suggestion_type, trigger_context, suggestion_data, priority, expires_at, demo_batch_id)
+      VALUES ($1, 'menu_engineering', $2, $3, $4, NOW() + INTERVAL '48 hours', $5)
+    `, [
+      tenantId, `menu-eng-${lowPerformer.id}`,
+      JSON.stringify({
+        menu_item_id: lowPerformer.id,
+        item_name: lowPerformer.name,
+        category: 'puzzle',
+        insight: `${lowPerformer.name} has high margin but low popularity`,
+        action: 'Reposition on menu, add photo, or bundle with popular items',
+        current_contribution: `${randFloat(1, 4).toFixed(1)}% of revenue`,
+        potential_contribution: `${randFloat(5, 10).toFixed(1)}% of revenue`,
+      }),
+      randInt(70, 85),
+      batchId,
+    ]);
+    summary.ai_suggestion_cache++;
+  }
+
+  // ─── 19. Integration Credentials ──────────────────────────
+
+  {
+    const integrationCreds = [
+      { service: 'stripe', key: 'secret_key', value: 'sk_test_••••demo••••' },
+      { service: 'stripe', key: 'publishable_key', value: 'pk_test_••••demo••••' },
+      { service: 'stripe', key: 'webhook_secret', value: 'whsec_••••demo••••' },
+      { service: 'twilio', key: 'account_sid', value: 'AC_demo_••••••••' },
+      { service: 'twilio', key: 'auth_token', value: 'auth_••••demo••••' },
+      { service: 'twilio', key: 'phone_number', value: '+15551234567' },
+      { service: 'mercado_pago', key: 'client_id', value: 'mp_client_••••demo' },
+      { service: 'mercado_pago', key: 'client_secret', value: 'mp_secret_••••demo' },
+      { service: 'facturapi', key: 'api_key', value: 'fapi_••••demo••••' },
+      { service: 'xai', key: 'api_key', value: 'xai_••••demo••••' },
+      { service: 'uber_eats', key: 'client_id', value: 'ue_client_••••demo' },
+      { service: 'uber_eats', key: 'client_secret', value: 'ue_secret_••••demo' },
+      { service: 'uber_eats', key: 'store_id', value: 'ue_store_••••demo' },
+      { service: 'uber_eats', key: 'webhook_secret', value: 'ue_whsec_••••demo' },
+      { service: 'rappi', key: 'client_id', value: 'rappi_client_••••demo' },
+      { service: 'rappi', key: 'client_secret', value: 'rappi_secret_••••demo' },
+      { service: 'rappi', key: 'store_id', value: 'rappi_store_••••demo' },
+      { service: 'didi_food', key: 'app_id', value: 'didi_app_••••demo' },
+      { service: 'didi_food', key: 'app_secret', value: 'didi_secret_••••demo' },
+      { service: 'didi_food', key: 'store_id', value: 'didi_store_••••demo' },
+    ];
+
+    for (const cred of integrationCreds) {
+      await adminSql.unsafe(`
+        INSERT INTO tenant_credentials (tenant_id, service, "key", value, demo_batch_id)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (tenant_id, service, "key") DO NOTHING
+      `, [tenantId, cred.service, cred.key, cred.value, batchId]);
+      summary.tenant_credentials++;
+    }
+  }
+
+  // ─── 20. Adjust Inventory for Prep Forecast ───────────────
+
+  if (inventoryItems.length > 0) {
+    const lowStockCount = Math.ceil(inventoryItems.length * randFloat(0.20, 0.30));
+    const lowStockItems = shuffle(inventoryItems).slice(0, lowStockCount);
+
+    for (const item of lowStockItems) {
+      const [inv] = await adminSql.unsafe(`
+        SELECT low_stock_threshold FROM inventory_items WHERE id = $1 AND tenant_id = $2
+      `, [item.id, tenantId]);
+      if (inv && Number(inv.low_stock_threshold) > 0) {
+        const newQty = Math.round(Number(inv.low_stock_threshold) * randFloat(0.30, 0.70) * 100) / 100;
+        await adminSql.unsafe(`
+          UPDATE inventory_items SET quantity = $1 WHERE id = $2 AND tenant_id = $3
+        `, [newQty, item.id, tenantId]);
+      }
+    }
+  }
+
+  // ─── 21. Auto-Trigger AI Pipeline ─────────────────────────
   // Run shrinkage detection and waste analysis with proper tenant RLS context
 
   try {

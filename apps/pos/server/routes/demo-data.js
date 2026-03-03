@@ -6,8 +6,16 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 const DEMO_SOURCE = 'demo_generator';
 
-// All endpoints require authenticated employee
-router.use(requireAuth());
+// Helper: check if request came via admin secret (super-admin context)
+function isAdminRequest(req) {
+  return req.headers['x-admin-secret'] === process.env.ADMIN_SECRET && process.env.ADMIN_SECRET;
+}
+
+// All endpoints require authenticated employee (unless admin-secret provided)
+router.use((req, res, next) => {
+  if (isAdminRequest(req)) return next();
+  requireAuth()(req, res, next);
+});
 
 // GET /api/demo-data/status — check demo data counts for current tenant
 router.get('/status', async (req, res) => {
@@ -15,10 +23,12 @@ router.get('/status', async (req, res) => {
     const tenantId = req.tenant?.id;
     if (!tenantId) return res.status(400).json({ error: 'No tenant context' });
 
-    // Safety: only allow on trial tenants
-    const [tenant] = await adminSql`SELECT plan FROM tenants WHERE id = ${tenantId}`;
-    if (!tenant || tenant.plan !== 'trial') {
-      return res.json({ allowed: false, reason: 'Demo data is only available for trial accounts' });
+    // Safety: only allow on trial tenants (admin-secret bypasses)
+    if (!isAdminRequest(req)) {
+      const [tenant] = await adminSql`SELECT plan FROM tenants WHERE id = ${tenantId}`;
+      if (!tenant || tenant.plan !== 'trial') {
+        return res.json({ allowed: false, reason: 'Demo data is only available for trial accounts' });
+      }
     }
 
     const [[orderCount], [customerCount], [deliveryCount], [snapshotCount], [financialCount]] = await Promise.all([
@@ -52,10 +62,12 @@ router.post('/generate', async (req, res) => {
     const tenantId = req.tenant?.id;
     if (!tenantId) return res.status(400).json({ error: 'No tenant context' });
 
-    // Safety: only allow on trial tenants
-    const [tenant] = await adminSql`SELECT plan FROM tenants WHERE id = ${tenantId}`;
-    if (!tenant || tenant.plan !== 'trial') {
-      return res.status(403).json({ error: 'Demo data is only available for trial accounts' });
+    // Safety: only allow on trial tenants (admin-secret bypasses)
+    if (!isAdminRequest(req)) {
+      const [tenant] = await adminSql`SELECT plan FROM tenants WHERE id = ${tenantId}`;
+      if (!tenant || tenant.plan !== 'trial') {
+        return res.status(403).json({ error: 'Demo data is only available for trial accounts' });
+      }
     }
 
     // Check for existing demo data
@@ -110,6 +122,15 @@ router.delete('/', async (req, res) => {
       adminSql`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
       adminSql`ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
       adminSql`ALTER TABLE menu_item_ingredients ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE pricing_guardrails ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE pricing_rules ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE pricing_experiments ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE price_history ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE virtual_brands ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE virtual_brand_items ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE delivery_recapture ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE tenant_credentials ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
+      adminSql`ALTER TABLE ai_suggestion_events ADD COLUMN IF NOT EXISTS demo_batch_id UUID`,
     ]);
 
     await adminSql.begin(async (sql) => {
@@ -146,6 +167,10 @@ router.delete('/', async (req, res) => {
 
       const r5 = await sql.unsafe(`DELETE FROM order_payments WHERE tenant_id = $1 AND order_id IN (SELECT id FROM orders WHERE tenant_id = $1 AND source = $2)`, [tenantId, DEMO_SOURCE]);
       deleted.order_payments = r5.count;
+
+      // Delivery recapture (FK → delivery_orders) — must delete before delivery_orders
+      const r_drc = await sql.unsafe(`DELETE FROM delivery_recapture WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.delivery_recapture = r_drc.count;
 
       const r6 = await sql.unsafe(`DELETE FROM delivery_orders WHERE tenant_id = $1 AND order_id IN (SELECT id FROM orders WHERE tenant_id = $1 AND source = $2)`, [tenantId, DEMO_SOURCE]);
       deleted.delivery_orders = r6.count;
@@ -193,6 +218,34 @@ router.delete('/', async (req, res) => {
       // ─── Delivery markup rules ──────────────────────────────
       const r_dmr = await sql.unsafe(`DELETE FROM delivery_markup_rules WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
       deleted.delivery_markup_rules = r_dmr.count;
+
+      // ─── Dynamic Pricing (FK order: price_history first) ───
+      const r_ph = await sql.unsafe(`DELETE FROM price_history WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.price_history = r_ph.count;
+
+      const r_pe = await sql.unsafe(`DELETE FROM pricing_experiments WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.pricing_experiments = r_pe.count;
+
+      const r_pr = await sql.unsafe(`DELETE FROM pricing_rules WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.pricing_rules = r_pr.count;
+
+      const r_pg = await sql.unsafe(`DELETE FROM pricing_guardrails WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.pricing_guardrails = r_pg.count;
+
+      // ─── Virtual Brands (FK order: items first) ────────────
+      const r_vbi = await sql.unsafe(`DELETE FROM virtual_brand_items WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.virtual_brand_items = r_vbi.count;
+
+      const r_vb = await sql.unsafe(`DELETE FROM virtual_brands WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.virtual_brands = r_vb.count;
+
+      // ─── AI Suggestion Events ─────────────────────────────
+      const r_ase = await sql.unsafe(`DELETE FROM ai_suggestion_events WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.ai_suggestion_events = r_ase.count;
+
+      // ─── Integration Credentials ──────────────────────────
+      const r_tc = await sql.unsafe(`DELETE FROM tenant_credentials WHERE tenant_id = $1 AND demo_batch_id IS NOT NULL`, [tenantId]);
+      deleted.tenant_credentials = r_tc.count;
 
       // ─── Vendors & Purchase Orders (FK order matters) ───────
       const r_poi = await sql.unsafe(`
