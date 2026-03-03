@@ -54,24 +54,27 @@ export default function VarianceTab({
             </thead>
             <tbody>
               {varianceData.map((row) => {
-                const avgPct = Math.abs(row.avg_variance_percent);
+                const avgVar = Number(row.avg_variance) || 0;
+                const avgVarPct = Number(row.avg_variance_percent) || 0;
+                const totalVar = Number(row.total_variance) || 0;
+                const avgPct = Math.abs(avgVarPct);
                 const risk = avgPct > 15 ? 'high' : avgPct > 5 ? 'medium' : 'low';
                 return (
                   <tr key={row.inventory_item_id} className="border-b border-neutral-800 hover:bg-neutral-800/50">
                     <td className="px-6 py-4 font-medium text-white">{row.name}</td>
                     <td className="px-6 py-4 text-neutral-300">{row.count_sessions}</td>
                     <td className="px-6 py-4">
-                      <span className={row.avg_variance < 0 ? 'text-brand-400' : row.avg_variance > 0 ? 'text-amber-400' : 'text-green-400'}>
-                        {row.avg_variance > 0 ? '+' : ''}{row.avg_variance.toFixed(1)}
+                      <span className={avgVar < 0 ? 'text-brand-400' : avgVar > 0 ? 'text-amber-400' : 'text-green-400'}>
+                        {avgVar > 0 ? '+' : ''}{avgVar.toFixed(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={avgPct > 10 ? 'text-brand-400' : 'text-neutral-300'}>
-                        {row.avg_variance_percent > 0 ? '+' : ''}{row.avg_variance_percent.toFixed(1)}%
+                        {avgVarPct > 0 ? '+' : ''}{avgVarPct.toFixed(1)}%
                       </span>
                     </td>
                     <td className="px-6 py-4 text-neutral-300">
-                      {row.total_variance.toFixed(1)}
+                      {totalVar.toFixed(1)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
