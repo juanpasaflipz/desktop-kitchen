@@ -30,7 +30,7 @@ import {
   Gauge,
   Landmark,
 } from 'lucide-react';
-import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal, getDemoDataStatus, generateDemoData, clearDemoData, DemoDataStatus } from '../api';
+import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal, getDemoDataStatus, generateDemoData, clearDemoData, DemoDataStatus, getOnboardingStatus } from '../api';
 import { SalesReport, InventoryItem } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
@@ -38,6 +38,8 @@ import BankingSummaryWidget from '../components/banking/BankingSummaryWidget';
 import BankSyncBanner from '../components/banking/BankSyncBanner';
 import { usePlan } from '../context/PlanContext';
 import { useLocation } from 'react-router-dom';
+import TemplatePickerModal from '../components/menu/TemplatePickerModal';
+import { invalidateMenuCache } from '../lib/menuCache';
 
 /* ── Top Features by Plan (rotating carousel) ── */
 const FEATURE_GROUPS = [
@@ -155,6 +157,8 @@ export default function AdminPanel() {
   const [demoStatus, setDemoStatus] = useState<DemoDataStatus | null>(null);
   const [demoAction, setDemoAction] = useState<'generate' | 'clear' | null>(null);
   const [demoError, setDemoError] = useState<string | null>(null);
+  const [menuEmpty, setMenuEmpty] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   const isPro = plan === 'pro' || plan === 'ghost_kitchen';
 
@@ -207,13 +211,18 @@ export default function AdminPanel() {
         setDailyStats(stats);
         setLowStockItems(lowStock);
 
+        // Check if menu is empty (non-blocking)
+        getOnboardingStatus()
+          .then(s => setMenuEmpty(!s.has_menu_items))
+          .catch(() => {});
+
         // Fetch demo data status for trial tenants (non-blocking)
         if (plan === 'trial') {
           getDemoDataStatus().then(setDemoStatus).catch(() => {});
         }
 
-        // Fetch confirmed bank deposits for pro+ tenants (non-blocking)
-        if (plan === 'pro' || plan === 'ghost_kitchen') {
+        // Fetch confirmed bank deposits for pro+ tenants (non-blocking, requires owner token)
+        if ((plan === 'pro' || plan === 'ghost_kitchen') && hasOwnerToken) {
           const today = new Date().toISOString().split('T')[0];
           getBankConfirmedTotal(today, today)
             .then(data => setConfirmedInBank(data.confirmedTotal))
@@ -499,9 +508,28 @@ export default function AdminPanel() {
         )}
 
         {/* Bank Sync Failure Banner */}
-        {isPro && <BankSyncBanner />}
+        {isPro && hasOwnerToken && <BankSyncBanner />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Quick Setup card — shown when menu is empty */}
+          {menuEmpty && (
+            <button
+              onClick={() => setShowTemplatePicker(true)}
+              className="text-left bg-neutral-900 p-8 rounded-lg border border-brand-600/50 hover:border-brand-500 transition-all cursor-pointer h-full relative overflow-hidden"
+            >
+              <div className="absolute top-3 right-3">
+                <span className="px-2 py-0.5 bg-brand-600/20 text-brand-400 text-[10px] font-bold rounded-full uppercase">
+                  Recommended
+                </span>
+              </div>
+              <div className="flex items-center justify-center w-12 h-12 bg-brand-600/20 rounded-lg mb-4">
+                <Sparkles className="text-brand-400" size={28} />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Quick Setup</h2>
+              <p className="text-neutral-400 text-sm">Use a template to instantly set up your menu, inventory, and recipes</p>
+            </button>
+          )}
+
           <Link to="/admin/menu">
             <div className="bg-neutral-900 p-8 rounded-lg border border-neutral-800 hover:border-brand-600 transition-all cursor-pointer h-full">
               <div className="flex items-center justify-center w-12 h-12 bg-brand-600/10 rounded-lg mb-4">
@@ -728,7 +756,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Banking Summary Widget — pro/ghost_kitchen only */}
-        {isPro && (
+        {isPro && hasOwnerToken && (
           <div className="mb-8">
             <BankingSummaryWidget />
           </div>
@@ -761,6 +789,15 @@ export default function AdminPanel() {
           </div>
         )}
       </div>
+
+      <TemplatePickerModal
+        isOpen={showTemplatePicker}
+        onClose={() => setShowTemplatePicker(false)}
+        onTemplateApplied={() => {
+          setMenuEmpty(false);
+          invalidateMenuCache();
+        }}
+      />
     </div>
   );
 }
