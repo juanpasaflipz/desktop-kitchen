@@ -124,7 +124,12 @@
   ],
   "pricing_ghost_missing": [],
 
-  "pricingFooter1": "All plans billed monthly. No contracts. Cancel anytime.",
+  "pricingMonthly": "Monthly",
+  "pricingAnnual": "Annual",
+  "pricingAnnualSave": "Save 25%",
+  "pricingAnnualBilled": "Billed as ${amount}/year",
+  "pricingAnnualFree": "3 months free",
+  "pricingFooter1": "All plans billed monthly or annually. No contracts. Cancel anytime.",
   "pricingFooter2": "MXN prices are approximate based on current exchange rate. Payments processed in USD via Stripe.",
 
   "comparisonLabel": "Why Operators Switch",
@@ -188,6 +193,19 @@
       "a": "Yes. With the Pro plan you can run up to 3 virtual brands, and the Ghost Kitchen plan supports unlimited brands — all from a single kitchen, with separate menus, markup rules, and P&L tracking per brand."
     }
   ],
+
+  "demoModalTitle": "Try Desktop Kitchen Free",
+  "demoModalSub": "Get a personalized demo loaded with 500+ sample orders, reports, and AI analytics.",
+  "demoModalName": "Your Name",
+  "demoModalEmail": "Email",
+  "demoModalPhone": "Phone (optional)",
+  "demoModalRestaurant": "Restaurant Name",
+  "demoModalSubmit": "Launch My Demo",
+  "demoModalLoading": "Setting up your demo...",
+  "demoModalExisting": "An account with this email already exists.",
+  "demoModalExistingLink": "Log in instead",
+  "demoModalRateLimit": "Too many requests. Please try again in a few minutes.",
+  "demoModalError": "Something went wrong. Please try again.",
 
   "footerBrand": "Desktop Kitchen",
   "footerDocs": "Documentation",

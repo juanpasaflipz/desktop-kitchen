@@ -1463,9 +1463,9 @@ export async function getBillingStatus(): Promise<{
   return res.json();
 }
 
-export async function createCheckoutSession(plan: 'starter' | 'pro', promo_code?: string): Promise<{ url: string }> {
+export async function createCheckoutSession(plan: 'starter' | 'pro', promo_code?: string, interval: 'monthly' | 'annual' = 'monthly'): Promise<{ url: string }> {
   const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
-  const body: Record<string, string> = { plan };
+  const body: Record<string, string> = { plan, interval };
   if (promo_code) body.promo_code = promo_code;
   const res = await fetch(`${base}/billing/checkout`, {
     method: 'POST',

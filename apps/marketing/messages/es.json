@@ -124,7 +124,12 @@
   ],
   "pricing_ghost_missing": [],
 
-  "pricingFooter1": "Todos los planes se cobran mensualmente. Sin contratos. Cancela cuando quieras.",
+  "pricingMonthly": "Mensual",
+  "pricingAnnual": "Anual",
+  "pricingAnnualSave": "Ahorra 25%",
+  "pricingAnnualBilled": "Cobrado como $${amount}/año",
+  "pricingAnnualFree": "3 meses gratis",
+  "pricingFooter1": "Todos los planes se cobran mensual o anualmente. Sin contratos. Cancela cuando quieras.",
   "pricingFooter2": "Precios en MXN son aproximados según el tipo de cambio actual. Pagos procesados en USD vía Stripe.",
 
   "comparisonLabel": "POS Tradicional vs Desktop Kitchen",
@@ -188,6 +193,19 @@
       "a": "Desktop Kitchen está preparado para integrarse con servicios de facturación electrónica CFDI para cumplir con los requisitos del SAT en México. Contacta a nuestro equipo para más detalles sobre la integración fiscal."
     }
   ],
+
+  "demoModalTitle": "Prueba Desktop Kitchen Gratis",
+  "demoModalSub": "Obtén un demo personalizado con 500+ pedidos de ejemplo, reportes y analítica con IA.",
+  "demoModalName": "Tu Nombre",
+  "demoModalEmail": "Email",
+  "demoModalPhone": "Teléfono (opcional)",
+  "demoModalRestaurant": "Nombre del Restaurante",
+  "demoModalSubmit": "Lanzar Mi Demo",
+  "demoModalLoading": "Preparando tu demo...",
+  "demoModalExisting": "Ya existe una cuenta con este email.",
+  "demoModalExistingLink": "Inicia sesión",
+  "demoModalRateLimit": "Demasiadas solicitudes. Intenta de nuevo en unos minutos.",
+  "demoModalError": "Algo salió mal. Intenta de nuevo.",
 
   "footerBrand": "Desktop Kitchen",
   "footerTagline": "Software punto de venta para restaurantes y ghost kitchens en México",

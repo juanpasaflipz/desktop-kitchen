@@ -1,8 +1,8 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useRef, useState } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 
 import en from "../messages/en.json";
 import es from "../messages/es.json";
@@ -87,6 +87,189 @@ function IconAI() {
 
 const featureIcons = [IconPOS, IconKitchen, IconDelivery, IconInventory, IconLoyalty, IconAI];
 
+/* ── Demo Modal ── */
+
+function DemoModal({
+  open,
+  onClose,
+  t,
+}: {
+  open: boolean;
+  onClose: () => void;
+  t: typeof en;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [restaurant, setRestaurant] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (open) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || !restaurant.trim()) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim() || undefined,
+          restaurant_name: restaurant.trim(),
+        }),
+      });
+      const data = await res.json();
+
+      if (res.status === 409 && data.existing) {
+        setError("existing");
+        setLoading(false);
+        return;
+      }
+      if (res.status === 429) {
+        setError("rate_limit");
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        setError("generic");
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to demo POS
+      window.location.href = `https://${data.subdomain}.desktop.kitchen/?demo_token=${data.demo_token}`;
+    } catch {
+      setError("generic");
+      setLoading(false);
+    }
+  };
+
+  const tAny = t as any;
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onClick={onClose}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.3, ease }}
+            className="relative w-full max-w-md bg-neutral-900 border border-white/10 rounded-2xl p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-white/30 hover:text-white/60 transition-colors"
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 className="text-2xl font-black tracking-tight text-white mb-2">
+              {tAny.demoModalTitle}
+            </h3>
+            <p className="text-sm text-white/40 mb-6">
+              {tAny.demoModalSub}
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={tAny.demoModalName}
+                required
+                className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-teal-500 text-sm"
+              />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                placeholder={tAny.demoModalEmail}
+                required
+                className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-teal-500 text-sm"
+              />
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={tAny.demoModalPhone}
+                className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-teal-500 text-sm"
+              />
+              <input
+                type="text"
+                value={restaurant}
+                onChange={(e) => setRestaurant(e.target.value)}
+                placeholder={tAny.demoModalRestaurant}
+                required
+                className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-teal-500 text-sm"
+              />
+
+              {error === "existing" && (
+                <p className="text-sm text-amber-400">
+                  {tAny.demoModalExisting}{" "}
+                  <a href="https://pos.desktop.kitchen/#/" className="underline hover:text-amber-300">
+                    {tAny.demoModalExistingLink}
+                  </a>
+                </p>
+              )}
+              {error === "rate_limit" && (
+                <p className="text-sm text-red-400">{tAny.demoModalRateLimit}</p>
+              )}
+              {error === "generic" && (
+                <p className="text-sm text-red-400">{tAny.demoModalError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-teal-600 text-white font-semibold rounded-xl text-sm uppercase tracking-wider transition-all hover:bg-teal-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    {tAny.demoModalLoading}
+                  </>
+                ) : (
+                  tAny.demoModalSubmit
+                )}
+              </button>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 /* ── Pricing helpers ── */
 
 const MXN_RATE = 19.5;
@@ -115,10 +298,13 @@ function PricingCard({
   features,
   missing,
   cta,
-  ctaLink,
+  onCtaClick,
   badge,
   highlighted,
   currency,
+  billing,
+  annualUsd,
+  t,
 }: {
   name: string;
   tagline: string;
@@ -127,11 +313,17 @@ function PricingCard({
   features: string[];
   missing: string[];
   cta: string;
-  ctaLink: string;
+  onCtaClick: () => void;
   badge?: string;
   highlighted?: boolean;
   currency: string;
+  billing: "monthly" | "annual";
+  annualUsd: number;
+  t: any;
 }) {
+  const isAnnual = billing === "annual" && monthlyUsd > 0;
+  const effectiveMonthly = isAnnual ? Math.round((annualUsd / 12) * 100) / 100 : monthlyUsd;
+
   return (
     <div
       className={`relative rounded-2xl border p-6 flex flex-col ${
@@ -154,21 +346,39 @@ function PricingCard({
       </div>
 
       <div className="mb-2">
+        {isAnnual && (
+          <span className="text-lg text-white/30 line-through mr-2">
+            {currency === "USD" ? formatUSD(monthlyUsd) : formatMXN(monthlyUsd)}
+          </span>
+        )}
         <span className="text-4xl font-extrabold text-white">
-          {currency === "USD" ? formatUSD(monthlyUsd) : formatMXN(monthlyUsd)}
+          {currency === "USD" ? formatUSD(effectiveMonthly) : formatMXN(effectiveMonthly)}
         </span>
-        {monthlyUsd > 0 && (
+        {effectiveMonthly > 0 && (
           <span className="text-white/30 text-sm ml-1">/mo</span>
         )}
       </div>
 
-      {monthlyUsd > 0 && (
-        <p className="text-white/30 text-xs mb-4">
+      {effectiveMonthly > 0 && (
+        <p className="text-white/30 text-xs mb-1">
           {currency === "USD"
-            ? `≈ ${formatMXN(monthlyUsd)}/mes`
-            : `≈ ${formatUSD(monthlyUsd)}/mo`}
+            ? `≈ ${formatMXN(effectiveMonthly)}/mes`
+            : `≈ ${formatUSD(effectiveMonthly)}/mo`}
         </p>
       )}
+
+      {isAnnual && (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-green-400">
+            {(t.pricingAnnualBilled || "").replace("${amount}", String(annualUsd))}
+          </span>
+          <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-semibold">
+            {t.pricingAnnualFree}
+          </span>
+        </div>
+      )}
+
+      {!isAnnual && effectiveMonthly > 0 && <div className="mb-4" />}
 
       <div className="mb-6">
         <span className="text-xs text-teal-400 bg-teal-400/10 border border-teal-400/20 px-3 py-1 rounded-full">
@@ -176,9 +386,9 @@ function PricingCard({
         </span>
       </div>
 
-      <a
-        href={ctaLink}
-        className={`block text-center font-semibold py-3 rounded-xl mb-6 transition-colors ${
+      <button
+        onClick={onCtaClick}
+        className={`block w-full text-center font-semibold py-3 rounded-xl mb-6 transition-colors cursor-pointer ${
           highlighted
             ? "bg-teal-600 hover:bg-teal-700 text-white"
             : monthlyUsd === 0
@@ -187,7 +397,7 @@ function PricingCard({
         }`}
       >
         {cta}
-      </a>
+      </button>
 
       <ul className="space-y-3 flex-1">
         {features.map((f) => (
@@ -212,14 +422,17 @@ function PricingCard({
 /* ── Pricing Section ── */
 
 const pricingPlans = [
-  { key: "free", usd: 0, highlight: false, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
-  { key: "starter", usd: 29, highlight: false, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
-  { key: "pro", usd: 79, highlight: true, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
-  { key: "ghost", usd: 129, highlight: false, ctaLink: "https://pos.desktop.kitchen/#/onboarding" },
+  { key: "free", usd: 0, annualUsd: 0, highlight: false },
+  { key: "starter", usd: 29, annualUsd: 261, highlight: false },
+  { key: "pro", usd: 79, annualUsd: 711, highlight: true },
+  { key: "ghost", usd: 129, annualUsd: 1161, highlight: false },
 ] as const;
 
-function PricingSection({ t }: { t: typeof en }) {
+function PricingSection({ t, onCtaClick }: { t: typeof en; onCtaClick: () => void }) {
   const [currency, setCurrency] = useState("USD");
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+
+  const tAny = t as any;
 
   return (
     <section id="precios" className="py-24 md:py-40 px-6 bg-neutral-950" aria-labelledby="pricing-heading">
@@ -236,7 +449,35 @@ function PricingSection({ t }: { t: typeof en }) {
               {t.pricingSub}
             </p>
 
+            {/* Billing toggle */}
             <div className="mt-8 inline-flex items-center bg-white/[0.03] border border-white/10 rounded-xl p-1">
+              <button
+                onClick={() => setBilling("monthly")}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  billing === "monthly"
+                    ? "bg-teal-600 text-white"
+                    : "text-white/40 hover:text-white"
+                }`}
+              >
+                {tAny.pricingMonthly}
+              </button>
+              <button
+                onClick={() => setBilling("annual")}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all relative ${
+                  billing === "annual"
+                    ? "bg-teal-600 text-white"
+                    : "text-white/40 hover:text-white"
+                }`}
+              >
+                {tAny.pricingAnnual}
+                <span className="ml-2 text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold">
+                  {tAny.pricingAnnualSave}
+                </span>
+              </button>
+            </div>
+
+            {/* Currency toggle */}
+            <div className="mt-3 inline-flex items-center bg-white/[0.03] border border-white/10 rounded-xl p-1">
               <button
                 onClick={() => setCurrency("USD")}
                 className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -268,14 +509,17 @@ function PricingSection({ t }: { t: typeof en }) {
                 name={t[`pricing_${plan.key}_name` as keyof typeof t] as string}
                 tagline={t[`pricing_${plan.key}_tagline` as keyof typeof t] as string}
                 monthlyUsd={plan.usd}
+                annualUsd={plan.annualUsd}
                 limits={t[`pricing_${plan.key}_limits` as keyof typeof t] as string}
                 features={t[`pricing_${plan.key}_features` as keyof typeof t] as string[]}
                 missing={t[`pricing_${plan.key}_missing` as keyof typeof t] as string[]}
                 cta={t[`pricing_${plan.key}_cta` as keyof typeof t] as string}
-                ctaLink={plan.ctaLink}
+                onCtaClick={onCtaClick}
                 badge={t[`pricing_${plan.key}_badge` as keyof typeof t] as string | undefined}
                 highlighted={plan.highlight}
                 currency={currency}
+                billing={billing}
+                t={tAny}
               />
             </FadeIn>
           ))}
@@ -492,6 +736,9 @@ const Home: NextPage = () => {
   const isSpanish = locale === "es";
   const otherLocale = locale === "es" ? "en" : "es";
 
+  const [demoOpen, setDemoOpen] = useState(false);
+  const openDemo = () => setDemoOpen(true);
+
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -618,12 +865,12 @@ const Home: NextPage = () => {
             transition={{ duration: 0.8, delay: 1.1, ease }}
             className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <a
-              href="https://pos.desktop.kitchen/#/onboarding"
+            <button
+              onClick={openDemo}
               className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
             >
               {t.heroCta}
-            </a>
+            </button>
             <a
               href={isSpanish ? "#funciones" : "#features"}
               className="text-white/40 font-medium text-sm uppercase tracking-wider hover:text-white/60 transition-colors duration-200"
@@ -788,19 +1035,19 @@ const Home: NextPage = () => {
                 <p className="text-white/40 mb-6">
                   {t.comparisonCtaText}
                 </p>
-                <a
-                  href="https://pos.desktop.kitchen/#/onboarding"
+                <button
+                  onClick={openDemo}
                   className="inline-block bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
                 >
                   {t.comparisonCtaButton}
-                </a>
+                </button>
               </div>
             </FadeIn>
           </div>
         </section>
 
         {/* ─── PRICING ─── */}
-        <PricingSection t={t} />
+        <PricingSection t={t} onCtaClick={openDemo} />
 
         {/* ─── FAQ (Spanish only for now) ─── */}
         <FAQSection t={t} locale={locale || "en"} />
@@ -819,12 +1066,12 @@ const Home: NextPage = () => {
               </p>
             </FadeIn>
             <FadeIn delay={0.2}>
-              <a
-                href="https://pos.desktop.kitchen/#/onboarding"
+              <button
+                onClick={openDemo}
                 className="mt-10 inline-block bg-white text-teal-700 font-semibold px-10 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-white/90 active:scale-[0.98]"
               >
                 {t.ctaButton}
-              </a>
+              </button>
             </FadeIn>
           </div>
         </section>
@@ -858,18 +1105,21 @@ const Home: NextPage = () => {
               {(t as any).footerBlog || "Blog"}
             </a>
             <span className="text-white/10" aria-hidden="true">|</span>
-            <a
-              href="https://pos.desktop.kitchen/#/onboarding"
+            <button
+              onClick={openDemo}
               className="hover:text-teal-500 transition-colors duration-200"
             >
               {t.footerDemo}
-            </a>
+            </button>
           </nav>
           <p className="mt-6 text-xs text-white/15" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Desktop Kitchen. {t.footerRights}
           </p>
         </div>
       </footer>
+
+      {/* Demo Lead Capture Modal */}
+      <DemoModal open={demoOpen} onClose={() => setDemoOpen(false)} t={t} />
     </>
   );
 };

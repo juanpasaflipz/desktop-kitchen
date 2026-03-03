@@ -9,9 +9,9 @@ const router = Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
 const PRICE_IDS = {
-  starter: process.env.STRIPE_PRICE_STARTER || null,
-  pro: process.env.STRIPE_PRICE_PRO || null,
-  ghost_kitchen: process.env.STRIPE_PRICE_GHOST_KITCHEN || null,
+  starter: { monthly: process.env.STRIPE_PRICE_STARTER || null, annual: process.env.STRIPE_PRICE_STARTER_ANNUAL || null },
+  pro: { monthly: process.env.STRIPE_PRICE_PRO || null, annual: process.env.STRIPE_PRICE_PRO_ANNUAL || null },
+  ghost_kitchen: { monthly: process.env.STRIPE_PRICE_GHOST_KITCHEN || null, annual: process.env.STRIPE_PRICE_GHOST_KITCHEN_ANNUAL || null },
 };
 
 const BASE_URL = process.env.APP_URL || 'https://pos.desktop.kitchen';
@@ -114,14 +114,18 @@ router.get('/', requireOwner, async (req, res) => {
 
 /**
  * POST /api/billing/checkout — create Stripe Checkout session for plan upgrade
- * Body: { plan: 'starter' | 'pro' | 'ghost_kitchen', promo_code?: string }
+ * Body: { plan: 'starter' | 'pro' | 'ghost_kitchen', interval?: 'monthly' | 'annual', promo_code?: string }
  */
 router.post('/checkout', requireOwner, async (req, res) => {
   try {
-    const { plan, promo_code } = req.body;
-    const priceId = PRICE_IDS[plan];
+    const { plan, promo_code, interval = 'monthly' } = req.body;
+    const planPrices = PRICE_IDS[plan];
+    if (!planPrices) {
+      return res.status(400).json({ error: `Invalid plan: ${plan}` });
+    }
+    const priceId = planPrices[interval] || planPrices.monthly;
     if (!priceId) {
-      return res.status(400).json({ error: `Invalid plan or price not configured: ${plan}` });
+      return res.status(400).json({ error: `Price not configured for ${plan} (${interval})` });
     }
 
     const tenant = await getTenant(req.owner.tenantId);
@@ -156,7 +160,7 @@ router.post('/checkout', requireOwner, async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${BASE_URL}/#/admin?billing=success`,
       cancel_url: `${BASE_URL}/#/admin?billing=cancelled`,
-      metadata: { tenant_id: tenant.id, plan, promo_code: codeToApply || '' },
+      metadata: { tenant_id: tenant.id, plan, interval, promo_code: codeToApply || '' },
     };
 
     if (promotionCodeId) {
@@ -266,6 +270,7 @@ export async function stripeWebhook(req, res) {
             plan,
             stripe_subscription_id: session.subscription,
             subscription_status: 'active',
+            billing_interval: session.metadata?.interval || 'monthly',
           };
           // Save promo code used during signup/checkout
           const promoCode = session.metadata?.promo_code;

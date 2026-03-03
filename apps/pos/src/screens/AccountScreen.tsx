@@ -88,6 +88,7 @@ export default function AccountScreen() {
 
   // Billing
   const [billingLoading, setBillingLoading] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
 
   // Promo code
   const [promoState, setPromoState] = useState<PromoState>('idle');
@@ -268,7 +269,7 @@ export default function AccountScreen() {
   const handleSubscribe = async (plan: 'starter' | 'pro') => {
     setBillingLoading(plan);
     try {
-      const { url } = await createCheckoutSession(plan, promoCode || undefined);
+      const { url } = await createCheckoutSession(plan, promoCode || undefined, billingInterval);
       window.location.href = url;
     } catch {
       setBillingLoading(null);
@@ -412,20 +413,50 @@ export default function AccountScreen() {
               {account.plan === 'trial' ? (
                 <div className="space-y-3">
                   <p className="text-neutral-400 text-sm">You are on the free trial. Upgrade to unlock more features.</p>
+
+                  {/* Monthly/Annual toggle */}
+                  <div className="inline-flex items-center bg-neutral-800 border border-neutral-700 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setBillingInterval('monthly')}
+                      className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        billingInterval === 'monthly'
+                          ? 'bg-teal-600 text-white'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      onClick={() => setBillingInterval('annual')}
+                      className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                        billingInterval === 'annual'
+                          ? 'bg-teal-600 text-white'
+                          : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Annual
+                      <span className="ml-1.5 text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">3 mo free</span>
+                    </button>
+                  </div>
+
                   <div className="flex gap-3">
                     <button
                       onClick={() => handleSubscribe('starter')}
                       disabled={billingLoading !== null}
                       className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
-                      {billingLoading === 'starter' ? 'Redirecting...' : 'Starter — $29/mo'}
+                      {billingLoading === 'starter' ? 'Redirecting...' : billingInterval === 'annual'
+                        ? 'Starter — $21.75/mo ($261/yr)'
+                        : 'Starter — $29/mo'}
                     </button>
                     <button
                       onClick={() => handleSubscribe('pro')}
                       disabled={billingLoading !== null}
                       className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
                     >
-                      {billingLoading === 'pro' ? 'Redirecting...' : 'Pro — $79/mo'}
+                      {billingLoading === 'pro' ? 'Redirecting...' : billingInterval === 'annual'
+                        ? 'Pro — $59.25/mo ($711/yr)'
+                        : 'Pro — $79/mo'}
                     </button>
                   </div>
 

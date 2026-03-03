@@ -42,6 +42,7 @@ import stressTestRoutes from './routes/stress-test.js';
 import chaosRoutes from './routes/chaos.js';
 import bankingRoutes from './routes/banking.js';
 import demoDataRoutes from './routes/demo-data.js';
+import demoProvisionRoutes from './routes/demo-provision.js';
 import salesRoutes from './routes/sales.js';
 import onboardingRoutes from './routes/onboarding.js';
 import belvoWebhook from './routes/webhooks/belvo.js';
@@ -144,6 +145,16 @@ app.get('/api/billing/promo/validate', promoValidateHandler);
 
 // Sales team commission tracking (platform-level, uses adminSql)
 app.use('/api/sales', salesRoutes);
+
+// Demo provisioning (public, no tenant context needed)
+app.use('/api/demo', demoProvisionRoutes);
+
+// Demo auto-login (public, token-based auth)
+app.post('/api/auth/demo-login', (req, res, next) => {
+  // Forward to demo-provision router's demo-login handler
+  req.url = '/demo-login';
+  demoProvisionRoutes(req, res, next);
+});
 
 // Lead capture (public, no tenant context needed)
 app.use('/api/leads', leadsRoutes);

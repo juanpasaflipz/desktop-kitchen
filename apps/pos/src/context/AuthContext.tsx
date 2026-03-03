@@ -69,8 +69,25 @@ async function offlineLogin(pin: string): Promise<Employee | null> {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  const [permissions, setPermissions] = useState<string[]>([]);
+  // Check for stored demo employee (set by demo token auto-login flow)
+  const storedDemo = (() => {
+    try {
+      const raw = localStorage.getItem('demo_employee');
+      if (raw) {
+        const emp = JSON.parse(raw);
+        // Clear it so it's single-use
+        localStorage.removeItem('demo_employee');
+        // Set API module state
+        setCurrentEmployeeId(emp.id);
+        setCurrentEmployeeToken(emp.token || null);
+        return emp as Employee;
+      }
+    } catch { /* ignore */ }
+    return null;
+  })();
+
+  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(storedDemo);
+  const [permissions, setPermissions] = useState<string[]>(storedDemo?.permissions || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

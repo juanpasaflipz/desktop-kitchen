@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   HashRouter as Router,
   Routes,
@@ -13,6 +13,8 @@ import { PlanProvider } from './context/PlanContext';
 import { ToastProvider } from './context/ToastContext';
 import { resolveTenant, type TenantInfo } from './lib/tenantResolver';
 import { useDeviceType } from './hooks/useDeviceType';
+import { setCurrentEmployeeId, setCurrentEmployeeToken } from './api';
+import DemoLoadingScreen from './components/DemoLoadingScreen';
 
 // Screens - these will be created as separate components
 // For now, we'll create placeholder components
@@ -627,11 +629,92 @@ const TenantRoutes: React.FC = () => {
   );
 };
 
+/* ==================== Demo Token Handler ==================== */
+
+function useDemoToken() {
+  const [showDemoScreen, setShowDemoScreen] = useState(false);
+  const [demoReady, setDemoReady] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const demoToken = params.get('demo_token');
+    if (!demoToken) return;
+
+    // Strip demo_token from URL immediately
+    const url = new URL(window.location.href);
+    url.searchParams.delete('demo_token');
+    window.history.replaceState({}, '', url.toString());
+
+    setShowDemoScreen(true);
+
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/demo-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ demo_token: demoToken }),
+        });
+
+        if (!res.ok) {
+          setShowDemoScreen(false);
+          return;
+        }
+
+        const data = await res.json();
+
+        // Store tokens for auto-login
+        if (data.owner_token) {
+          localStorage.setItem('owner_token', data.owner_token);
+        }
+        if (data.tenant?.id) {
+          localStorage.setItem('tenant_id', data.tenant.id);
+        }
+        if (data.employee) {
+          // Store demo employee for auto-login on reload
+          localStorage.setItem('demo_employee', JSON.stringify({
+            ...data.employee,
+            token: data.employee_token,
+            permissions: ['pos_access', 'kitchen_access', 'bar_access', 'view_reports', 'manage_menu',
+              'manage_inventory', 'manage_employees', 'manage_printers', 'manage_delivery',
+              'manage_modifiers', 'manage_ai', 'process_refunds', 'void_orders',
+              'apply_discounts', 'view_dashboard', 'manage_permissions', 'manage_purchase_orders',
+              'manage_loyalty', 'manage_branding', 'manage_invoicing'],
+          }));
+        }
+
+        sessionStorage.setItem('is_demo', 'true');
+        setDemoReady(true);
+      } catch {
+        setShowDemoScreen(false);
+      }
+    })();
+  }, []);
+
+  const dismissDemoScreen = useCallback(() => {
+    setShowDemoScreen(false);
+    // Reload so AuthContext picks up the stored demo employee
+    window.location.href = window.location.origin + window.location.pathname + '#/pos';
+    window.location.reload();
+  }, []);
+
+  return { showDemoScreen, demoReady, dismissDemoScreen };
+}
+
 /* ==================== App Content ==================== */
 
 const AppContent: React.FC = () => {
   const tenantInfo = useMemo(() => resolveTenant(), []);
   const isPlatformMode = tenantInfo.mode === 'platform' || tenantInfo.mode === 'local';
+  const { showDemoScreen, demoReady, dismissDemoScreen } = useDemoToken();
+
+  if (showDemoScreen) {
+    return (
+      <DemoLoadingScreen
+        onReady={dismissDemoScreen}
+        onSkip={dismissDemoScreen}
+      />
+    );
+  }
 
   return (
     <TenantContext.Provider value={tenantInfo}>
