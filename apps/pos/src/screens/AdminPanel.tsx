@@ -39,6 +39,107 @@ import BankSyncBanner from '../components/banking/BankSyncBanner';
 import { usePlan } from '../context/PlanContext';
 import { useLocation } from 'react-router-dom';
 
+/* ── Top Features by Plan (rotating carousel) ── */
+const FEATURE_GROUPS = [
+  [
+    { name: 'AI-Powered Upsell Suggestions', plans: { trial: false, starter: false, pro: true, ghost_kitchen: true } },
+    { name: 'Delivery Platform Intelligence', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+    { name: 'Dynamic Menu Pricing', plans: { trial: false, starter: false, pro: true, ghost_kitchen: true } },
+    { name: 'Loyalty & Stamp Cards', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+  ],
+  [
+    { name: 'Virtual Brands per Kitchen', plans: { trial: false, starter: false, pro: false, ghost_kitchen: true } },
+    { name: 'Bank Account Integration', plans: { trial: false, starter: false, pro: 'Up to 2', ghost_kitchen: 'Up to 5' } },
+    { name: 'Custom Role Permissions', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+    { name: 'Prep Forecast & Waste Reduction', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+  ],
+  [
+    { name: 'Real-time Kitchen Printers', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+    { name: 'Stress Test Simulations', plans: { trial: false, starter: false, pro: true, ghost_kitchen: true } },
+    { name: 'A/B Price Testing', plans: { trial: false, starter: false, pro: false, ghost_kitchen: true } },
+    { name: 'White-label Branding', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+  ],
+];
+
+const PLAN_COLS = [
+  { key: 'trial' as const, label: 'Free', dim: true },
+  { key: 'starter' as const, label: 'Starter', dim: false },
+  { key: 'pro' as const, label: 'Pro', dim: false },
+  { key: 'ghost_kitchen' as const, label: 'Ghost Kitchen', dim: false },
+];
+
+function TopFeaturesByPlan({ plan: currentPlan }: { plan: string }) {
+  const [groupIdx, setGroupIdx] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setGroupIdx(i => (i + 1) % FEATURE_GROUPS.length);
+        setFade(true);
+      }, 300);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const features = FEATURE_GROUPS[groupIdx];
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">Top Features by Plan</h3>
+        <div className="flex gap-1.5">
+          {FEATURE_GROUPS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setFade(false); setTimeout(() => { setGroupIdx(i); setFade(true); }, 300); }}
+              className={`w-2 h-2 rounded-full transition-colors ${i === groupIdx ? 'bg-brand-500' : 'bg-neutral-700 hover:bg-neutral-500'}`}
+            />
+          ))}
+        </div>
+      </div>
+      <div className={`transition-opacity duration-300 ${fade ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-neutral-700">
+                <th className="text-left py-2 pr-4 text-neutral-400 font-medium">Feature</th>
+                {PLAN_COLS.map(c => (
+                  <th key={c.key} className={`text-center py-2 px-3 font-medium ${c.key === currentPlan ? 'text-brand-400' : c.dim ? 'text-neutral-500' : 'text-neutral-400'}`}>
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {features.map((f, i) => (
+                <tr key={f.name} className={i < features.length - 1 ? 'border-b border-neutral-800/50' : ''}>
+                  <td className="py-2.5 pr-4 text-neutral-300">{f.name}</td>
+                  {PLAN_COLS.map(c => {
+                    const val = f.plans[c.key];
+                    return (
+                      <td key={c.key} className="text-center py-2.5 px-3">
+                        {val === true ? (
+                          <Check size={14} className="inline text-green-400" />
+                        ) : val === false ? (
+                          <X size={14} className="inline text-neutral-600" />
+                        ) : (
+                          <span className="text-green-400 text-xs font-medium">{val}</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPanel() {
   const { t } = useTranslation('admin');
   const { plan, refresh: refreshPlan } = usePlan();
@@ -304,39 +405,8 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* Banking Feature Comparison */}
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-3">Banking Features by Plan</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-700">
-                    <th className="text-left py-2 pr-4 text-neutral-400 font-medium">Feature</th>
-                    <th className="text-center py-2 px-3 text-neutral-500 font-medium">Free</th>
-                    <th className="text-center py-2 px-3 text-neutral-500 font-medium">Starter</th>
-                    <th className="text-center py-2 px-3 text-neutral-400 font-medium">Pro</th>
-                    <th className="text-center py-2 px-3 text-neutral-400 font-medium">Ghost Kitchen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-neutral-800/50">
-                    <td className="py-2.5 pr-4 text-neutral-300">Bank Account Integration</td>
-                    <td className="text-center py-2.5 px-3"><X size={14} className="inline text-neutral-600" /></td>
-                    <td className="text-center py-2.5 px-3"><X size={14} className="inline text-neutral-600" /></td>
-                    <td className="text-center py-2.5 px-3"><span className="text-green-400 text-xs font-medium">Up to 2</span></td>
-                    <td className="text-center py-2.5 px-3"><span className="text-green-400 text-xs font-medium">Up to 5</span></td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 pr-4 text-neutral-300">Delivery Payout Reconciliation</td>
-                    <td className="text-center py-2.5 px-3"><X size={14} className="inline text-neutral-600" /></td>
-                    <td className="text-center py-2.5 px-3"><X size={14} className="inline text-neutral-600" /></td>
-                    <td className="text-center py-2.5 px-3"><X size={14} className="inline text-neutral-600" /></td>
-                    <td className="text-center py-2.5 px-3"><Check size={14} className="inline text-green-400" /></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Top Features by Plan — rotating carousel */}
+          <TopFeaturesByPlan plan={plan} />
         </div>
 
         {/* Demo Data — trial tenants only */}
