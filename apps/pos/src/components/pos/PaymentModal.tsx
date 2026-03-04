@@ -145,14 +145,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             <p className="text-lg font-semibold text-white mb-3">{t('payment.selectTip')}</p>
             <div className="grid grid-cols-4 gap-2">
               <button
-                onClick={() => handleTipSelect(0)}
+                onClick={() => handleTipSelect(10)}
                 className={`py-3 px-2 text-lg font-bold rounded-lg transition-all ${
-                  tip === 0 && !showCustomInput
+                  tip === Math.round((orderTotal * 10) / 100 * 100) / 100 &&
+                  !showCustomInput
                     ? 'bg-brand-600 text-white'
                     : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
                 }`}
               >
-                {t('payment.noTip')}
+                10%
               </button>
               <button
                 onClick={() => handleTipSelect(15)}
@@ -166,17 +167,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 15%
               </button>
               <button
-                onClick={() => handleTipSelect(18)}
-                className={`py-3 px-2 text-lg font-bold rounded-lg transition-all ${
-                  tip === Math.round((orderTotal * 18) / 100 * 100) / 100 &&
-                  !showCustomInput
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
-                }`}
-              >
-                18%
-              </button>
-              <button
                 onClick={() => handleTipSelect(20)}
                 className={`py-3 px-2 text-lg font-bold rounded-lg transition-all ${
                   tip === Math.round((orderTotal * 20) / 100 * 100) / 100 &&
@@ -187,11 +177,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               >
                 20%
               </button>
+              <button
+                onClick={() => setShowCustomInput(true)}
+                className={`py-3 px-2 text-lg font-bold rounded-lg transition-all ${
+                  showCustomInput
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                }`}
+              >
+                {t('payment.customTip')}
+              </button>
             </div>
           </div>
 
-          {/* Custom Tip */}
-          {showCustomInput ? (
+          {/* Custom Tip Input */}
+          {showCustomInput && (
             <div className="flex gap-2">
               <input
                 type="number"
@@ -207,13 +207,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 {t('common:buttons.ok')}
               </button>
             </div>
-          ) : (
-            <button
-              onClick={() => setShowCustomInput(true)}
-              className="w-full py-3 bg-neutral-800 text-neutral-300 text-lg font-semibold rounded-lg hover:bg-neutral-700 transition-all"
-            >
-              {t('payment.customTip')}
-            </button>
           )}
 
           {/* Total Display */}
