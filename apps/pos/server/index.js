@@ -25,7 +25,6 @@ import purchaseOrdersRoutes from './routes/purchase-orders.js';
 import loyaltyRoutes from './routes/loyalty.js';
 import orderTemplatesRoutes from './routes/order-templates.js';
 import adminRoutes from './routes/admin.js';
-import adminStressTestRoutes from './routes/admin-stress-test.js';
 import authRoutes from './routes/auth.js';
 import brandingRoutes from './routes/branding.js';
 import billingRoutes, { stripeWebhook, promoValidateHandler } from './routes/billing.js';
@@ -38,14 +37,16 @@ import accountRoutes from './routes/account.js';
 import wasteRoutes from './routes/waste.js';
 import cfdiRoutes from './routes/cfdi.js';
 import credentialsRoutes from './routes/credentials.js';
-import stressTestRoutes from './routes/stress-test.js';
-import chaosRoutes from './routes/chaos.js';
+// Chaos/stress-test routes — only loaded when ENABLE_CHAOS=true
+const chaosEnabled = process.env.ENABLE_CHAOS === 'true';
+const stressTestRoutes = chaosEnabled ? (await import('./routes/stress-test.js')).default : null;
+const chaosRoutes = chaosEnabled ? (await import('./routes/chaos.js')).default : null;
+const adminStressTestRoutesLazy = chaosEnabled ? (await import('./routes/admin-stress-test.js')).default : null;
 import bankingRoutes from './routes/banking.js';
 import demoDataRoutes from './routes/demo-data.js';
 import demoProvisionRoutes from './routes/demo-provision.js';
 import salesRoutes from './routes/sales.js';
 import onboardingRoutes from './routes/onboarding.js';
-import belvoWebhook from './routes/webhooks/belvo.js';
 import plaidWebhook from './routes/webhooks/plaid.js';
 import { initAI, shutdownAI } from './ai/index.js';
 import { startBankingSyncScheduler } from './services/banking/SyncScheduler.js';
@@ -85,8 +86,7 @@ app.use(cors({
 // Stripe webhook needs raw body (before express.json)
 app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
-// Banking webhooks need raw body for signature verification (before express.json)
-app.use('/webhooks/belvo', express.raw({ type: 'application/json' }), belvoWebhook);
+// Plaid webhook needs raw body for signature verification (before express.json)
 app.use('/webhooks/plaid', express.raw({ type: 'application/json' }), plaidWebhook);
 
 // Capture raw body for delivery webhook signature verification
@@ -122,10 +122,10 @@ app.get('/api/health', async (req, res) => {
 
 // Admin routes (uses admin pool, not tenant-scoped)
 app.use('/admin', adminRoutes);
-app.use('/admin/stress-test', adminStressTestRoutes);
+if (adminStressTestRoutesLazy) app.use('/admin/stress-test', adminStressTestRoutesLazy);
 
-// Chaos agent (admin-secret protected, uses its own tenant pool connections)
-app.use('/api/chaos', chaosRoutes);
+// Chaos agent (only when ENABLE_CHAOS=true)
+if (chaosRoutes) app.use('/api/chaos', chaosRoutes);
 
 // Auth routes (uses admin pool for registration/login, not tenant-scoped)
 app.use('/api/auth', authRoutes);
@@ -194,7 +194,7 @@ app.use('/api/delivery-intel', deliveryIntelRoutes);
 app.use('/api/pricing', pricingRoutes);
 app.use('/api/cfdi', cfdiRoutes);
 app.use('/api/credentials', credentialsRoutes);
-app.use('/api/stress-test', stressTestRoutes);
+if (stressTestRoutes) app.use('/api/stress-test', stressTestRoutes);
 app.use('/api/demo-data', demoDataRoutes);
 app.use('/api/banking', bankingRoutes);
 app.use('/api/onboarding', onboardingRoutes);
