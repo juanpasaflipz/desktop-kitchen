@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { all, get, run, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { checkLimit, planUpgradeError } from '../planLimits.js';
 import { logRestockEvent } from '../ai/data-pipeline.js';
 
 const router = Router();
@@ -360,6 +361,14 @@ router.post('/', requireAuth('manage_inventory'), async (req, res) => {
 
     if (!name) {
       return res.status(400).json({ error: 'name is required' });
+    }
+
+    // Plan limit check
+    const plan = req.tenant?.plan || 'trial';
+    const { cnt } = await get('SELECT COUNT(*) as cnt FROM inventory_items WHERE active = true') || { cnt: 0 };
+    const check = checkLimit(plan, 'inventoryItems', cnt);
+    if (!check.allowed) {
+      return res.status(403).json(planUpgradeError('inventoryItems', plan, { limit: check.limit, current: check.current }));
     }
 
     const tid = getTenantId();

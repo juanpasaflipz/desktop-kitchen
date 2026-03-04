@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import { all, get, run, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireOwner } from '../middleware/ownerAuth.js';
-import { checkLimit } from '../planLimits.js';
+import { checkLimit, planUpgradeError } from '../planLimits.js';
 import { audit } from '../lib/auditLog.js';
 import { TEMPLATE_LIST, getTemplate } from '../templates/index.js';
 import { bulkInsertMenu } from '../lib/menuBulkInsert.js';
@@ -246,7 +246,7 @@ router.post('/items', requireAuth('manage_menu'), async (req, res) => {
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM menu_items WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'menuItems', cnt);
     if (!check.allowed) {
-      return res.status(403).json({ error: `Menu item limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
+      return res.status(403).json(planUpgradeError('menuItems', plan, { limit: check.limit, current: check.current }));
     }
 
     const tid = getTenantId();

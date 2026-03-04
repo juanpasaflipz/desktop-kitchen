@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { all, get, run, getTenantId } from '../db/index.js';
-import { checkLimit } from '../planLimits.js';
+import { checkLimit, planUpgradeError } from '../planLimits.js';
 
 const router = Router();
 
@@ -69,7 +69,7 @@ router.post('/', async (req, res) => {
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM combo_definitions WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'combos', cnt);
     if (!check.allowed) {
-      return res.status(403).json({ error: `Combo limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
+      return res.status(403).json(planUpgradeError('combos', plan, { limit: check.limit, current: check.current }));
     }
 
     const tid = getTenantId();

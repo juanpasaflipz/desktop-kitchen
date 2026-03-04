@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { all, get, run, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { getChargeFees } from '../stripe.js';
-import { getPlanLimits } from '../planLimits.js';
+import { getPlanLimits, planUpgradeError } from '../planLimits.js';
 
 const router = Router();
 
@@ -943,7 +943,7 @@ router.put('/financial-targets', requireAuth('view_reports'), async (req, res) =
     const plan = req.tenant?.plan || 'trial';
     const limits = getPlanLimits(plan);
     if (!limits.reports.editVariables) {
-      return res.status(403).json({ error: 'Editing financial targets requires a paid plan', upgrade: true });
+      return res.status(403).json(planUpgradeError('reports', plan));
     }
 
     const employee = req.employee;
@@ -980,7 +980,7 @@ router.put('/financial-actuals', requireAuth('view_reports'), async (req, res) =
     const plan = req.tenant?.plan || 'trial';
     const limits = getPlanLimits(plan);
     if (!limits.reports.editVariables) {
-      return res.status(403).json({ error: 'Editing financial actuals requires a paid plan', upgrade: true });
+      return res.status(403).json(planUpgradeError('reports', plan));
     }
 
     const employee = req.employee;

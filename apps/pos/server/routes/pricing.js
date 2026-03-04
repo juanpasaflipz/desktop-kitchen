@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { run, all, get, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
-import { getPlanLimits } from '../planLimits.js';
+import { getPlanLimits, planUpgradeError } from '../planLimits.js';
 import {
   checkGuardrails,
   applyPriceChange,
@@ -21,8 +21,7 @@ function requireDynamicPricing(feature = 'aiSuggestions') {
     const plan = req.tenant?.plan || 'trial';
     const limits = getPlanLimits(plan);
     if (!limits.dynamicPricing?.[feature]) {
-      const planNeeded = feature === 'abTesting' || feature === 'deliveryIntegration' ? 'Ghost Kitchen' : 'Pro';
-      return res.status(403).json({ error: `This feature requires the ${planNeeded} plan`, upgrade: true });
+      return res.status(403).json(planUpgradeError('dynamicPricing', plan));
     }
     next();
   };

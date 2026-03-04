@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import { all, get, run, exec, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requirePlanFeature } from '../planLimits.js';
 import { sendSMS } from '../helpers/twilio.js';
 
 const router = Router();
+
+// Gate all delivery intelligence endpoints behind the delivery plan feature
+router.use(requirePlanFeature('delivery'));
 
 // ==================== P&L Analytics ====================
 

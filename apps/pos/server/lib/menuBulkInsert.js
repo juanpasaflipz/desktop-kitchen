@@ -103,7 +103,7 @@ export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' 
     }
   }
 
-  // ─── 4. Insert inventory items (skip duplicates by name) ───
+  // ─── 4. Insert inventory items (skip duplicates by name, respect plan limits) ───
   const invIdMap = {};
   if (payload.inventory) {
     const existingInv = await all('SELECT id, name FROM inventory_items');
@@ -111,9 +111,18 @@ export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' 
       invIdMap[ei.name.toLowerCase()] = ei.id;
     }
 
+    const { cnt: invCurrentCount } = await get('SELECT COUNT(*) as cnt FROM inventory_items WHERE active = true') || { cnt: 0 };
+    let invCount = Number(invCurrentCount);
+    const maxInv = typeof limits.inventoryItems === 'number' ? limits.inventoryItems : Infinity;
+
     for (const inv of payload.inventory) {
       const key = inv.name.toLowerCase();
       if (invIdMap[key]) continue;
+
+      if (invCount >= maxInv) {
+        stats.warnings.push(`Inventory item limit reached (${maxInv}). Remaining inventory items skipped.`);
+        break;
+      }
 
       const result = await run(
         `INSERT INTO inventory_items (tenant_id, name, unit, quantity, low_stock_threshold, category, cost_price, active)
@@ -121,6 +130,7 @@ export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' 
         [tid, inv.name.trim(), inv.unit || 'unit', inv.quantity || 0, inv.low_stock_threshold || 5, inv.category || 'General', inv.cost_price || 0]
       );
       invIdMap[key] = result.lastInsertRowid;
+      invCount++;
       stats.inventoryCreated++;
     }
   }
@@ -142,9 +152,18 @@ export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' 
     }
   }
 
-  // ─── 6. Insert modifier groups + modifiers, assign to items by category ───
+  // ─── 6. Insert modifier groups + modifiers, assign to items by category (respect plan limits) ───
   if (payload.modifier_groups) {
+    const { cnt: mgCurrentCount } = await get('SELECT COUNT(*) as cnt FROM modifier_groups WHERE active = true') || { cnt: 0 };
+    let mgCount = Number(mgCurrentCount);
+    const maxMg = typeof limits.modifierGroups === 'number' ? limits.modifierGroups : Infinity;
+
     for (const mg of payload.modifier_groups) {
+      if (mgCount >= maxMg) {
+        stats.warnings.push(`Modifier group limit reached (${maxMg}). Remaining modifier groups skipped.`);
+        break;
+      }
+
       const mgResult = await run(
         `INSERT INTO modifier_groups (tenant_id, name, selection_type, required, min_selections, max_selections)
          VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -186,13 +205,23 @@ export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' 
         }
       }
 
+      mgCount++;
       stats.modifierGroupsCreated++;
     }
   }
 
-  // ─── 7. Insert combos ───
+  // ─── 7. Insert combos (respect plan limits) ───
   if (payload.combos) {
+    const { cnt: comboCurrentCount } = await get('SELECT COUNT(*) as cnt FROM combo_definitions WHERE active = true') || { cnt: 0 };
+    let comboCount = Number(comboCurrentCount);
+    const maxCombos = typeof limits.combos === 'number' ? limits.combos : Infinity;
+
     for (const combo of payload.combos) {
+      if (comboCount >= maxCombos) {
+        stats.warnings.push(`Combo limit reached (${maxCombos}). Remaining combos skipped.`);
+        break;
+      }
+
       const comboResult = await run(
         `INSERT INTO combo_definitions (tenant_id, name, description, combo_price, active)
          VALUES ($1, $2, $3, $4, true)`,
@@ -212,6 +241,7 @@ export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' 
         }
       }
 
+      comboCount++;
       stats.combosCreated++;
     }
   }

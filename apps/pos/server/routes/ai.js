@@ -11,7 +11,7 @@ import { getGrokStats, analyzeUpsellPatterns, analyzeInventoryTrends, enhanceFor
 import { getConfigBool } from '../ai/config.js';
 import { requireAuth } from '../middleware/auth.js';
 import { generatePrepForecast } from '../ai/suggestions/prep-forecast.js';
-import { getPlanLimits } from '../planLimits.js';
+import { getPlanLimits, planUpgradeError, getRequiredPlan } from '../planLimits.js';
 
 const router = Router();
 
@@ -123,7 +123,7 @@ router.put('/config', requireAuth('manage_ai'), async (req, res) => {
     const plan = req.tenant?.plan || 'trial';
     const limits = getPlanLimits(plan);
     if (limits.ai.mode !== 'full') {
-      return res.status(403).json({ error: 'AI configuration requires the Pro plan', upgrade: true });
+      return res.status(403).json(planUpgradeError('ai', plan));
     }
 
     const { entries } = req.body;
@@ -354,14 +354,14 @@ router.post('/analyze', requireAuth('manage_ai'), async (req, res) => {
       return res.json(MOCK_ANALYSIS);
     }
     if (limits.ai.mode === 'locked') {
-      return res.status(403).json({ error: 'AI Intelligence requires the Pro plan', upgrade: true });
+      return res.status(403).json(planUpgradeError('ai', plan));
     }
 
     // Pro plan — check monthly analysis cap
     if (limits.ai.monthlyAnalyses > 0) {
       const { cnt } = (await get(`SELECT COUNT(*) as cnt FROM ai_suggestion_events WHERE created_at >= date_trunc('month', NOW())`)) || { cnt: 0 };
       if (cnt >= limits.ai.monthlyAnalyses) {
-        return res.status(429).json({ error: `Monthly analysis limit reached (${limits.ai.monthlyAnalyses})`, upgrade: true });
+        return res.status(403).json(planUpgradeError('ai', plan, { limit: limits.ai.monthlyAnalyses, current: cnt }));
       }
     }
 

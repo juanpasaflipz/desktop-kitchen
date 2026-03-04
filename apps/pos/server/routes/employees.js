@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { all, get, run, getTenantId } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
-import { checkLimit } from '../planLimits.js';
+import { checkLimit, planUpgradeError } from '../planLimits.js';
 import { audit } from '../lib/auditLog.js';
 import { sendPinEmail } from '../helpers/email.js';
 import { BCRYPT_ROUNDS, JWT_SECRET } from '../lib/constants.js';
@@ -53,7 +53,7 @@ router.post('/', async (req, res) => {
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM employees WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'employees', cnt);
     if (!check.allowed) {
-      return res.status(403).json({ error: `Employee limit reached (${check.limit})`, upgrade: true, limit: check.limit, current: check.current });
+      return res.status(403).json(planUpgradeError('employees', plan, { limit: check.limit, current: check.current }));
     }
 
     const hashedPin = await bcrypt.hash(pin, BCRYPT_ROUNDS);

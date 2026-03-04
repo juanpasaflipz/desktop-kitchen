@@ -3,7 +3,7 @@ import { all, get, run, getTenantId } from '../db/index.js';
 import { requireOwner } from '../middleware/ownerAuth.js';
 import { BankingService } from '../lib/bankingService.js';
 import { reconcileDeliveryPayouts } from '../services/banking/ReconciliationService.js';
-import { getPlanLimits } from '../planLimits.js';
+import { getPlanLimits, planUpgradeError } from '../planLimits.js';
 
 const router = Router();
 
@@ -15,11 +15,7 @@ router.use(requireOwner);
 router.use((req, res, next) => {
   const plan = req.tenant?.plan || 'trial';
   if (plan !== 'pro' && plan !== 'ghost_kitchen') {
-    return res.status(403).json({
-      error: 'PLAN_UPGRADE_REQUIRED',
-      requiredPlan: 'pro',
-      feature: 'bank_connections',
-    });
+    return res.status(403).json(planUpgradeError('banking', plan));
   }
   next();
 });
@@ -65,12 +61,7 @@ router.post('/exchange-token', async (req, res) => {
     );
     const currentCount = countRow?.cnt || 0;
     if (currentCount >= maxConns) {
-      return res.status(403).json({
-        error: 'CONNECTION_LIMIT_REACHED',
-        limit: maxConns,
-        current: currentCount,
-        plan,
-      });
+      return res.status(403).json(planUpgradeError('banking', plan, { limit: maxConns, current: currentCount }));
     }
 
     const institutionName = metadata?.institutionName || null;

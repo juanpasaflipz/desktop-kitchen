@@ -85,8 +85,68 @@ export const PLAN_LIMITS = {
   },
 };
 
+export const PLAN_TIERS = ['trial', 'starter', 'pro', 'ghost_kitchen'];
+
 export function getPlanLimits(plan) {
   return PLAN_LIMITS[plan] || PLAN_LIMITS.trial;
+}
+
+/**
+ * Finds the lowest plan tier that unlocks a feature.
+ * Handles: locked: false, functional: true, numeric limits > 0, boolean true, nested subKeys.
+ */
+export function getRequiredPlan(feature, subKey) {
+  for (const tier of PLAN_TIERS) {
+    const limits = PLAN_LIMITS[tier];
+    const val = limits[feature];
+    if (val === undefined) continue;
+
+    if (subKey) {
+      const sub = val?.[subKey];
+      if (sub === true || (typeof sub === 'number' && sub > 0)) return tier;
+      continue;
+    }
+
+    // Numeric limit (e.g., menuItems: 10 → unlocked at trial)
+    if (typeof val === 'number') {
+      if (val > 0) return tier;
+      continue;
+    }
+
+    // Object with locked/functional flags or custom boolean/string keys
+    if (typeof val === 'object') {
+      if (val.locked === false || val.functional === true) return tier;
+      // For objects without locked/functional (e.g., reports.editVariables, branding.canRename, ai.mode),
+      // consider unlocked if any value is truthy and not 'mock'/'locked'
+      if (!('locked' in val) && !('functional' in val)) {
+        const hasUnlockedValue = Object.values(val).some(v =>
+          v === true || (typeof v === 'number' && v > 0) || (typeof v === 'string' && v !== 'mock' && v !== 'locked')
+        );
+        if (hasUnlockedValue) return tier;
+      }
+      continue;
+    }
+
+    // Boolean
+    if (val === true) return tier;
+  }
+  return 'ghost_kitchen'; // fallback to highest tier
+}
+
+/**
+ * Builds the standardized plan-upgrade error body.
+ * @param {string} feature - Feature key from PLAN_LIMITS
+ * @param {string} currentPlan - Tenant's current plan
+ * @param {object} [extra] - Optional { limit, current } for numeric limits
+ */
+export function planUpgradeError(feature, currentPlan, extra) {
+  return {
+    error: 'PLAN_UPGRADE_REQUIRED',
+    requiredPlan: getRequiredPlan(feature),
+    feature,
+    currentPlan,
+    ...extra,
+  };
 }
 
 export function checkLimit(plan, resource, currentCount) {
@@ -108,11 +168,7 @@ export function requirePlanFeature(feature) {
     const featureLimits = limits[feature];
 
     if (featureLimits && (featureLimits.locked === true || featureLimits.functional === false)) {
-      return res.status(403).json({
-        error: `This feature requires a higher plan. Current plan: ${plan}`,
-        upgrade_required: true,
-        feature,
-      });
+      return res.status(403).json(planUpgradeError(feature, plan));
     }
     next();
   };
