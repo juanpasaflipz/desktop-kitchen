@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Rules
+
+- You are a native Swift developer. Do not assume anything, always go back to the documentation for the correct usage and development.
+- Always use context7 when code generation, setup/configuration steps, or library/API documentation is needed.
+
+## Parent Repository Context
+
+This monorepo lives inside a broader project at `juanbertos/POS/juanbertos-pos/`. Sibling projects outside this repo:
+
+- **`es-landing/`** — Spanish landing page (Next.js, pnpm) → es.juanbertos.com
+- **`my-mcp-server/`** — Custom MCP server (TypeScript, `@modelcontextprotocol/sdk`)
+- **`migrations/`** + **`scripts/`** — Standalone SQL migrations run against Neon Postgres
+
 ## Monorepo Structure
 
 ```
@@ -31,6 +44,13 @@ npm run dev:server       # Express backend only
 npm run build            # Production build (outputs to /dist)
 npm run start            # Production mode (NODE_ENV=production, serves /dist)
 npm run seed             # Seed database with demo data (employees, menu, inventory)
+npm run test             # Vitest full suite
+npm run test:watch       # Watch mode
+npm run test:modules     # Module tests
+npm run test:integration # Integration tests
+npm run test:security    # Security tests
+npm run test:personas    # Persona-based tests
+npm run test:coverage    # Coverage report
 ```
 
 **Deployment**: Railway → pos.desktop.kitchen (Root Directory: `apps/pos`)
@@ -274,3 +294,15 @@ RESEND_API_KEY=...                      # Resend API key for transactional email
 - **Branding colors**: Use `brand-*` Tailwind classes (e.g., `bg-brand-600`, `text-brand-400`). Never use hardcoded colors — the brand palette defaults to teal (#0d9488) via CSS variable fallbacks.
 - **Two auth systems**: Employee PIN login (`AuthContext`, `x-employee-id` header) for POS operations. Owner JWT (`ownerAuth.js`, `Authorization: Bearer` header) for tenant management/billing.
 - **Path alias**: `@/*` maps to `src/*` (configured in tsconfig.json and vite.config.ts).
+
+## Deployment Map
+
+| App | Platform | URL | Package Manager |
+|-----|----------|-----|-----------------|
+| POS | Railway | pos.desktop.kitchen | npm |
+| Marketing | Vercel | www.desktop.kitchen / es.desktop.kitchen | npm |
+| Landing (EN) | Vercel | www.juanbertos.com | npm |
+| Docs | Vercel | docs.desktop.kitchen | npm |
+| Sales | Vercel | sales.desktop.kitchen | npm |
+
+DNS managed in Cloudflare for both `desktop.kitchen` and `juanbertos.com` zones.
