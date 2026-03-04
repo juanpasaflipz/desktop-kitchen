@@ -121,8 +121,11 @@ export async function sendSalesRepWelcomeEmail(email, fullName, password) {
 
             <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px;margin:20px 0">
               <p style="margin:0 0 8px"><strong>Correo:</strong> ${email}</p>
-              <p style="margin:0 0 8px"><strong>Contrase\u00f1a:</strong> <span style="font-size:18px;font-weight:700">${password}</span></p>
-              <p style="margin:0"><strong>Iniciar sesi\u00f3n:</strong> <a href="${loginUrl}" style="color:#0d9488">${loginUrl.replace('https://', '')}</a></p>
+              <p style="margin:0 0 12px"><strong>Contrase\u00f1a:</strong> <span style="font-size:18px;font-weight:700">${password}</span></p>
+              <p style="margin:0">
+                <a href="${loginUrl}" style="display:inline-block;padding:10px 20px;background:#0d9488;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Iniciar Sesi\u00f3n</a>
+                <span style="color:#666;font-size:13px;margin-left:12px">${loginUrl.replace('https://', '')}</span>
+              </p>
             </div>
 
             <h3 style="color:#0d9488;margin-bottom:8px">Lo que puedes hacer</h3>
@@ -158,10 +161,6 @@ export async function sendSalesRepWelcomeEmail(email, fullName, password) {
                 <li><a href="https://www.desktop.kitchen/investors" style="color:#0d9488">www.desktop.kitchen/investors</a> \u2014 Inversionistas</li>
               </ul>
             </div>
-
-            <p style="margin-top:20px">
-              <a href="${loginUrl}" style="display:inline-block;padding:10px 20px;background:#0d9488;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Iniciar Sesi\u00f3n</a>
-            </p>
 
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
             <p style="color:#9ca3af;font-size:13px">Por favor cambia tu contrase\u00f1a despu\u00e9s de tu primer inicio de sesi\u00f3n. \u00bfPreguntas? Responde a este correo.</p>
