@@ -33,6 +33,26 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
     <priority>1.0</priority>
   </url>
 
+  <!-- Investors -->
+  <url>
+    <loc>https://www.desktop.kitchen/investors</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.desktop.kitchen/investors" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://es.desktop.kitchen/investors" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.desktop.kitchen/investors" />
+    <lastmod>${now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://es.desktop.kitchen/investors</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.desktop.kitchen/investors" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://es.desktop.kitchen/investors" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.desktop.kitchen/investors" />
+    <lastmod>${now}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Blog index -->
   <url>
     <loc>https://www.desktop.kitchen/blog</loc>
