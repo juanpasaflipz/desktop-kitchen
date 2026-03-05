@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { ShoppingBag, ChefHat, ScanBarcode, User } from 'lucide-react';
+import { Store, ShoppingBag, ChefHat, ScanBarcode, User } from 'lucide-react';
 
 interface Tab {
   path: string;
@@ -11,6 +11,7 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
+  { path: '/m/pos', label: 'POS', icon: <Store className="w-5 h-5" /> },
   { path: '/m/orders', label: 'Orders', icon: <ShoppingBag className="w-5 h-5" /> },
   { path: '/m/kitchen', label: 'Kitchen', icon: <ChefHat className="w-5 h-5" /> },
   { path: '/m/scan', label: 'Scan', icon: <ScanBarcode className="w-5 h-5" />, roles: ['manager', 'admin'] },
