@@ -939,8 +939,8 @@ router.get('/financial-projection', requireAuth('view_reports'), async (req, res
 // PUT /api/reports/financial-targets
 router.put('/financial-targets', requireAuth('view_reports'), async (req, res) => {
   try {
-    // Plan check — trial cannot edit variables
-    const plan = req.tenant?.plan || 'trial';
+    // Plan check — free cannot edit variables
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
     if (!limits.reports.editVariables) {
       return res.status(403).json(planUpgradeError('reports', plan));
@@ -976,8 +976,8 @@ router.put('/financial-targets', requireAuth('view_reports'), async (req, res) =
 // PUT /api/reports/financial-actuals
 router.put('/financial-actuals', requireAuth('view_reports'), async (req, res) => {
   try {
-    // Plan check — trial cannot edit variables
-    const plan = req.tenant?.plan || 'trial';
+    // Plan check — free cannot edit variables
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
     if (!limits.reports.editVariables) {
       return res.status(403).json(planUpgradeError('reports', plan));

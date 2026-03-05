@@ -65,7 +65,7 @@ router.post('/', async (req, res) => {
     if (!name || combo_price === undefined) return res.status(400).json({ error: 'Missing name or combo_price' });
 
     // Plan limit check
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM combo_definitions WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'combos', cnt);
     if (!check.allowed) {

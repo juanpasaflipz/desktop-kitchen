@@ -12,4 +12,3 @@ export const JWT_OWNER_EXPIRY = '7d';
 
 export const MAX_PAGE_LIMIT = 200;
 
-export const TRIAL_DURATION_DAYS = 14;

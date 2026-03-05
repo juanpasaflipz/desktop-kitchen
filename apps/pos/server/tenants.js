@@ -1,6 +1,5 @@
 import { adminSql } from './db/index.js';
 import { tenantCache } from './lib/tenantCache.js';
-import { TRIAL_DURATION_DAYS } from './lib/constants.js';
 
 // ==================== Tenant CRUD ====================
 // All operations use adminSql (neondb_owner, bypasses RLS).
@@ -36,20 +35,11 @@ export async function getTenantByEmail(email) {
 
 /** Create a new tenant in the registry */
 export async function createTenant({ id, name, subdomain, owner_email, owner_password_hash, plan, branding_json }) {
-  const effectivePlan = plan || 'trial';
+  const effectivePlan = plan || 'free';
   await adminSql`
     INSERT INTO tenants (id, name, subdomain, owner_email, owner_password_hash, plan, branding_json)
     VALUES (${id}, ${name}, ${subdomain || id}, ${owner_email}, ${owner_password_hash}, ${effectivePlan}, ${branding_json || null})
   `;
-
-  // Set trial_ends_at for trial tenants
-  if (effectivePlan === 'trial') {
-    await adminSql`
-      UPDATE tenants
-      SET trial_ends_at = NOW() + ${TRIAL_DURATION_DAYS + ' days'}::INTERVAL
-      WHERE id = ${id}
-    `;
-  }
 
   // Seed default role permissions for the new tenant
   await seedTenantDefaults(id);

@@ -64,7 +64,7 @@ router.get('/', (req, res) => {
   }
 
   const branding = tenant.branding || {};
-  const plan = tenant.plan || 'trial';
+  const plan = tenant.plan || 'free';
   res.json({
     primaryColor: branding.primaryColor || '#0d9488',
     logoUrl: branding.logoUrl || null,
@@ -76,7 +76,6 @@ router.get('/', (req, res) => {
     ownerEmail: tenant.owner_email || null,
     mpUserId: tenant.mp_user_id || null,
     mpDefaultTerminalId: tenant.mp_default_terminal_id || null,
-    trialEndsAt: tenant.trial_ends_at || null,
   });
 });
 
@@ -150,8 +149,7 @@ router.put('/settings', requireAuth('manage_branding'), async (req, res) => {
       });
     }
 
-    // Plan check — trial tenants can preview but not save
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     if (!getPlanLimits(plan).branding.canRename) {
       return res.status(403).json(planUpgradeError('branding', plan));
     }

@@ -586,7 +586,7 @@ const OnboardingScreen: React.FC = () => {
 
         {/* Trust signals */}
         <div style={styles.trustRow}>
-          {['14-day free trial', 'No credit card', 'Cancel anytime'].map(t => (
+          {['Free forever', 'No credit card', 'Upgrade anytime'].map(t => (
             <span key={t} style={styles.trustChip}>
               <Check size={10} color="#0d9488" strokeWidth={3} style={{ flexShrink: 0 }} />
               {t}

@@ -242,10 +242,8 @@ export default function TenantsTab() {
         <select value={planFilter} onChange={e => setPlanFilter(e.target.value)}
           className="bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500">
           <option value="">All plans</option>
-          <option value="trial">Trial</option>
-          <option value="starter">Starter</option>
+          <option value="free">Free</option>
           <option value="pro">Pro</option>
-          <option value="ghost_kitchen">Ghost Kitchen</option>
         </select>
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-semibold transition-colors">
@@ -282,10 +280,8 @@ export default function TenantsTab() {
                         <select value={t.plan} onClick={e => e.stopPropagation()}
                           onChange={e => { e.stopPropagation(); handlePlanChange(t.id, e.target.value); }}
                           className="bg-neutral-700 border-none rounded px-2 py-1 text-xs text-white focus:outline-none">
-                          <option value="trial">Trial</option>
-                          <option value="starter">Starter</option>
+                          <option value="free">Free</option>
                           <option value="pro">Pro</option>
-                          <option value="ghost_kitchen">Ghost Kitchen</option>
                         </select>
                       </td>
                       <td className="px-4 py-3">

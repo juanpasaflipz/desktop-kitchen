@@ -152,12 +152,12 @@ export default function AIConfigScreen() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        {aiMode === 'mock' && (
+        {aiMode === 'lite' && (
           <div className="mb-6 space-y-4">
             <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-4 flex items-center gap-3">
               <Sparkles className="text-brand-500 flex-shrink-0" size={20} />
-              <span className="text-sm text-neutral-300">Sample Data</span>
-              <span className="text-xs text-neutral-500 ml-auto">Upgrade to Pro for real-time AI insights</span>
+              <span className="text-sm text-neutral-300">AI Lite — 5 free insights/day</span>
+              <span className="text-xs text-neutral-500 ml-auto">Upgrade to Pro for unlimited AI insights</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
@@ -176,22 +176,7 @@ export default function AIConfigScreen() {
                 <p className="text-green-500 text-sm mt-1">Projected high-demand items</p>
               </div>
             </div>
-            <UpgradePrompt message="Unlock real-time AI intelligence, dynamic pricing, and demand forecasting with the Pro plan." />
-          </div>
-        )}
-
-        {aiMode === 'locked' && (
-          <div className="relative min-h-[400px]">
-            <div className="opacity-30 pointer-events-none">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
-                    <div className="h-20 bg-neutral-800 rounded" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <UpgradePrompt variant="overlay" message="AI Intelligence is available on the Pro plan." />
+            <UpgradePrompt message="Unlock unlimited AI intelligence, dynamic pricing, and demand forecasting with the Pro plan." />
           </div>
         )}
 

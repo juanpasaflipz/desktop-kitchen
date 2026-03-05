@@ -7,25 +7,25 @@ import { admin, alpha, tenantApi, rawRequest } from '../setup/helpers.js';
 import { getTestState } from '../setup/test-env.js';
 
 describe('Billing Lifecycle', () => {
-  const TRIAL_TENANT_ID = 'test-billing-trial';
-  const TRIAL_EMAIL = 'billing-trial@test.desktop.kitchen';
-  let trialManagerToken: string;
+  const TRIAL_TENANT_ID = 'test-billing-free';
+  const TRIAL_EMAIL = 'billing-free@test.desktop.kitchen';
+  let freeManagerToken: string;
   const MANAGER_PIN = '1234';
 
-  describe('Setup: Create trial tenant', () => {
-    it('creates a trial tenant', async () => {
+  describe('Setup: Create free tenant', () => {
+    it('creates a free tenant', async () => {
       const res = await admin.post('/admin/tenants', {
         id: TRIAL_TENANT_ID,
         name: 'Billing Trial Test',
         owner_email: TRIAL_EMAIL,
         owner_password: 'BillingTrial2026!',
-        plan: 'trial',
+        plan: 'free',
       });
       expect(res.status).toBe(201);
-      expect(res.data.plan).toBe('trial');
+      expect(res.data.plan).toBe('free');
     });
 
-    it('seeds the trial tenant', async () => {
+    it('seeds the free tenant', async () => {
       const res = await admin.post(`/admin/tenants/${TRIAL_TENANT_ID}/seed`);
       expect(res.status).toBe(200);
     });
@@ -43,11 +43,11 @@ describe('Billing Lifecycle', () => {
         headers,
         body: { name: 'Trial Manager', pin: MANAGER_PIN, role: 'admin' },
       });
-      // Accept 201 (created) or 403 (plan limit) — trial allows 3 employees
+      // Accept 201 (created) or 403 (plan limit) — free allows 3 employees
       expect([201, 403]).toContain(res.status);
     });
 
-    it('logs in as trial manager', async () => {
+    it('logs in as free manager', async () => {
       const headers: Record<string, string> = {
         'X-Tenant-ID': TRIAL_TENANT_ID,
         'X-Admin-Secret': getTestState().adminSecret,
@@ -58,13 +58,13 @@ describe('Billing Lifecycle', () => {
         body: { pin: MANAGER_PIN },
       });
       expect(res.status).toBe(200);
-      trialManagerToken = res.data.token;
+      freeManagerToken = res.data.token;
     });
   });
 
   describe('Trial Limits', () => {
-    it('trial tenant has limited menu items', async () => {
-      const api = tenantApi(TRIAL_TENANT_ID, trialManagerToken);
+    it('free tenant has limited menu items', async () => {
+      const api = tenantApi(TRIAL_TENANT_ID, freeManagerToken);
 
       // Get current count
       const items = await api.get('/api/menu/items');
@@ -75,7 +75,7 @@ describe('Billing Lifecycle', () => {
       if (cats.data.length === 0) return;
       const catId = cats.data[0].id;
 
-      // Try to create items up to the trial limit (10)
+      // Try to create items up to the free limit (10)
       // If already at limit, creation should fail
       if (currentItems.length >= 10) {
         const res = await api.post('/api/menu/items', {
@@ -87,8 +87,8 @@ describe('Billing Lifecycle', () => {
       }
     });
 
-    it('trial tenant has limited employees', async () => {
-      const api = tenantApi(TRIAL_TENANT_ID, trialManagerToken);
+    it('free tenant has limited employees', async () => {
+      const api = tenantApi(TRIAL_TENANT_ID, freeManagerToken);
       const emps = await api.get('/api/employees');
 
       // Trial limit is 3 employees
@@ -105,7 +105,7 @@ describe('Billing Lifecycle', () => {
 
   describe('Plan Upgrade', () => {
     it('upgrading to pro unlocks delivery features', async () => {
-      // Upgrade trial to pro via admin
+      // Upgrade free to pro via admin
       await admin.patch(`/admin/tenants/${TRIAL_TENANT_ID}`, {
         plan: 'pro',
       });
@@ -116,7 +116,7 @@ describe('Billing Lifecycle', () => {
     });
 
     it('pro tenant can access delivery endpoints', async () => {
-      const api = tenantApi(TRIAL_TENANT_ID, trialManagerToken);
+      const api = tenantApi(TRIAL_TENANT_ID, freeManagerToken);
       const res = await api.get('/api/delivery/platforms');
       expect(res.status).toBe(200);
     });
@@ -135,7 +135,7 @@ describe('Billing Lifecycle', () => {
   });
 
   describe('Cleanup', () => {
-    it('deletes the trial tenant', async () => {
+    it('deletes the free tenant', async () => {
       const res = await admin.delete(`/admin/tenants/${TRIAL_TENANT_ID}`, {
         confirm: TRIAL_TENANT_ID,
       });

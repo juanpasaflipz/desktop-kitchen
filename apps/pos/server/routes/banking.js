@@ -11,10 +11,10 @@ const router = Router();
 
 router.use(requireOwner);
 
-// Plan gate: only pro and ghost_kitchen tenants can access banking
+// Plan gate: only pro tenants can access banking
 router.use((req, res, next) => {
-  const plan = req.tenant?.plan || 'trial';
-  if (plan !== 'pro' && plan !== 'ghost_kitchen') {
+  const plan = req.tenant?.plan || 'free';
+  if (plan !== 'pro') {
     return res.status(403).json(planUpgradeError('banking', plan));
   }
   next();
@@ -53,7 +53,7 @@ router.post('/exchange-token', async (req, res) => {
     }
 
     // Enforce max_bank_connections limit
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
     const maxConns = limits.maxBankConnections || 0;
     const countRow = await get(

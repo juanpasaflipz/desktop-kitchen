@@ -76,14 +76,14 @@ router.post('/provision', demoLimiter, async (req, res) => {
     const password = crypto.randomBytes(16).toString('hex');
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-    // Create tenant (plan='trial', trial_ends_at auto-set by createTenant)
+    // Create tenant (plan='free')
     const tenant = await createTenant({
       id: slug,
       name: restaurant_name,
       subdomain: slug,
       owner_email: cleanEmail,
       owner_password_hash: passwordHash,
-      plan: 'trial',
+      plan: 'free',
     });
 
     // Generate random 4-digit PIN for admin employee

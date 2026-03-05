@@ -15,6 +15,7 @@ import { ToastProvider } from './context/ToastContext';
 import { resolveTenant, type TenantInfo } from './lib/tenantResolver';
 import { useDeviceType } from './hooks/useDeviceType';
 import { setCurrentEmployeeId, setCurrentEmployeeToken } from './api';
+import { MobileCartProvider } from './context/MobileCartContext';
 import DemoLoadingScreen from './components/DemoLoadingScreen';
 import UpgradeCTABar from './components/UpgradeCTABar';
 import AIAssistantFAB from './components/AIAssistantFAB';
@@ -243,6 +244,18 @@ const MobileProfileScreen = React.lazy(() =>
   }))
 );
 
+const MobilePOSScreen = React.lazy(() =>
+  import('./screens/mobile/MobilePOSScreen').then((module) => ({
+    default: module.default,
+  }))
+);
+
+const MobileCartScreen = React.lazy(() =>
+  import('./screens/mobile/MobileCartScreen').then((module) => ({
+    default: module.default,
+  }))
+);
+
 /* ==================== Tenant Context ==================== */
 
 const TenantContext = React.createContext<TenantInfo>({
@@ -335,26 +348,30 @@ const TenantRoutes: React.FC = () => {
   const { currentEmployee } = useAuth();
   const { deviceType } = useDeviceType();
 
-  // Phone + authenticated → mobile companion mode
+  // Phone + authenticated → mobile POS mode
   if (deviceType === 'phone' && currentEmployee) {
     return (
-      <MobileShell>
-        <Routes>
-          <Route path="/m/orders" element={<MobileOrdersScreen />} />
-          <Route path="/m/kitchen" element={<MobileKitchenScreen />} />
-          <Route
-            path="/m/scan"
-            element={
-              <ProtectedRoute
-                element={<MobileScannerScreen />}
-                requiredRole={['manager', 'admin']}
-              />
-            }
-          />
-          <Route path="/m/profile" element={<MobileProfileScreen />} />
-          <Route path="*" element={<Navigate to="/m/orders" replace />} />
-        </Routes>
-      </MobileShell>
+      <MobileCartProvider>
+        <MobileShell>
+          <Routes>
+            <Route path="/m/pos" element={<MobilePOSScreen />} />
+            <Route path="/m/cart" element={<MobileCartScreen />} />
+            <Route path="/m/orders" element={<MobileOrdersScreen />} />
+            <Route path="/m/kitchen" element={<MobileKitchenScreen />} />
+            <Route
+              path="/m/scan"
+              element={
+                <ProtectedRoute
+                  element={<MobileScannerScreen />}
+                  requiredRole={['manager', 'admin']}
+                />
+              }
+            />
+            <Route path="/m/profile" element={<MobileProfileScreen />} />
+            <Route path="*" element={<Navigate to="/m/pos" replace />} />
+          </Routes>
+        </MobileShell>
+      </MobileCartProvider>
     );
   }
 
@@ -620,7 +637,7 @@ const TenantRoutes: React.FC = () => {
         }
       />
 
-      {/* Banking — pro/ghost_kitchen only */}
+      {/* Banking — pro only */}
       <Route
         path="/admin/banking"
         element={
@@ -631,7 +648,7 @@ const TenantRoutes: React.FC = () => {
         }
       />
 
-      {/* Stress Test — pro/ghost_kitchen only */}
+      {/* Stress Test — pro only */}
       <Route
         path="/admin/stress-test"
         element={

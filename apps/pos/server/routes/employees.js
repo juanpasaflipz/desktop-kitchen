@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
     }
 
     // Plan limit check
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM employees WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'employees', cnt);
     if (!check.allowed) {

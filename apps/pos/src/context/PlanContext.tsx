@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 
-export type PlanTier = 'trial' | 'starter' | 'pro' | 'ghost_kitchen';
+export type PlanTier = 'free' | 'pro';
 
 export interface PlanLimits {
   menuItems: number;
@@ -10,17 +10,19 @@ export interface PlanLimits {
   combos: number;
   maxBankConnections: number;
   reports: { editVariables: boolean };
-  ai: { mode: 'mock' | 'locked' | 'full'; monthlyAnalyses: number };
-  printers: { functional: boolean };
+  ai: { mode: 'lite' | 'full'; dailySuggestions: number; monthlyAnalyses: number };
+  printers: { functional: boolean; max: number };
   delivery: { functional: boolean };
   permissions: { locked: boolean };
-  loyalty: { locked: boolean };
-  branding: { canRename: boolean };
+  loyalty: { locked: boolean; smsEnabled: boolean };
+  branding: { canRename: boolean; watermark: boolean };
   prepForecast: { locked: boolean };
   menuBoard: { canRenameBrands: boolean };
   dynamicPricing: { aiSuggestions: boolean; scheduledRules: boolean; priceHistory: boolean; guardrails: boolean; abTesting: boolean; deliveryIntegration: boolean };
   banking: { locked: boolean };
   bankReconciliation: { locked: boolean };
+  dataExport: { locked: boolean };
+  cfdi: { locked: boolean };
 }
 
 interface PlanContextType {
@@ -30,41 +32,40 @@ interface PlanContextType {
   mpUserId: string | null;
   mpDefaultTerminalId: string | null;
   isPaid: boolean;
+  isFree: boolean;
   isMpConnected: boolean;
-  trialEndsAt: string | null;
-  trialDaysRemaining: number | null;
-  isTrialExpired: boolean;
   isAtLimit: (resource: 'menuItems' | 'inventoryItems' | 'employees' | 'modifierGroups' | 'combos', currentCount: number) => boolean;
-  isFeatureLocked: (feature: 'printers' | 'delivery' | 'permissions' | 'loyalty' | 'prepForecast' | 'banking' | 'bankReconciliation') => boolean;
+  isFeatureLocked: (feature: 'printers' | 'delivery' | 'permissions' | 'loyalty' | 'prepForecast' | 'banking' | 'bankReconciliation' | 'dataExport' | 'cfdi') => boolean;
   refresh: () => Promise<void>;
 }
 
 const DEFAULT_LIMITS: PlanLimits = {
-  menuItems: 10, inventoryItems: 12, employees: 3,
-  modifierGroups: 2, combos: 1, maxBankConnections: 0,
+  menuItems: 50, inventoryItems: Infinity, employees: 3,
+  modifierGroups: Infinity, combos: Infinity, maxBankConnections: 0,
   reports: { editVariables: false },
-  ai: { mode: 'mock', monthlyAnalyses: 0 },
-  printers: { functional: false },
+  ai: { mode: 'lite', dailySuggestions: 5, monthlyAnalyses: 0 },
+  printers: { functional: true, max: 1 },
   delivery: { functional: false },
-  permissions: { locked: true },
-  loyalty: { locked: true },
-  branding: { canRename: false },
+  permissions: { locked: false },
+  loyalty: { locked: false, smsEnabled: false },
+  branding: { canRename: true, watermark: true },
   prepForecast: { locked: true },
-  menuBoard: { canRenameBrands: false },
+  menuBoard: { canRenameBrands: true },
   dynamicPricing: { aiSuggestions: false, scheduledRules: false, priceHistory: false, guardrails: false, abTesting: false, deliveryIntegration: false },
   banking: { locked: true },
   bankReconciliation: { locked: true },
+  dataExport: { locked: true },
+  cfdi: { locked: true },
 };
 
 const PlanContext = createContext<PlanContextType | undefined>(undefined);
 
 export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [plan, setPlan] = useState<PlanTier>('trial');
+  const [plan, setPlan] = useState<PlanTier>('free');
   const [limits, setLimits] = useState<PlanLimits>(DEFAULT_LIMITS);
   const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
   const [mpUserId, setMpUserId] = useState<string | null>(null);
   const [mpDefaultTerminalId, setMpDefaultTerminalId] = useState<string | null>(null);
-  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
 
   const fetchPlan = useCallback(async () => {
     try {
@@ -78,12 +79,11 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await fetch(`${baseUrl}/branding`, { headers });
       if (res.ok) {
         const data = await res.json();
-        if (data.plan) setPlan(data.plan);
+        if (data.plan) setPlan(data.plan === 'pro' ? 'pro' : 'free');
         if (data.limits) setLimits(data.limits);
         if (data.ownerEmail !== undefined) setOwnerEmail(data.ownerEmail);
         if (data.mpUserId !== undefined) setMpUserId(data.mpUserId);
         if (data.mpDefaultTerminalId !== undefined) setMpDefaultTerminalId(data.mpDefaultTerminalId);
-        if (data.trialEndsAt !== undefined) setTrialEndsAt(data.trialEndsAt);
       }
     } catch {
       // Server unreachable — keep defaults
@@ -92,17 +92,9 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => { fetchPlan(); }, [fetchPlan]);
 
-  const isPaid = plan === 'starter' || plan === 'pro' || plan === 'ghost_kitchen';
-  const isMpConnected = !!mpUserId && (plan === 'pro' || plan === 'ghost_kitchen');
-
-  const trialDaysRemaining = useMemo(() => {
-    if (!trialEndsAt) return null;
-    const diff = new Date(trialEndsAt).getTime() - Date.now();
-    if (diff <= 0) return 0;
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
-  }, [trialEndsAt]);
-
-  const isTrialExpired = plan === 'trial' && trialDaysRemaining !== null && trialDaysRemaining <= 0;
+  const isPaid = plan === 'pro';
+  const isFree = plan === 'free';
+  const isMpConnected = !!mpUserId && plan === 'pro';
 
   const isAtLimit = useCallback((resource: string, currentCount: number) => {
     const max = (limits as unknown as Record<string, unknown>)[resource];
@@ -122,7 +114,7 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [limits]);
 
   return (
-    <PlanContext.Provider value={{ plan, limits, ownerEmail, mpUserId, mpDefaultTerminalId, isPaid, isMpConnected, trialEndsAt, trialDaysRemaining, isTrialExpired, isAtLimit, isFeatureLocked, refresh: fetchPlan }}>
+    <PlanContext.Provider value={{ plan, limits, ownerEmail, mpUserId, mpDefaultTerminalId, isPaid, isFree, isMpConnected, isAtLimit, isFeatureLocked, refresh: fetchPlan }}>
       {children}
     </PlanContext.Provider>
   );

@@ -36,7 +36,7 @@ async function adminRequest<T>(endpoint: string, options: RequestInit = {}): Pro
 export interface OverviewData {
   total_tenants: number;
   active_tenants: number;
-  plan_breakdown: { trial: number; starter: number; pro: number; ghost_kitchen: number };
+  plan_breakdown: { free: number; pro: number };
   mrr: number;
   total_orders: number;
   total_revenue: number;

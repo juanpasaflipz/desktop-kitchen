@@ -11,7 +11,7 @@ const DemoBanner: React.FC = () => {
   const isDemo = sessionStorage.getItem('is_demo') === '1';
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISSED_KEY) === '1');
 
-  if (!isDemo || plan !== 'trial' || dismissed) return null;
+  if (!isDemo || plan !== 'free' || dismissed) return null;
 
   return (
     <div className="mx-4 mt-3 bg-brand-950/50 border border-brand-700/50 rounded-xl px-5 py-3">

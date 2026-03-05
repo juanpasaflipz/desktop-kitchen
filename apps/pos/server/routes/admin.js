@@ -38,7 +38,7 @@ router.use(requireAdmin);
 
 // ==================== Analytics Endpoints ====================
 
-const PLAN_PRICES = { starter: 29, pro: 79, ghost_kitchen: 129 };
+const PLAN_PRICES = { pro: 80 };
 
 // GET /admin/analytics/overview — KPIs: total tenants, plan breakdown, MRR, total orders/revenue
 router.get('/analytics/overview', async (req, res) => {
@@ -47,10 +47,8 @@ router.get('/analytics/overview', async (req, res) => {
       SELECT
         COUNT(*) AS total_tenants,
         COUNT(*) FILTER (WHERE active = true) AS active_tenants,
-        COUNT(*) FILTER (WHERE plan = 'trial') AS trial_count,
-        COUNT(*) FILTER (WHERE plan = 'starter') AS starter_count,
-        COUNT(*) FILTER (WHERE plan = 'pro') AS pro_count,
-        COUNT(*) FILTER (WHERE plan = 'ghost_kitchen') AS ghost_kitchen_count
+        COUNT(*) FILTER (WHERE plan = 'free') AS free_count,
+        COUNT(*) FILTER (WHERE plan = 'pro') AS pro_count
       FROM tenants
     `;
 
@@ -61,18 +59,14 @@ router.get('/analytics/overview', async (req, res) => {
       FROM orders
     `;
 
-    const mrr = (tenantStats.starter_count * PLAN_PRICES.starter)
-              + (tenantStats.pro_count * PLAN_PRICES.pro)
-              + (tenantStats.ghost_kitchen_count * PLAN_PRICES.ghost_kitchen);
+    const mrr = tenantStats.pro_count * PLAN_PRICES.pro;
 
     res.json({
       total_tenants: Number(tenantStats.total_tenants),
       active_tenants: Number(tenantStats.active_tenants),
       plan_breakdown: {
-        trial: Number(tenantStats.trial_count),
-        starter: Number(tenantStats.starter_count),
+        free: Number(tenantStats.free_count),
         pro: Number(tenantStats.pro_count),
-        ghost_kitchen: Number(tenantStats.ghost_kitchen_count),
       },
       mrr,
       total_orders: Number(orderStats.total_orders),
@@ -321,7 +315,7 @@ router.post('/tenants', async (req, res) => {
       action: 'create',
       resource: 'tenant',
       resourceId: id,
-      details: { name, owner_email, plan: plan || 'trial' },
+      details: { name, owner_email, plan: plan || 'free' },
       ip: req.ip,
     });
 

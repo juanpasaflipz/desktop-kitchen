@@ -44,30 +44,28 @@ import { invalidateMenuCache } from '../lib/menuCache';
 /* ── Top Features by Plan (rotating carousel) ── */
 const FEATURE_GROUPS = [
   [
-    { name: 'AI-Powered Upsell Suggestions', plans: { trial: false, starter: false, pro: true, ghost_kitchen: true } },
-    { name: 'Delivery Platform Intelligence', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
-    { name: 'Dynamic Menu Pricing', plans: { trial: false, starter: false, pro: true, ghost_kitchen: true } },
-    { name: 'Loyalty & Stamp Cards', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+    { name: 'AI-Powered Upsell Suggestions', plans: { free: '5/day', pro: true } },
+    { name: 'Delivery Platform Intelligence', plans: { free: false, pro: true } },
+    { name: 'Dynamic Menu Pricing', plans: { free: false, pro: true } },
+    { name: 'Loyalty & Stamp Cards', plans: { free: true, pro: true } },
   ],
   [
-    { name: 'Virtual Brands per Kitchen', plans: { trial: false, starter: false, pro: false, ghost_kitchen: true } },
-    { name: 'Bank Account Integration', plans: { trial: false, starter: false, pro: 'Up to 2', ghost_kitchen: 'Up to 5' } },
-    { name: 'Custom Role Permissions', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
-    { name: 'Prep Forecast & Waste Reduction', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+    { name: 'Bank Account Integration', plans: { free: false, pro: 'Up to 5' } },
+    { name: 'Custom Role Permissions', plans: { free: true, pro: true } },
+    { name: 'Prep Forecast & Waste Reduction', plans: { free: false, pro: true } },
+    { name: 'Data Export (CSV/JSON)', plans: { free: false, pro: true } },
   ],
   [
-    { name: 'Real-time Kitchen Printers', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
-    { name: 'Stress Test Simulations', plans: { trial: false, starter: false, pro: true, ghost_kitchen: true } },
-    { name: 'A/B Price Testing', plans: { trial: false, starter: false, pro: false, ghost_kitchen: true } },
-    { name: 'White-label Branding', plans: { trial: false, starter: true, pro: true, ghost_kitchen: true } },
+    { name: 'Real-time Kitchen Printers', plans: { free: '1 printer', pro: 'Unlimited' } },
+    { name: 'Stress Test Simulations', plans: { free: false, pro: true } },
+    { name: 'Advanced Reports & Analytics', plans: { free: false, pro: true } },
+    { name: 'White-label Branding', plans: { free: false, pro: true } },
   ],
 ];
 
 const PLAN_COLS = [
-  { key: 'trial' as const, label: 'Free', dim: true },
-  { key: 'starter' as const, label: 'Starter', dim: false },
+  { key: 'free' as const, label: 'Free', dim: true },
   { key: 'pro' as const, label: 'Pro', dim: false },
-  { key: 'ghost_kitchen' as const, label: 'Ghost Kitchen', dim: false },
 ];
 
 function TopFeaturesByPlan({ plan: currentPlan }: { plan: string }) {
@@ -161,7 +159,7 @@ export default function AdminPanel() {
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [stressTestEnabled, setStressTestEnabled] = useState(false);
 
-  const isPro = plan === 'pro' || plan === 'ghost_kitchen';
+  const isPro = plan === 'pro';
 
   const hasOwnerToken = true; // Admin employees can now access via employee JWT
 
@@ -176,7 +174,7 @@ export default function AdminPanel() {
     }
   }, [location.search, refreshPlan]);
 
-  const handleSubscribe = async (selectedPlan: 'starter' | 'pro') => {
+  const handleSubscribe = async (selectedPlan: 'pro') => {
     setBillingLoading(selectedPlan);
     setBillingError(null);
     try {
@@ -222,13 +220,13 @@ export default function AdminPanel() {
           .then(f => setStressTestEnabled(f.stressTest))
           .catch(() => {});
 
-        // Fetch demo data status for trial tenants (non-blocking)
-        if (plan === 'trial') {
+        // Fetch demo data status for free tenants (non-blocking)
+        if (plan === 'free') {
           getDemoDataStatus().then(setDemoStatus).catch(() => {});
         }
 
         // Fetch confirmed bank deposits for pro+ tenants (non-blocking, requires owner token)
-        if ((plan === 'pro' || plan === 'ghost_kitchen') && hasOwnerToken) {
+        if (plan === 'pro' && hasOwnerToken) {
           const today = new Date().toISOString().split('T')[0];
           getBankConfirmedTotal(today, today)
             .then(data => setConfirmedInBank(data.confirmedTotal))
@@ -258,7 +256,6 @@ export default function AdminPanel() {
             <h1 className="text-3xl font-black tracking-tighter">{t('panel.title')}</h1>
             <span className={`ml-3 px-2.5 py-1 text-xs font-semibold rounded-full uppercase ${
               plan === 'pro' ? 'bg-brand-600/20 text-brand-400' :
-              plan === 'starter' ? 'bg-blue-600/20 text-blue-400' :
               'bg-neutral-700/50 text-neutral-400'
             }`}>
               {plan}
@@ -350,46 +347,26 @@ export default function AdminPanel() {
             <p className="text-neutral-400 text-sm">
               <Link to="/admin/account" className="text-brand-400 hover:text-brand-300 underline">Sign in as account owner</Link> to manage billing.
             </p>
-          ) : plan === 'trial' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Starter Card */}
-              <div className="border border-neutral-700 rounded-xl p-6 space-y-4">
-                <h3 className="text-lg font-bold text-white">Starter</h3>
-                <p className="text-3xl font-black text-white">$29<span className="text-base font-normal text-neutral-400">/mo</span></p>
-                <ul className="space-y-2 text-sm text-neutral-300">
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited orders</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Up to 5 employees</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Basic reports</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Inventory management</li>
-                </ul>
-                <button
-                  onClick={() => handleSubscribe('starter')}
-                  disabled={billingLoading !== null}
-                  className="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
-                >
-                  {billingLoading === 'starter' ? 'Redirecting...' : 'Subscribe to Starter'}
-                </button>
-              </div>
-
+          ) : plan === 'free' ? (
+            <div className="max-w-md">
               {/* Pro Card */}
-              <div className="border border-brand-600 rounded-xl p-6 space-y-4 relative">
-                <span className="absolute -top-3 right-4 bg-brand-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</span>
+              <div className="border border-brand-600 rounded-xl p-6 space-y-4">
                 <h3 className="text-lg font-bold text-white">Pro</h3>
-                <p className="text-3xl font-black text-white">$79<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <p className="text-3xl font-black text-white">$80<span className="text-base font-normal text-neutral-400">/mo</span></p>
                 <ul className="space-y-2 text-sm text-neutral-300">
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Everything in Starter</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited employees</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> AI intelligence & analytics</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited employees & menu items</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited AI insights & analytics</li>
                   <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Delivery platforms & virtual brands</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Loyalty & CRM</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Bank account integration (up to 2)</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Advanced reports & dynamic pricing</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Loyalty SMS, CFDI, data export</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Bank account integration (up to 5)</li>
                 </ul>
                 <button
                   onClick={() => handleSubscribe('pro')}
                   disabled={billingLoading !== null}
                   className="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
                 >
-                  {billingLoading === 'pro' ? 'Redirecting...' : 'Subscribe to Pro'}
+                  {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
                 </button>
               </div>
             </div>
@@ -397,18 +374,9 @@ export default function AdminPanel() {
             <div className="flex flex-wrap items-center gap-4">
               <div>
                 <p className="text-neutral-400 text-sm">Current plan</p>
-                <p className="text-xl font-bold text-white capitalize">{plan} — {plan === 'starter' ? '$29' : '$79'}/mo</p>
+                <p className="text-xl font-bold text-white capitalize">Pro — $80/mo</p>
               </div>
               <div className="flex gap-3 ml-auto">
-                {plan === 'starter' && (
-                  <button
-                    onClick={() => handleSubscribe('pro')}
-                    disabled={billingLoading !== null}
-                    className="px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
-                  >
-                    {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
-                  </button>
-                )}
                 <button
                   onClick={handleManageBilling}
                   disabled={billingLoading !== null}
@@ -424,8 +392,8 @@ export default function AdminPanel() {
           <TopFeaturesByPlan plan={plan} />
         </div>
 
-        {/* Demo Data — trial tenants only */}
-        {plan === 'trial' && demoStatus?.allowed && (
+        {/* Demo Data — free tenants only */}
+        {plan === 'free' && demoStatus?.allowed && (
           <div className="bg-neutral-900 border border-amber-800/50 rounded-lg p-6 mb-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex items-center justify-center w-10 h-10 bg-amber-600/10 rounded-lg">
@@ -764,7 +732,7 @@ export default function AdminPanel() {
           )}
         </div>
 
-        {/* Banking Summary Widget — pro/ghost_kitchen only */}
+        {/* Banking Summary Widget — pro only */}
         {isPro && hasOwnerToken && (
           <div className="mb-8">
             <BankingSummaryWidget />

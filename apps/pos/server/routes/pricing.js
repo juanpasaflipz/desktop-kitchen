@@ -18,7 +18,7 @@ const router = Router();
 
 function requireDynamicPricing(feature = 'aiSuggestions') {
   return (req, res, next) => {
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
     if (!limits.dynamicPricing?.[feature]) {
       return res.status(403).json(planUpgradeError('dynamicPricing', plan));

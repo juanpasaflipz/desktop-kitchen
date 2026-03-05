@@ -95,12 +95,12 @@ describe('Super Admin', () => {
         name: 'CRUD Test Tenant',
         owner_email: TEMP_EMAIL,
         owner_password: 'CrudTest2026!',
-        plan: 'starter',
+        plan: 'free',
       });
       expect(res.status).toBe(201);
       expect(res.data.id).toBe(TEMP_TENANT_ID);
       expect(res.data.name).toBe('CRUD Test Tenant');
-      expect(res.data.plan).toBe('starter');
+      expect(res.data.plan).toBe('free');
       expect(res.data.pin).toBeDefined();
       expect(res.data.owner_password_hash).toBeUndefined(); // should be stripped
     });

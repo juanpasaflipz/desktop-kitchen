@@ -679,7 +679,7 @@ const POSScreen: React.FC = () => {
   }
 
   return (
-    <div className={`flex h-screen bg-neutral-950 overflow-hidden ${plan === 'trial' ? 'pb-12' : ''}`}>
+    <div className={`flex h-screen bg-neutral-950 overflow-hidden ${plan === 'free' ? 'pb-12' : ''}`}>
       {/* Left Sidebar - Categories */}
       <CategorySidebar
         categories={visibleCategories}
@@ -930,7 +930,7 @@ const POSScreen: React.FC = () => {
       )}
 
       {/* Toast Notifications */}
-      <div className={`fixed right-4 space-y-2 z-[60] pointer-events-none ${plan === 'trial' ? 'bottom-16' : 'bottom-4'}`}>
+      <div className={`fixed right-4 space-y-2 z-[60] pointer-events-none ${plan === 'free' ? 'bottom-16' : 'bottom-4'}`}>
         {toasts.map((toast) => (
           <div
             key={toast.id}

@@ -84,5 +84,39 @@
     "taxIncluded": "IVA (16%) incluido",
     "total": "Total",
     "tip": "Propina"
+  },
+  "plan": {
+    "free": "Gratis",
+    "pro": "Pro"
+  },
+  "upgrade": {
+    "title": "Actualizar a Pro",
+    "cta": "Actualizar a Pro — $80/mes",
+    "description": "Desbloquea acceso ilimitado a todas las funciones",
+    "features": {
+      "ai": "Sugerencias e insights de IA ilimitados",
+      "reports": "Reportes y analíticas avanzadas",
+      "delivery": "Gestión de delivery y reglas de markup",
+      "dynamic_pricing": "Precios dinámicos y pruebas A/B",
+      "export": "Exportación de datos (CSV/JSON)",
+      "branding": "Quitar marca de Desktop Kitchen",
+      "cfdi": "Facturación CFDI",
+      "banking": "Conexiones bancarias"
+    }
+  },
+  "ai": {
+    "lite": {
+      "badge": "Sugerencia IA",
+      "unlock": "Desbloquear ilimitado",
+      "limit_reached": "Usaste tus 5 sugerencias de IA gratis hoy",
+      "upgrade_prompt": "Actualiza a Pro para sugerencias de IA ilimitadas",
+      "daily_forecast": "La IA predice ~{{count}} pedidos hoy"
+    }
+  },
+  "welcome": {
+    "free": {
+      "title": "¡Bienvenido a Desktop Kitchen!",
+      "subtitle": "Tu restaurante está listo — gratis para siempre"
+    }
   }
 }

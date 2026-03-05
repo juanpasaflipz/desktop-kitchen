@@ -115,7 +115,7 @@ router.post('/register', registerLimiter, async (req, res) => {
       subdomain: slug,
       owner_email: email,
       owner_password_hash: passwordHash,
-      plan: 'trial',
+      plan: 'free',
       branding_json,
     });
 

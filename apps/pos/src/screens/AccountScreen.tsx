@@ -28,12 +28,11 @@ interface AccountData {
 
 function PlanBadge({ plan }: { plan: string }) {
   const styles: Record<string, string> = {
-    trial: 'bg-neutral-700/50 text-neutral-400',
-    starter: 'bg-blue-600/20 text-blue-400',
+    free: 'bg-neutral-700/50 text-neutral-400',
     pro: 'bg-teal-600/20 text-teal-400',
   };
   return (
-    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase ${styles[plan] || styles.trial}`}>
+    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase ${styles[plan] || styles.free}`}>
       {plan}
     </span>
   );
@@ -110,7 +109,7 @@ export default function AccountScreen() {
   const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   const { plan, limits } = usePlan();
-  const isBankingPlan = plan === 'pro' || plan === 'ghost_kitchen';
+  const isBankingPlan = plan === 'pro';
   const maxBankConns = limits.maxBankConnections || 0;
 
   const hasOwnerToken = true; // Admin employees can now access via employee JWT
@@ -147,7 +146,7 @@ export default function AccountScreen() {
         setEditName(data.name);
         setEditEmail(data.email);
         // Load banking data for pro+ plans
-        if (data.plan === 'pro' || data.plan === 'ghost_kitchen') {
+        if (data.plan === 'pro') {
           loadBankData();
         }
       })
@@ -227,7 +226,7 @@ export default function AccountScreen() {
     setPromoError('');
   };
 
-  const handleSubscribe = async (plan: 'starter' | 'pro') => {
+  const handleSubscribe = async (plan: 'pro') => {
     setBillingLoading(plan);
     try {
       const { url } = await createCheckoutSession(plan, promoCode || undefined, billingInterval);
@@ -328,9 +327,9 @@ export default function AccountScreen() {
                 <CreditCard className="text-brand-500" size={22} />
                 <h2 className="text-lg font-bold text-white">Billing</h2>
               </div>
-              {account.plan === 'trial' ? (
+              {account.plan === 'free' ? (
                 <div className="space-y-3">
-                  <p className="text-neutral-400 text-sm">You are on the free trial. Upgrade to unlock more features.</p>
+                  <p className="text-neutral-400 text-sm">You're on the Free plan. Upgrade to Pro to unlock unlimited access.</p>
 
                   {/* Monthly/Annual toggle */}
                   <div className="inline-flex items-center bg-neutral-800 border border-neutral-700 rounded-lg p-0.5">
@@ -353,28 +352,19 @@ export default function AccountScreen() {
                       }`}
                     >
                       Annual
-                      <span className="ml-1.5 text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">3 mo free</span>
+                      <span className="ml-1.5 text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full">Save 2 mo</span>
                     </button>
                   </div>
 
                   <div className="flex gap-3">
-                    <button
-                      onClick={() => handleSubscribe('starter')}
-                      disabled={billingLoading !== null}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    >
-                      {billingLoading === 'starter' ? 'Redirecting...' : billingInterval === 'annual'
-                        ? 'Starter — $21.75/mo ($261/yr)'
-                        : 'Starter — $29/mo'}
-                    </button>
                     <button
                       onClick={() => handleSubscribe('pro')}
                       disabled={billingLoading !== null}
                       className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
                     >
                       {billingLoading === 'pro' ? 'Redirecting...' : billingInterval === 'annual'
-                        ? 'Pro — $59.25/mo ($711/yr)'
-                        : 'Pro — $79/mo'}
+                        ? 'Pro — $60/mo ($720/yr)'
+                        : 'Pro — $80/mo'}
                     </button>
                   </div>
 
@@ -386,7 +376,7 @@ export default function AccountScreen() {
                         onClick={() => setPromoState('expanded')}
                         className="text-sm text-teal-500 hover:text-teal-400 transition-colors"
                       >
-                        ¿Tienes un código de descuento?
+                        Have a promo code?
                       </button>
                     )}
 
@@ -403,7 +393,7 @@ export default function AccountScreen() {
                                 setPromoError('');
                               }
                             }}
-                            placeholder="Ingresa tu código"
+                            placeholder="Enter code"
                             className="flex-1 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white text-sm placeholder-neutral-500 focus:outline-none focus:border-teal-600"
                             disabled={promoState === 'loading'}
                             onKeyDown={e => { if (e.key === 'Enter') handleValidatePromo(); }}
@@ -414,7 +404,7 @@ export default function AccountScreen() {
                             disabled={promoState === 'loading' || !promoInput.trim()}
                             className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
                           >
-                            {promoState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Aplicar'}
+                            {promoState === 'loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
                           </button>
                           <button
                             type="button"
@@ -453,19 +443,10 @@ export default function AccountScreen() {
                     <p className="text-neutral-400 text-sm">Current plan</p>
                     <p className="text-white font-bold capitalize flex items-center gap-2">
                       <Crown size={16} className="text-teal-500" />
-                      {account.plan} — {account.plan === 'starter' ? '$29' : '$79'}/mo
+                      Pro — $80/mo
                     </p>
                   </div>
                   <div className="flex gap-3 ml-auto">
-                    {account.plan === 'starter' && (
-                      <button
-                        onClick={() => handleSubscribe('pro')}
-                        disabled={billingLoading !== null}
-                        className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
-                      >
-                        {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
-                      </button>
-                    )}
                     <button
                       onClick={handleManageBilling}
                       disabled={billingLoading !== null}
@@ -575,8 +556,8 @@ export default function AccountScreen() {
               </form>
             </div>
 
-            {/* Mercado Pago Point — Pro+ only */}
-            {(account.plan === 'pro' || account.plan === 'ghost_kitchen') && (
+            {/* Mercado Pago Point — Pro only */}
+            {account.plan === 'pro' && (
               <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Smartphone className="text-brand-500" size={22} />

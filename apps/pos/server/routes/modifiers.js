@@ -84,7 +84,7 @@ router.post('/groups', requireAuth('manage_modifiers'), async (req, res) => {
     if (!name) return res.status(400).json({ error: 'Missing name' });
 
     // Plan limit check
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM modifier_groups WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'modifierGroups', cnt);
     if (!check.allowed) {

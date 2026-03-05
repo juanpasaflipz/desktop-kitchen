@@ -364,7 +364,7 @@ router.post('/', requireAuth('manage_inventory'), async (req, res) => {
     }
 
     // Plan limit check
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM inventory_items WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'inventoryItems', cnt);
     if (!check.allowed) {

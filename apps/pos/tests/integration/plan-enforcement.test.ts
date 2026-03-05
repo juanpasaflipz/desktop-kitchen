@@ -1,7 +1,7 @@
 /**
  * Plan Enforcement integration tests (~15 tests)
  *
- * Creates its own trial tenant, exercises all plan limits and feature gates,
+ * Creates its own free tenant, exercises all plan limits and feature gates,
  * upgrades to pro, verifies unlock, then cleans up.
  */
 import { describe, it, expect } from 'vitest';
@@ -22,19 +22,19 @@ describe('Plan Enforcement', () => {
   // ==================== Setup ====================
 
   describe('Setup', () => {
-    it('creates a trial tenant', async () => {
+    it('creates a free tenant', async () => {
       const res = await admin.post('/admin/tenants', {
         id: TENANT_ID,
         name: 'Plan Enforcement Test',
         owner_email: OWNER_EMAIL,
         owner_password: OWNER_PASSWORD,
-        plan: 'trial',
+        plan: 'free',
       });
       expect(res.status).toBe(201);
-      expect(res.data.plan).toBe('trial');
+      expect(res.data.plan).toBe('free');
     });
 
-    it('seeds the trial tenant', async () => {
+    it('seeds the free tenant', async () => {
       const res = await admin.post(`/admin/tenants/${TENANT_ID}/seed`);
       expect(res.status).toBe(200);
     });
@@ -51,11 +51,11 @@ describe('Plan Enforcement', () => {
         },
         body: { name: 'Plan Test Manager', pin: MANAGER_PIN, role: 'admin' },
       });
-      // Accept 201 (created) or 403 (plan limit — trial allows 3)
+      // Accept 201 (created) or 403 (plan limit — free allows 3)
       expect([201, 403]).toContain(res.status);
     });
 
-    it('logs in as trial manager (PIN 1234)', async () => {
+    it('logs in as free manager (PIN 1234)', async () => {
       const state = getTestState();
       const res = await rawRequest('POST', '/api/employees/login', {
         headers: {
@@ -92,20 +92,19 @@ describe('Plan Enforcement', () => {
   // ==================== Numeric Limits (checkLimit) ====================
 
   describe('Numeric Limits', () => {
-    it('menu items: trial limit 10 → 403 with upgrade info', async () => {
+    it('menu items: free limit 50 → allowed (seed creates 20, under limit)', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
-      // Seed creates 20 items (already over the limit of 10)
+      // Seed creates 20 items (under the free limit of 50)
       const res = await api.post('/api/menu/items', {
         category_id: categoryId,
-        name: 'Over Limit Item',
+        name: 'Under Limit Item',
         price: 50,
       });
-      expect(res.status).toBe(403);
-      expect(res.data.error).toBe('PLAN_UPGRADE_REQUIRED');
-      expect(res.data.limit).toBe(10);
+      // Should succeed since 20 < 50
+      expect([201, 200]).toContain(res.status);
     });
 
-    it('employees: trial limit 3 → 403 with upgrade info', async () => {
+    it('employees: free limit 3 → 403 with upgrade info', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
       // Tenant creation = 1 employee, our explicit create = 2 total.
       // First, fill the limit (create a 3rd employee).
@@ -127,35 +126,31 @@ describe('Plan Enforcement', () => {
       expect(res.data.limit).toBe(3);
     });
 
-    it('modifier groups: trial limit 2 → 403 with upgrade info', async () => {
+    it('modifier groups: free plan has unlimited → succeeds', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
-      // Seed creates 2 modifier groups (at the limit)
+      // Free plan has Infinity modifier groups
       const res = await api.post('/api/modifiers/groups', {
-        name: 'Over Limit Group',
+        name: 'Free Plan Group',
         selection_type: 'single',
       });
-      expect(res.status).toBe(403);
-      expect(res.data.error).toBe('PLAN_UPGRADE_REQUIRED');
-      expect(res.data.limit).toBe(2);
+      expect([201, 200]).toContain(res.status);
     });
 
-    it('combos: trial limit 1 → 403 with upgrade info', async () => {
+    it('combos: free plan has unlimited → succeeds', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
-      // Seed creates 2 combos (already over the limit of 1)
+      // Free plan has Infinity combos
       const res = await api.post('/api/combos', {
-        name: 'Over Limit Combo',
+        name: 'Free Plan Combo',
         combo_price: 100,
       });
-      expect(res.status).toBe(403);
-      expect(res.data.error).toBe('PLAN_UPGRADE_REQUIRED');
-      expect(res.data.limit).toBe(1);
+      expect([201, 200]).toContain(res.status);
     });
   });
 
   // ==================== Feature Gates (requirePlanFeature) ====================
 
   describe('Feature Gates', () => {
-    it('delivery: trial → 403 with PLAN_UPGRADE_REQUIRED', async () => {
+    it('delivery: free → 403 with PLAN_UPGRADE_REQUIRED', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
       // PUT /api/delivery/platforms/:id uses requirePlanFeature('delivery')
       const res = await api.put('/api/delivery/platforms/1', {
@@ -164,42 +159,38 @@ describe('Plan Enforcement', () => {
       expect(res.status).toBe(403);
       expect(res.data.error).toBe('PLAN_UPGRADE_REQUIRED');
       expect(res.data.feature).toBe('delivery');
-      expect(res.data.requiredPlan).toBe('starter');
-      expect(res.data.currentPlan).toBe('trial');
+      expect(res.data.requiredPlan).toBe('pro');
+      expect(res.data.currentPlan).toBe('free');
     });
 
-    it('printers: trial → 403 with PLAN_UPGRADE_REQUIRED', async () => {
+    it('printers: free allows 1 printer → succeeds', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
       const res = await api.post('/api/printers', {
         name: 'Test Printer',
         ip_address: '192.168.1.100',
         type: 'thermal',
       });
-      expect(res.status).toBe(403);
-      expect(res.data.error).toBe('PLAN_UPGRADE_REQUIRED');
-      expect(res.data.feature).toBe('printers');
-      expect(res.data.requiredPlan).toBe('starter');
+      // Free plan allows 1 printer (printers.functional: true, max: 1)
+      expect([201, 200]).toContain(res.status);
     });
 
-    it('loyalty: trial → 403 with PLAN_UPGRADE_REQUIRED', async () => {
+    it('loyalty: free allows basic loyalty → succeeds', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
       const res = await api.post('/api/loyalty/customers', {
         phone: '5551234567',
         name: 'Test Customer',
       });
-      expect(res.status).toBe(403);
-      expect(res.data.error).toBe('PLAN_UPGRADE_REQUIRED');
-      expect(res.data.feature).toBe('loyalty');
-      expect(res.data.requiredPlan).toBe('starter');
+      // Free plan has loyalty.locked: false (no SMS though)
+      expect([201, 200]).toContain(res.status);
     });
 
-    it('stress test: trial → blocked (403 or 404 if chaos routes disabled)', async () => {
+    it('stress test: free → blocked (403 or 404 if chaos routes disabled)', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
       const res = await api.post('/api/stress-test/run', {
         template: 'light',
       });
       // Route is only mounted when ENABLE_CHAOS=true; otherwise 404.
-      // Either way, trial tenants cannot access it.
+      // Either way, free tenants cannot access it.
       expect([403, 404]).toContain(res.status);
     });
   });
@@ -207,7 +198,7 @@ describe('Plan Enforcement', () => {
   // ==================== Banking Custom Gate ====================
 
   describe('Banking Gate', () => {
-    it('banking widget token: trial → 403 with PLAN_UPGRADE_REQUIRED', async () => {
+    it('banking widget token: free → 403 with PLAN_UPGRADE_REQUIRED', async () => {
       const state = getTestState();
       // Banking requires ownerAuth + tenant middleware
       const res = await rawRequest('POST', '/api/banking/widget-token', {
@@ -222,7 +213,7 @@ describe('Plan Enforcement', () => {
   // ==================== Upgrade Flow ====================
 
   describe('Upgrade Flow', () => {
-    it('admin upgrades trial → pro', async () => {
+    it('admin upgrades free → pro', async () => {
       const res = await admin.patch(`/admin/tenants/${TENANT_ID}`, {
         plan: 'pro',
       });
@@ -233,14 +224,14 @@ describe('Plan Enforcement', () => {
       expect(tenant.data.plan).toBe('pro');
     });
 
-    it('previously-blocked loyalty endpoint now succeeds (not 403)', async () => {
+    it('previously-blocked delivery endpoint now succeeds (not 403)', async () => {
       const api = tenantApi(TENANT_ID, managerToken);
-      const res = await api.post('/api/loyalty/customers', {
-        phone: '5559876543',
-        name: 'Pro Customer',
+      // Delivery is locked on free, unlocked on pro
+      const res = await api.put('/api/delivery/platforms/1', {
+        display_name: 'Test Platform',
       });
-      // Should succeed — loyalty unlocked on pro
-      expect([200, 201]).toContain(res.status);
+      // Should not be 403 PLAN_UPGRADE_REQUIRED anymore (may 404 if no platform exists)
+      expect(res.status).not.toBe(403);
     });
   });
 

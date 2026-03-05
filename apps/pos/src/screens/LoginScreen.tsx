@@ -72,7 +72,7 @@ const LoginScreen: React.FC = () => {
           </p>
         )}
         <p className="text-lg text-neutral-400 mt-2">{t('login.employeeLogin')}</p>
-        {plan === 'trial' && ownerEmail && (
+        {plan === 'free' && ownerEmail && (
           <p className="text-sm text-neutral-500 mt-1">{ownerEmail}</p>
         )}
       </div>

@@ -62,7 +62,7 @@ export function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void;
   const [slugEdited, setSlugEdited] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [plan, setPlan] = useState('trial');
+  const [plan, setPlan] = useState('free');
   const [color, setColor] = useState('#0d9488');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -141,10 +141,8 @@ export function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void;
               onChange={e => setPlan(e.target.value)}
               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500"
             >
-              <option value="trial">Trial</option>
-              <option value="starter">Starter</option>
+              <option value="free">Free</option>
               <option value="pro">Pro</option>
-              <option value="ghost_kitchen">Ghost Kitchen</option>
             </select>
           </div>
           <div>
@@ -219,10 +217,8 @@ export function EditTenantModal({ tenant, onClose, onSuccess }: {
               onChange={e => setPlan(e.target.value)}
               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500"
             >
-              <option value="trial">Trial</option>
-              <option value="starter">Starter</option>
+              <option value="free">Free</option>
               <option value="pro">Pro</option>
-              <option value="ghost_kitchen">Ghost Kitchen</option>
             </select>
           </div>
           <div>

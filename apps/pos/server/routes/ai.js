@@ -50,6 +50,37 @@ router.get('/suggestions/cart', async (req, res) => {
       return res.json([]);
     }
 
+    // AI Lite: enforce daily suggestion limit for free plan
+    const plan = req.tenant?.plan || 'free';
+    const limits = getPlanLimits(plan);
+
+    if (limits.ai.mode === 'lite') {
+      const tid = getTenantId();
+      const row = await get(`SELECT count FROM ai_daily_suggestions WHERE tenant_id = $1 AND date = CURRENT_DATE`, [tid]);
+      const dailyCount = row?.count || 0;
+
+      if (dailyCount >= limits.ai.dailySuggestions) {
+        // Log upgrade trigger (fire-and-forget)
+        run(`INSERT INTO upgrade_trigger_events (tenant_id, feature) VALUES ($1, 'ai_suggestions')`, [tid]).catch(() => {});
+        return res.json({ limited: true, upgradeRequired: true, message: 'Daily AI suggestion limit reached. Upgrade to Pro for unlimited.' });
+      }
+
+      // Get suggestions and increment counter
+      const maxSuggestions = await getConfigNumber('max_suggestions_per_order') || 2;
+      const suggestions = await getCartSuggestions(itemIds, hour);
+      const result = suggestions.slice(0, maxSuggestions);
+
+      if (result.length > 0) {
+        // Upsert daily counter
+        await run(`
+          INSERT INTO ai_daily_suggestions (tenant_id, date, count) VALUES ($1, CURRENT_DATE, 1)
+          ON CONFLICT (tenant_id, date) DO UPDATE SET count = ai_daily_suggestions.count + 1
+        `, [tid]);
+      }
+
+      return res.json(result.map(s => ({ ...s, aiLite: true })));
+    }
+
     const maxSuggestions = await getConfigNumber('max_suggestions_per_order') || 2;
     const suggestions = await getCartSuggestions(itemIds, hour);
 
@@ -123,7 +154,7 @@ const SUPER_ADMIN_ONLY_KEYS = new Set(['grok_max_calls_per_hour', 'grok_model'])
 router.put('/config', requireAuth('manage_ai'), async (req, res) => {
   try {
     // Only Pro plan can modify AI config
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
     if (limits.ai.mode !== 'full') {
       return res.status(403).json(planUpgradeError('ai', plan));
@@ -354,13 +385,10 @@ router.get('/inventory-forecast', async (req, res) => {
 router.post('/analyze', requireAuth('manage_ai'), async (req, res) => {
   try {
     // Plan-based AI gating
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
 
-    if (limits.ai.mode === 'mock') {
-      return res.json(MOCK_ANALYSIS);
-    }
-    if (limits.ai.mode === 'locked') {
+    if (limits.ai.mode === 'lite') {
       return res.status(403).json(planUpgradeError('ai', plan));
     }
 
@@ -439,11 +467,11 @@ router.post('/analyze', requireAuth('manage_ai'), async (req, res) => {
 // POST /api/ai/ask - AI assistant with context-aware answers
 router.post('/ask', requireAuth(), async (req, res) => {
   try {
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
 
-    if (limits.ai.mode === 'locked') {
-      return res.status(403).json({ success: false, error: 'AI Assistant requires a paid plan. Upgrade to access AI-powered insights.' });
+    if (limits.ai.mode === 'lite') {
+      return res.status(403).json({ success: false, error: 'AI Assistant requires Pro plan. Upgrade to access AI-powered insights.' });
     }
 
     if (!await getConfigBool('grok_api_enabled')) {

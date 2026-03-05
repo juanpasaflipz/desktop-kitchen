@@ -23,11 +23,11 @@ router.get('/status', async (req, res) => {
     const tenantId = req.tenant?.id;
     if (!tenantId) return res.status(400).json({ error: 'No tenant context' });
 
-    // Safety: only allow on trial tenants (admin-secret bypasses)
+    // Safety: only allow on free tenants (admin-secret bypasses)
     if (!isAdminRequest(req)) {
       const [tenant] = await adminSql`SELECT plan FROM tenants WHERE id = ${tenantId}`;
-      if (!tenant || tenant.plan !== 'trial') {
-        return res.json({ allowed: false, reason: 'Demo data is only available for trial accounts' });
+      if (!tenant || tenant.plan !== 'free') {
+        return res.json({ allowed: false, reason: 'Demo data is only available for free accounts' });
       }
     }
 
@@ -62,11 +62,11 @@ router.post('/generate', async (req, res) => {
     const tenantId = req.tenant?.id;
     if (!tenantId) return res.status(400).json({ error: 'No tenant context' });
 
-    // Safety: only allow on trial tenants (admin-secret bypasses)
+    // Safety: only allow on free tenants (admin-secret bypasses)
     if (!isAdminRequest(req)) {
       const [tenant] = await adminSql`SELECT plan FROM tenants WHERE id = ${tenantId}`;
-      if (!tenant || tenant.plan !== 'trial') {
-        return res.status(403).json({ error: 'Demo data is only available for trial accounts' });
+      if (!tenant || tenant.plan !== 'free') {
+        return res.status(403).json({ error: 'Demo data is only available for free accounts' });
       }
     }
 

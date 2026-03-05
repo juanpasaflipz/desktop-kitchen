@@ -1,45 +1,26 @@
 export const PLAN_LIMITS = {
-  trial: {
-    menuItems: 10,
-    inventoryItems: 12,
+  free: {
+    menuItems: 50,
+    inventoryItems: Infinity,
     employees: 3,
-    modifierGroups: 2,
-    combos: 1,
+    modifierGroups: Infinity,
+    combos: Infinity,
     maxBankConnections: 0,
     reports: { editVariables: false },
-    ai: { mode: 'mock', monthlyAnalyses: 0 },
-    printers: { functional: false },
+    ai: { mode: 'lite', dailySuggestions: 5, monthlyAnalyses: 0 },
+    printers: { functional: true, max: 1 },
     delivery: { functional: false },
-    permissions: { locked: true },
-    loyalty: { locked: true },
-    branding: { canRename: false },
-    prepForecast: { locked: true },
-    menuBoard: { canRenameBrands: false },
-    dynamicPricing: { aiSuggestions: false, scheduledRules: false, priceHistory: false, guardrails: false, abTesting: false, deliveryIntegration: false },
-    stressTest: { locked: true },
-    banking: { locked: true },
-    bankReconciliation: { locked: true },
-  },
-  starter: {
-    menuItems: Infinity,
-    inventoryItems: Infinity,
-    employees: Infinity,
-    modifierGroups: 15,
-    combos: 10,
-    maxBankConnections: 0,
-    reports: { editVariables: true },
-    ai: { mode: 'locked', monthlyAnalyses: 0 },
-    printers: { functional: true },
-    delivery: { functional: true },
     permissions: { locked: false },
-    loyalty: { locked: false },
-    branding: { canRename: true },
-    prepForecast: { locked: false },
+    loyalty: { locked: false, smsEnabled: false },
+    branding: { canRename: true, watermark: true },
+    prepForecast: { locked: true },
     menuBoard: { canRenameBrands: true },
     dynamicPricing: { aiSuggestions: false, scheduledRules: false, priceHistory: false, guardrails: false, abTesting: false, deliveryIntegration: false },
     stressTest: { locked: true },
     banking: { locked: true },
     bankReconciliation: { locked: true },
+    dataExport: { locked: true },
+    cfdi: { locked: true },
   },
   pro: {
     menuItems: Infinity,
@@ -47,48 +28,29 @@ export const PLAN_LIMITS = {
     employees: Infinity,
     modifierGroups: Infinity,
     combos: Infinity,
-    maxBankConnections: 2,
-    reports: { editVariables: true },
-    ai: { mode: 'full', monthlyAnalyses: 100 },
-    printers: { functional: true },
-    delivery: { functional: true },
-    permissions: { locked: false },
-    loyalty: { locked: false },
-    branding: { canRename: true },
-    prepForecast: { locked: false },
-    menuBoard: { canRenameBrands: true },
-    dynamicPricing: { aiSuggestions: true, scheduledRules: true, priceHistory: true, guardrails: true, abTesting: false, deliveryIntegration: false },
-    stressTest: { locked: false },
-    banking: { locked: false },
-    bankReconciliation: { locked: true },
-  },
-  ghost_kitchen: {
-    menuItems: Infinity,
-    inventoryItems: Infinity,
-    employees: Infinity,
-    modifierGroups: Infinity,
-    combos: Infinity,
     maxBankConnections: 5,
     reports: { editVariables: true },
-    ai: { mode: 'full', monthlyAnalyses: Infinity },
-    printers: { functional: true },
+    ai: { mode: 'full', dailySuggestions: Infinity, monthlyAnalyses: Infinity },
+    printers: { functional: true, max: Infinity },
     delivery: { functional: true },
     permissions: { locked: false },
-    loyalty: { locked: false },
-    branding: { canRename: true },
+    loyalty: { locked: false, smsEnabled: true },
+    branding: { canRename: true, watermark: false },
     prepForecast: { locked: false },
     menuBoard: { canRenameBrands: true },
     dynamicPricing: { aiSuggestions: true, scheduledRules: true, priceHistory: true, guardrails: true, abTesting: true, deliveryIntegration: true },
     stressTest: { locked: false },
     banking: { locked: false },
     bankReconciliation: { locked: false },
+    dataExport: { locked: false },
+    cfdi: { locked: false },
   },
 };
 
-export const PLAN_TIERS = ['trial', 'starter', 'pro', 'ghost_kitchen'];
+export const PLAN_TIERS = ['free', 'pro'];
 
 export function getPlanLimits(plan) {
-  return PLAN_LIMITS[plan] || PLAN_LIMITS.trial;
+  return PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 }
 
 /**
@@ -107,7 +69,7 @@ export function getRequiredPlan(feature, subKey) {
       continue;
     }
 
-    // Numeric limit (e.g., menuItems: 10 → unlocked at trial)
+    // Numeric limit (e.g., menuItems: 50 → unlocked at free)
     if (typeof val === 'number') {
       if (val > 0) return tier;
       continue;
@@ -117,10 +79,10 @@ export function getRequiredPlan(feature, subKey) {
     if (typeof val === 'object') {
       if (val.locked === false || val.functional === true) return tier;
       // For objects without locked/functional (e.g., reports.editVariables, branding.canRename, ai.mode),
-      // consider unlocked if any value is truthy and not 'mock'/'locked'
+      // consider unlocked if any value is truthy and not 'lite'/'locked'
       if (!('locked' in val) && !('functional' in val)) {
         const hasUnlockedValue = Object.values(val).some(v =>
-          v === true || (typeof v === 'number' && v > 0) || (typeof v === 'string' && v !== 'mock' && v !== 'locked')
+          v === true || (typeof v === 'number' && v > 0) || (typeof v === 'string' && v !== 'mock' && v !== 'locked' && v !== 'lite')
         );
         if (hasUnlockedValue) return tier;
       }
@@ -130,7 +92,7 @@ export function getRequiredPlan(feature, subKey) {
     // Boolean
     if (val === true) return tier;
   }
-  return 'ghost_kitchen'; // fallback to highest tier
+  return 'pro'; // fallback to highest tier
 }
 
 /**
@@ -163,7 +125,7 @@ export function checkLimit(plan, resource, currentCount) {
  */
 export function requirePlanFeature(feature) {
   return (req, res, next) => {
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const limits = getPlanLimits(plan);
     const featureLimits = limits[feature];
 

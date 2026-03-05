@@ -242,7 +242,7 @@ router.post('/items', requireAuth('manage_menu'), async (req, res) => {
     }
 
     // Plan limit check
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const { cnt } = await get('SELECT COUNT(*) as cnt FROM menu_items WHERE active = true') || { cnt: 0 };
     const check = checkLimit(plan, 'menuItems', cnt);
     if (!check.allowed) {
@@ -547,7 +547,7 @@ router.post('/import-template', requireMenuAuth, async (req, res) => {
       return res.status(400).json({ error: 'mode must be "append" or "replace"' });
     }
 
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const stats = await bulkInsertMenu(template, { plan, mode });
 
     audit({
@@ -598,7 +598,7 @@ router.post('/ai-import', requireMenuAuth, async (req, res) => {
       return res.status(400).json({ error: 'mode must be "append" or "replace"' });
     }
 
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const stats = await bulkInsertMenu(payload, { plan, mode });
 
     audit({
@@ -778,7 +778,7 @@ router.post('/import', requireAuth('manage_menu'), csvUpload.single('file'), asy
       }
     }
 
-    const plan = req.tenant?.plan || 'trial';
+    const plan = req.tenant?.plan || 'free';
     const importMode = req.body?.import_mode || 'append';
     const stats = await bulkInsertMenu(
       { categories, items, inventory, recipes },

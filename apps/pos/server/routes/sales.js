@@ -270,10 +270,10 @@ router.get('/commissions', async (req, res) => {
 // GET /api/sales/tenants — list tenants for linking to prospects
 router.get('/tenants', async (req, res) => {
   try {
-    // Only show trial tenants — prevents accidentally seeding paying customers
+    // Only show free tenants — prevents accidentally seeding paying customers
     const tenants = await adminSql`
       SELECT id, name, subdomain, plan FROM tenants
-      WHERE active = true AND plan = 'trial'
+      WHERE active = true AND plan = 'free'
       ORDER BY name
     `;
     res.json(tenants);
@@ -318,9 +318,9 @@ router.post('/demo/generate', async (req, res) => {
     const tenant = await getTenant(tenantId);
     if (!tenant) return res.status(404).json({ error: 'Linked tenant not found' });
 
-    // Safety: only allow demo data on trial tenants
-    if (tenant.plan !== 'trial') {
-      return res.status(403).json({ error: `Cannot generate demo data for a ${tenant.plan} plan tenant. Only trial tenants are allowed.` });
+    // Safety: only allow demo data on free tenants
+    if (tenant.plan !== 'free') {
+      return res.status(403).json({ error: `Cannot generate demo data for a ${tenant.plan} plan tenant. Only free tenants are allowed.` });
     }
 
     // Check for existing demo data

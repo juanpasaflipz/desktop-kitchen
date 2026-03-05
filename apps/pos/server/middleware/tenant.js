@@ -126,39 +126,20 @@ export async function tenantMiddleware(req, res, next) {
       if (!res.writableFinished) releaseConn(false);
     });
 
-    // Check if trial has expired
-    const trialExpired = tenant.plan === 'trial'
-      && tenant.trial_ends_at
-      && new Date(tenant.trial_ends_at) < new Date();
+    // Normalize unknown plans to 'free'
+    const plan = (tenant.plan === 'free' || tenant.plan === 'pro') ? tenant.plan : 'free';
 
     // Attach tenant metadata to request
     req.tenant = {
       id: tenant.id,
       name: tenant.name,
-      plan: tenant.plan,
+      plan,
       subscription_status: tenant.subscription_status,
       branding: tenant.branding_json ? JSON.parse(tenant.branding_json) : null,
       owner_email: tenant.owner_email || null,
       mp_user_id: tenant.mp_user_id || null,
       mp_default_terminal_id: tenant.mp_default_terminal_id || null,
-      trial_ends_at: tenant.trial_ends_at || null,
-      trialExpired: !!trialExpired,
     };
-
-    // Block write operations for expired trials (read-only mode)
-    if (trialExpired && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-      // Allow billing + account routes so owners can still upgrade
-      const allowedPrefixes = ['/billing', '/account'];
-      const isAllowed = allowedPrefixes.some(p => req.path.startsWith(p));
-      if (!isAllowed) {
-        // Release connection before responding
-        releaseConn(true);
-        return res.status(402).json({
-          error: 'Your free trial has ended. Upgrade to continue.',
-          trial_expired: true,
-        });
-      }
-    }
 
     // Run the rest of the request inside tenant context
     tenantContext.run({ conn, tenantId }, () => {

@@ -60,7 +60,7 @@ export default function POSHeaderBar({
         <div className="flex-1">
           <p className="text-xs text-neutral-500">{t('header.operator')}</p>
           <p className="text-base lg:text-lg font-bold text-white">{currentEmployee?.name}</p>
-          {plan === 'trial' && ownerEmail && (
+          {plan === 'free' && ownerEmail && (
             <p className="text-xs text-neutral-500 truncate max-w-[180px]">{ownerEmail}</p>
           )}
         </div>

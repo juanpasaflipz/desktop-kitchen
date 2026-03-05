@@ -24,7 +24,7 @@ describe('Owner', () => {
       expect(res.data).toHaveProperty('token');
       expect(res.data).toHaveProperty('pin');
       expect(res.data).toHaveProperty('tenant');
-      expect(res.data.tenant.plan).toBe('trial');
+      expect(res.data.tenant.plan).toBe('free');
     });
 
     it('POST /api/auth/register rejects missing fields', async () => {

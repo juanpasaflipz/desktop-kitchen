@@ -9,9 +9,7 @@ const router = Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 
 const PRICE_IDS = {
-  starter: { monthly: process.env.STRIPE_PRICE_STARTER || null, annual: process.env.STRIPE_PRICE_STARTER_ANNUAL || null },
   pro: { monthly: process.env.STRIPE_PRICE_PRO || null, annual: process.env.STRIPE_PRICE_PRO_ANNUAL || null },
-  ghost_kitchen: { monthly: process.env.STRIPE_PRICE_GHOST_KITCHEN || null, annual: process.env.STRIPE_PRICE_GHOST_KITCHEN_ANNUAL || null },
 };
 
 const BASE_URL = process.env.APP_URL || 'https://pos.desktop.kitchen';
@@ -114,7 +112,7 @@ router.get('/', requireOwner, async (req, res) => {
 
 /**
  * POST /api/billing/checkout — create Stripe Checkout session for plan upgrade
- * Body: { plan: 'starter' | 'pro' | 'ghost_kitchen', interval?: 'monthly' | 'annual', promo_code?: string }
+ * Body: { plan: 'pro', interval?: 'monthly' | 'annual', promo_code?: string }
  */
 router.post('/checkout', requireOwner, async (req, res) => {
   try {
@@ -301,7 +299,7 @@ export async function stripeWebhook(req, res) {
         const tenant = await findTenantByCustomer(sub.customer);
         if (tenant) {
           await updateTenant(tenant.id, {
-            plan: 'trial',
+            plan: 'free',
             subscription_status: 'cancelled',
             stripe_subscription_id: null,
             subscription_cancelled_at: new Date().toISOString(),

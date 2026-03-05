@@ -213,23 +213,14 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     let errorMessage = `API Error: ${response.status} ${response.statusText}`;
-    let trialExpired = false;
     let errorData: Record<string, unknown> = {};
     try {
       errorData = await response.json();
       errorMessage = (errorData.error as string) || (errorData.message as string) || errorMessage;
-      if (response.status === 402 && errorData.trial_expired) {
-        trialExpired = true;
-      }
     } catch {
       // Use default error message if response is not JSON
     }
-    const err = new Error(errorMessage) as Error & { trialExpired?: boolean; planUpgradeRequired?: boolean; requiredPlan?: string; feature?: string };
-    if (trialExpired) {
-      err.trialExpired = true;
-      // Dispatch a custom event so the UI can react (e.g., show upgrade prompt)
-      window.dispatchEvent(new CustomEvent('trial-expired'));
-    }
+    const err = new Error(errorMessage) as Error & { planUpgradeRequired?: boolean; requiredPlan?: string; feature?: string };
     if (response.status === 403 && errorData.error === 'PLAN_UPGRADE_REQUIRED') {
       err.planUpgradeRequired = true;
       err.requiredPlan = errorData.requiredPlan as string;
@@ -1599,7 +1590,7 @@ export async function getBillingStatus(): Promise<{
   return res.json();
 }
 
-export async function createCheckoutSession(plan: 'starter' | 'pro', promo_code?: string, interval: 'monthly' | 'annual' = 'monthly'): Promise<{ url: string }> {
+export async function createCheckoutSession(plan: 'pro', promo_code?: string, interval: 'monthly' | 'annual' = 'monthly'): Promise<{ url: string }> {
   const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const body: Record<string, string> = { plan, interval };
   if (promo_code) body.promo_code = promo_code;

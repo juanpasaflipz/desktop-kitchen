@@ -9,11 +9,11 @@ import { checkLimit, getPlanLimits } from '../planLimits.js';
  *
  * @param {object} payload - Template-shaped data
  * @param {object} opts
- * @param {string} opts.plan - Tenant plan ('trial','starter','pro','ghost_kitchen')
+ * @param {string} opts.plan - Tenant plan ('free','pro')
  * @param {'append'|'replace'} opts.mode - 'replace' deletes is_example items first
  * @returns {object} stats
  */
-export async function bulkInsertMenu(payload, { plan = 'trial', mode = 'append' } = {}) {
+export async function bulkInsertMenu(payload, { plan = 'free', mode = 'append' } = {}) {
   const tid = getTenantId();
   const limits = getPlanLimits(plan);
 

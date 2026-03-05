@@ -20,8 +20,8 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   const [loading, setLoading] = useState(false);
 
   const defaultMessage = feature
-    ? `${feature} is available on a paid plan.`
-    : 'This feature requires an upgrade.';
+    ? `${feature} requires Pro plan.`
+    : 'This feature requires Pro plan.';
 
   const handleUpgrade = async () => {
     const token = localStorage.getItem('owner_token');
@@ -31,7 +31,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
     }
     setLoading(true);
     try {
-      const { url } = await createCheckoutSession('starter');
+      const { url } = await createCheckoutSession('pro');
       window.location.href = url;
     } catch {
       navigate('/admin');
@@ -53,7 +53,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
           >
             <ArrowUpCircle className="w-4 h-4" />
-            {loading ? 'Redirecting...' : 'Upgrade Now'}
+            {loading ? 'Redirecting...' : 'Upgrade to Pro — $80/mo'}
           </button>
         </div>
       </div>
@@ -70,7 +70,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
         className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
       >
         <ArrowUpCircle className="w-3.5 h-3.5" />
-        {loading ? 'Redirecting...' : 'Upgrade'}
+        {loading ? 'Redirecting...' : 'Upgrade to Pro'}
       </button>
     </div>
   );

@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS tenants (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   subdomain TEXT UNIQUE,
-  plan TEXT DEFAULT 'trial',
+  plan TEXT DEFAULT 'free',
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
   subscription_status TEXT DEFAULT 'active',

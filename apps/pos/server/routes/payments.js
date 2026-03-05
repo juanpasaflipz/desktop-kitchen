@@ -447,10 +447,10 @@ router.get('/refunds', async (req, res) => {
 
 // ==================== Mercado Pago Point Endpoints (Pro+) ====================
 
-/** Middleware: require Pro or ghost_kitchen plan */
+/** Middleware: require Pro plan */
 function requirePro(req, res, next) {
   const plan = req.tenant?.plan;
-  if (plan !== 'pro' && plan !== 'ghost_kitchen') {
+  if (plan !== 'pro') {
     return res.status(403).json({ error: 'Mercado Pago Point requires a Pro plan' });
   }
   next();

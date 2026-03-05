@@ -1,12 +1,11 @@
 import React from 'react';
 
 export const PLAN_COLORS: Record<string, string> = {
-  trial: '#6b7280',
-  starter: '#3b82f6',
+  free: '#6b7280',
   pro: '#0d9488',
 };
 
-export const PIE_COLORS = ['#6b7280', '#3b82f6', '#0d9488'];
+export const PIE_COLORS = ['#6b7280', '#0d9488'];
 
 export function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);

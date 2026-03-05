@@ -55,7 +55,7 @@ async function provisionTenants(emit) {
       subdomain: def.id,
       owner_email: `${def.id}@chaos.test`,
       owner_password_hash: hash,
-      plan: 'trial',
+      plan: 'free',
     });
 
     // Seed 2 menu categories
