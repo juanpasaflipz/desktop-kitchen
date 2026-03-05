@@ -1,3 +1,6 @@
+[build]
+watchPatterns = ["apps/pos/**", "package.json", "package-lock.json"]
+
 [deploy]
 healthcheckPath = "/health"
 healthcheckTimeout = 300
