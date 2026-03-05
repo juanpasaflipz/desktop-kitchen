@@ -302,3 +302,62 @@ export function deleteDemoData(tenantId: string) {
     method: 'DELETE',
   });
 }
+
+// ==================== Financing ====================
+
+import type {
+  FinancingOverview,
+  FinancingProfileWithTenant,
+  FinancingOffer,
+  FinancingEvent,
+  FinancialProfile,
+} from '../types/financing';
+
+export function getFinancingOverview() {
+  return adminRequest<FinancingOverview>('/financing/overview');
+}
+
+export function getFinancingProfiles(params?: { eligibility?: string; sort?: string; order?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.eligibility) qs.set('eligibility', params.eligibility);
+  if (params?.sort) qs.set('sort', params.sort);
+  if (params?.order) qs.set('order', params.order);
+  const s = qs.toString();
+  return adminRequest<FinancingProfileWithTenant[]>(`/financing/profiles${s ? `?${s}` : ''}`);
+}
+
+export function getFinancingProfileAdmin(tenantId: string) {
+  return adminRequest<FinancingProfileWithTenant>(`/financing/profiles/${tenantId}`);
+}
+
+export function recalculateFinancingProfile(tenantId: string) {
+  return adminRequest<FinancialProfile>(`/financing/profiles/${tenantId}/recalculate`, {
+    method: 'POST',
+  });
+}
+
+export function getFinancingOffers(params?: { status?: string; sort?: string; order?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set('status', params.status);
+  if (params?.sort) qs.set('sort', params.sort);
+  if (params?.order) qs.set('order', params.order);
+  const s = qs.toString();
+  return adminRequest<(FinancingOffer & { tenant_name?: string })[]>(`/financing/offers${s ? `?${s}` : ''}`);
+}
+
+export function updateFinancingOffer(offerId: string, updates: Partial<Pick<FinancingOffer, 'offer_amount' | 'holdback_percent' | 'factor_rate' | 'notes' | 'status'>>) {
+  return adminRequest<FinancingOffer>(`/financing/offers/${offerId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export function getFinancingEvents(params?: { tenant_id?: string; event_type?: string; limit?: number; offset?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.tenant_id) qs.set('tenant_id', params.tenant_id);
+  if (params?.event_type) qs.set('event_type', params.event_type);
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.offset) qs.set('offset', String(params.offset));
+  const s = qs.toString();
+  return adminRequest<FinancingEvent[]>(`/financing/events${s ? `?${s}` : ''}`);
+}

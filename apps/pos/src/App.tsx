@@ -214,6 +214,12 @@ const BankingPage = React.lazy(() =>
   }))
 );
 
+const FinancingScreen = React.lazy(() =>
+  import('./screens/FinancingScreen').then((module) => ({
+    default: module.default || (() => <div>Financing</div>),
+  }))
+);
+
 const MobileShell = React.lazy(() =>
   import('./components/mobile/MobileShell').then((module) => ({
     default: module.default,
@@ -632,6 +638,17 @@ const TenantRoutes: React.FC = () => {
         element={
           <ProtectedRoute
             element={<IntegrationsScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
+
+      {/* Financing — all plans (free sees UpgradePrompt) */}
+      <Route
+        path="/admin/financing"
+        element={
+          <ProtectedRoute
+            element={<FinancingScreen />}
             requiredRole={['manager', 'admin']}
           />
         }

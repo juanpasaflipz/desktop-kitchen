@@ -9,6 +9,7 @@ import enKitchen from './locales/en/kitchen.json';
 import enAdmin from './locales/en/admin.json';
 import enInventory from './locales/en/inventory.json';
 import enReports from './locales/en/reports.json';
+import enFinancing from './locales/en/financing.json';
 
 // ES namespaces
 import esCommon from './locales/es/common.json';
@@ -17,6 +18,7 @@ import esKitchen from './locales/es/kitchen.json';
 import esAdmin from './locales/es/admin.json';
 import esInventory from './locales/es/inventory.json';
 import esReports from './locales/es/reports.json';
+import esFinancing from './locales/es/financing.json';
 
 const resources = {
   en: {
@@ -26,6 +28,7 @@ const resources = {
     admin: enAdmin,
     inventory: enInventory,
     reports: enReports,
+    financing: enFinancing,
   },
   es: {
     common: esCommon,
@@ -34,6 +37,7 @@ const resources = {
     admin: esAdmin,
     inventory: esInventory,
     reports: esReports,
+    financing: esFinancing,
   },
 };
 
@@ -44,7 +48,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'pos', 'kitchen', 'admin', 'inventory', 'reports'],
+    ns: ['common', 'pos', 'kitchen', 'admin', 'inventory', 'reports', 'financing'],
     interpolation: {
       escapeValue: false,
     },

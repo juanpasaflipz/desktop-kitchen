@@ -41,6 +41,7 @@ import BrandLogo from '../components/BrandLogo';
 import { usePlan } from '../context/PlanContext';
 import TrialBanner from '../components/TrialBanner';
 import DemoBanner from '../components/DemoBanner';
+import FinancingBanner from '../components/financing/FinancingBanner';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useDeviceType } from '../hooks/useDeviceType';
 import { createOfflineOrder, toReceiptOrder } from '../lib/offlineOrderQueue';
@@ -722,6 +723,7 @@ const POSScreen: React.FC = () => {
 
         <TrialBanner />
         <DemoBanner />
+        <FinancingBanner />
 
         {currentEmployee && ['admin', 'manager'].includes(currentEmployee.role) && (
           <SetupChecklistBanner />

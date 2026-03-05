@@ -9,14 +9,16 @@ import RevenueTab from '../components/super-admin/RevenueTab';
 import HealthTab from '../components/super-admin/HealthTab';
 
 const StressTestTab = lazy(() => import('../components/super-admin/StressTestTab'));
+const FinancingTab = lazy(() => import('../components/super-admin/FinancingTab'));
 
-type TabId = 'overview' | 'tenants' | 'revenue' | 'health' | 'stress-test';
+type TabId = 'overview' | 'tenants' | 'revenue' | 'health' | 'financing' | 'stress-test';
 
 const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'tenants', label: 'Tenants' },
   { id: 'revenue', label: 'Revenue' },
   { id: 'health', label: 'Health' },
+  { id: 'financing', label: 'Financing' },
 ];
 
 export default function SuperAdminDashboard() {
@@ -80,6 +82,7 @@ export default function SuperAdminDashboard() {
         {tab === 'tenants' && <TenantsTab />}
         {tab === 'revenue' && <RevenueTab />}
         {tab === 'health' && <HealthTab />}
+        {tab === 'financing' && <Suspense fallback={null}><FinancingTab /></Suspense>}
         {tab === 'stress-test' && stressTestEnabled && <Suspense fallback={null}><StressTestTab /></Suspense>}
       </div>
     </div>

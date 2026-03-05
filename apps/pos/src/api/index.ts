@@ -1624,6 +1624,88 @@ export async function createPortalSession(): Promise<{ url: string }> {
   return res.json();
 }
 
+/* ==================== Financing Endpoints (Owner JWT Auth) ==================== */
+
+import type {
+  ConsentStatus,
+  FinancialProfile,
+  FinancingOffer,
+} from '../types/financing';
+
+export async function postFinancingConsent(consent_types: string[]): Promise<{ success: boolean }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/consent`, {
+    method: 'POST',
+    headers: ownerHeaders(),
+    body: JSON.stringify({ consent_types }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to submit consent');
+  return res.json();
+}
+
+export async function getFinancingConsent(): Promise<ConsentStatus> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/consent`, { headers: ownerHeaders() });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch consent');
+  return res.json();
+}
+
+export async function deleteFinancingConsent(): Promise<{ success: boolean }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/consent`, {
+    method: 'DELETE',
+    headers: ownerHeaders(),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to revoke consent');
+  return res.json();
+}
+
+export async function getFinancingProfile(): Promise<FinancialProfile | null> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/profile`, { headers: ownerHeaders() });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch profile');
+  return res.json();
+}
+
+export async function getFinancingOffers(): Promise<FinancingOffer[]> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/offers`, { headers: ownerHeaders() });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch offers');
+  return res.json();
+}
+
+export async function viewFinancingOffer(offerId: string): Promise<FinancingOffer> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/offers/${offerId}/view`, {
+    method: 'POST',
+    headers: ownerHeaders(),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to view offer');
+  return res.json();
+}
+
+export async function acceptFinancingOffer(offerId: string): Promise<FinancingOffer> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/offers/${offerId}/accept`, {
+    method: 'POST',
+    headers: ownerHeaders(),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to accept offer');
+  return res.json();
+}
+
+export async function declineFinancingOffer(offerId: string, reason?: string): Promise<FinancingOffer> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/offers/${offerId}/decline`, {
+    method: 'POST',
+    headers: ownerHeaders(),
+    body: JSON.stringify({ reason }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to decline offer');
+  return res.json();
+}
+
 /* ==================== Account Endpoints (Owner JWT Auth) ==================== */
 
 export async function getAccount(): Promise<any> {

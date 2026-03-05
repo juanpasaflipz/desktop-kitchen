@@ -29,6 +29,7 @@ import {
   BookOpen,
   Gauge,
   Landmark,
+  Banknote,
 } from 'lucide-react';
 import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal, getDemoDataStatus, generateDemoData, clearDemoData, DemoDataStatus, getOnboardingStatus, getFeatureFlags } from '../api';
 import { SalesReport, InventoryItem } from '../types';
@@ -654,6 +655,16 @@ export default function AdminPanel() {
               </div>
               <h2 className="text-xl font-bold text-white mb-2">{t('cards.loyaltyCrm')}</h2>
               <p className="text-neutral-400 text-sm">{t('cards.loyaltyDesc')}</p>
+            </div>
+          </Link>
+
+          <Link to="/admin/financing">
+            <div className="bg-neutral-900 p-8 rounded-lg border border-neutral-800 hover:border-green-600 transition-all cursor-pointer h-full">
+              <div className="flex items-center justify-center w-12 h-12 bg-green-600/10 rounded-lg mb-4">
+                <Banknote className="text-green-500" size={28} />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Financing</h2>
+              <p className="text-neutral-400 text-sm">Revenue-based financing for your restaurant</p>
             </div>
           </Link>
 
