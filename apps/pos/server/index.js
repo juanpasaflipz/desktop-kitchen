@@ -47,9 +47,11 @@ import demoDataRoutes from './routes/demo-data.js';
 import demoProvisionRoutes from './routes/demo-provision.js';
 import salesRoutes from './routes/sales.js';
 import onboardingRoutes from './routes/onboarding.js';
+import financingRoutes, { adminRouter as financingAdminRoutes } from './routes/financing.js';
 import plaidWebhook from './routes/webhooks/plaid.js';
 import { initAI, shutdownAI } from './ai/index.js';
 import { startBankingSyncScheduler } from './services/banking/SyncScheduler.js';
+import { startFinancingScheduler, stopFinancingScheduler } from './services/financing/scheduler.js';
 import { shutdown as shutdownDb } from './db/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -127,6 +129,7 @@ app.get('/api/features', (_req, res) => {
 
 // Admin routes (uses admin pool, not tenant-scoped)
 app.use('/admin', adminRoutes);
+app.use('/admin/financing', financingAdminRoutes);
 if (adminStressTestRoutesLazy) app.use('/admin/stress-test', adminStressTestRoutesLazy);
 
 // Chaos agent (only when ENABLE_CHAOS=true)
@@ -203,6 +206,7 @@ if (stressTestRoutes) app.use('/api/stress-test', stressTestRoutes);
 app.use('/api/demo-data', demoDataRoutes);
 app.use('/api/banking', bankingRoutes);
 app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/financing', financingRoutes);
 
 // Serve index.html for all other routes (SPA)
 app.get('*', (req, res) => {
@@ -241,6 +245,9 @@ async function gracefulShutdown(signal) {
   // 2. Stop AI scheduler (clears all intervals)
   shutdownAI();
 
+  // 2b. Stop financing scheduler
+  stopFinancingScheduler();
+
   // 3. Close database connection pools
   await shutdownDb();
   console.log('[Shutdown] Database pools closed');
@@ -274,6 +281,9 @@ process.on('SIGINT', () => shutdownWithTimeout('SIGINT'));
 
     // Banking sync scheduler
     startBankingSyncScheduler();
+
+    // Financing scoring scheduler
+    startFinancingScheduler();
 
     server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Desktop Kitchen POS server running on port ${PORT}`);
