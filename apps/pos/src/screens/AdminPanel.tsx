@@ -30,7 +30,7 @@ import {
   Gauge,
   Landmark,
 } from 'lucide-react';
-import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal, getDemoDataStatus, generateDemoData, clearDemoData, DemoDataStatus, getOnboardingStatus } from '../api';
+import { getSalesReport, getLowStock, createCheckoutSession, createPortalSession, getBankConfirmedTotal, getDemoDataStatus, generateDemoData, clearDemoData, DemoDataStatus, getOnboardingStatus, getFeatureFlags } from '../api';
 import { SalesReport, InventoryItem } from '../types';
 import { formatPrice } from '../utils/currency';
 import BrandLogo from '../components/BrandLogo';
@@ -159,6 +159,7 @@ export default function AdminPanel() {
   const [demoError, setDemoError] = useState<string | null>(null);
   const [menuEmpty, setMenuEmpty] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [stressTestEnabled, setStressTestEnabled] = useState(false);
 
   const isPro = plan === 'pro' || plan === 'ghost_kitchen';
 
@@ -214,6 +215,11 @@ export default function AdminPanel() {
         // Check if menu is empty (non-blocking)
         getOnboardingStatus()
           .then(s => setMenuEmpty(!s.has_menu_items))
+          .catch(() => {});
+
+        // Check feature flags (non-blocking)
+        getFeatureFlags()
+          .then(f => setStressTestEnabled(f.stressTest))
           .catch(() => {});
 
         // Fetch demo data status for trial tenants (non-blocking)
@@ -745,7 +751,7 @@ export default function AdminPanel() {
             </Link>
           )}
 
-          {isPro && (
+          {isPro && stressTestEnabled && (
             <Link to="/admin/stress-test">
               <div className="bg-neutral-900 p-8 rounded-lg border border-neutral-800 hover:border-orange-600 transition-all cursor-pointer h-full">
                 <div className="flex items-center justify-center w-12 h-12 bg-orange-600/10 rounded-lg mb-4">

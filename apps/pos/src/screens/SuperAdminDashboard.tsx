@@ -1,31 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Shield, LogOut } from 'lucide-react';
 import { verifySecret } from '../api/superAdmin';
+import { getFeatureFlags } from '../api';
 import LoginGate from '../components/super-admin/LoginGate';
 import OverviewTab from '../components/super-admin/OverviewTab';
 import TenantsTab from '../components/super-admin/TenantsTab';
 import RevenueTab from '../components/super-admin/RevenueTab';
 import HealthTab from '../components/super-admin/HealthTab';
-import StressTestTab from '../components/super-admin/StressTestTab';
+
+const StressTestTab = lazy(() => import('../components/super-admin/StressTestTab'));
 
 type TabId = 'overview' | 'tenants' | 'revenue' | 'health' | 'stress-test';
 
-const TABS: { id: TabId; label: string }[] = [
+const BASE_TABS: { id: TabId; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'tenants', label: 'Tenants' },
   { id: 'revenue', label: 'Revenue' },
   { id: 'health', label: 'Health' },
-  { id: 'stress-test', label: 'Stress Test' },
 ];
 
 export default function SuperAdminDashboard() {
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState<TabId>('overview');
+  const [stressTestEnabled, setStressTestEnabled] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem('admin_secret')) {
       verifySecret().then(ok => setAuthed(ok));
     }
+    getFeatureFlags()
+      .then(f => setStressTestEnabled(f.stressTest))
+      .catch(() => {});
   }, []);
 
   if (!authed) {
@@ -54,7 +59,7 @@ export default function SuperAdminDashboard() {
 
       <div className="bg-neutral-900/50 border-b border-neutral-800">
         <div className="max-w-7xl mx-auto flex gap-1 px-6">
-          {TABS.map(t => (
+          {[...BASE_TABS, ...(stressTestEnabled ? [{ id: 'stress-test' as TabId, label: 'Stress Test' }] : [])].map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -75,7 +80,7 @@ export default function SuperAdminDashboard() {
         {tab === 'tenants' && <TenantsTab />}
         {tab === 'revenue' && <RevenueTab />}
         {tab === 'health' && <HealthTab />}
-        {tab === 'stress-test' && <StressTestTab />}
+        {tab === 'stress-test' && stressTestEnabled && <Suspense fallback={null}><StressTestTab /></Suspense>}
       </div>
     </div>
   );

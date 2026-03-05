@@ -120,6 +120,11 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Feature flags (before tenant middleware — always accessible)
+app.get('/api/features', (_req, res) => {
+  res.json({ stressTest: chaosEnabled });
+});
+
 // Admin routes (uses admin pool, not tenant-scoped)
 app.use('/admin', adminRoutes);
 if (adminStressTestRoutesLazy) app.use('/admin/stress-test', adminStressTestRoutesLazy);

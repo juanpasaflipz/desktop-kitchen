@@ -2034,6 +2034,13 @@ export interface ChaosAgentResults {
   latency: { avg: number; p50: number; p95: number; max: number };
 }
 
+export async function getFeatureFlags(): Promise<{ stressTest: boolean }> {
+  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/api/features`);
+  if (!res.ok) return { stressTest: false };
+  return res.json();
+}
+
 export async function getChaosStatus(): Promise<{ running: boolean }> {
   const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const adminSecret = sessionStorage.getItem('admin_secret') || '';

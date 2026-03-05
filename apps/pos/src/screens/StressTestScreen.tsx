@@ -376,7 +376,10 @@ export default function StressTestScreen() {
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message);
+        const msg = err.message?.includes('Unexpected token')
+          ? 'Stress testing is not enabled on this server. Set ENABLE_CHAOS=true to activate.'
+          : err.message;
+        setError(msg);
         setLoading(false);
       });
     fetchResidual();
