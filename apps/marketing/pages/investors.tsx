@@ -822,8 +822,8 @@ const Investors: NextPage = () => {
                   },
                   {
                     feat: isSpanish
-                      ? "App iOS nativa con modo offline"
-                      : "iOS-native offline app",
+                      ? "App nativa con modo offline"
+                      : "Native offline app",
                     dk: true,
                     sq: "partial",
                     lp: false,
@@ -1143,13 +1143,13 @@ const Investors: NextPage = () => {
                     ? [
                         "Ningún POS importante tiene tracking de márgenes nativo para delivery",
                         "Square y Toast tienen presencia mínima en México",
-                        "Competidores locales carecen de capacidades de IA y soporte iOS",
+                        "Competidores locales carecen de capacidades de IA y soporte móvil nativo",
                         "WhatsApp Business crea un canal de recaptura de clientes no disponible en otro lado",
                       ]
                     : [
                         "No major POS player has delivery-native margin tracking",
                         "Square and Toast have minimal Mexico presence",
-                        "Local competitors lack AI capabilities and iOS support",
+                        "Local competitors lack AI capabilities and native mobile support",
                         "WhatsApp Business creates a customer recapture channel unavailable elsewhere",
                       ]
                   ).map((item, i) => (

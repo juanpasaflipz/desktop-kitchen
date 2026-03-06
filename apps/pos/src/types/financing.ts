@@ -41,6 +41,7 @@ export interface ConsentStatus {
   has_consent: boolean;
   consent_types?: string[];
   consented_at?: string;
+  consent_version?: string;
 }
 
 export interface FinancingOverview {

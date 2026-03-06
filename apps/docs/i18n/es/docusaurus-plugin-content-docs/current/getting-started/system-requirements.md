@@ -9,7 +9,7 @@ title: Requisitos del Sistema
 ## Dispositivos
 
 ### Para Terminales POS
-- **iPad** (recomendado): iPad 9a generacion o mas reciente, iPadOS 16+
+- **Tablet** (recomendado): 9a generación o más reciente, versión de OS 16+
 - **Tablet Android**: Chrome 90+
 - **Escritorio/laptop**: Cualquier navegador moderno (Chrome, Firefox, Safari, Edge)
 

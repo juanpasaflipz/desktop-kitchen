@@ -1,25 +1,27 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck, RefreshCw, Zap, ChevronRight, Lock, X } from 'lucide-react';
-import { postFinancingConsent } from '../../api';
+import { postFinancingConsent, getFinancingConsentTerms } from '../../api';
 
 interface ConsentViewProps {
   onConsent: () => void;
 }
 
 const ConsentView: React.FC<ConsentViewProps> = ({ onConsent }) => {
-  const { t } = useTranslation('financing');
+  const { t, i18n } = useTranslation('financing');
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
+  const [termsData, setTermsData] = useState<any>(null);
+  const [termsLoading, setTermsLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (!agreed) return;
     setSubmitting(true);
     setError(null);
     try {
-      await postFinancingConsent(['financial_data_analysis', 'revenue_sharing']);
+      await postFinancingConsent(['financial_data_analysis', 'financing_offers']);
       onConsent();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit consent');
@@ -82,7 +84,18 @@ const ConsentView: React.FC<ConsentViewProps> = ({ onConsent }) => {
         <h3 className="text-white font-bold text-lg">{t('consent.dataConsent.title')}</h3>
         <p className="text-neutral-400 text-sm">{t('consent.dataConsent.description')}</p>
         <button
-          onClick={() => setShowTerms(true)}
+          onClick={async () => {
+            if (!termsData) {
+              setTermsLoading(true);
+              try {
+                const locale = i18n.language?.startsWith('es') ? 'es' : 'en';
+                const result = await getFinancingConsentTerms(locale);
+                setTermsData(result.consent);
+              } catch {}
+              setTermsLoading(false);
+            }
+            setShowTerms(true);
+          }}
           className="text-brand-400 hover:text-brand-300 text-sm font-medium flex items-center gap-1"
         >
           {t('consent.dataConsent.viewTerms')} <ChevronRight size={14} />
@@ -129,17 +142,56 @@ const ConsentView: React.FC<ConsentViewProps> = ({ onConsent }) => {
                 <X size={20} />
               </button>
             </div>
-            <div className="text-neutral-300 text-sm space-y-3">
-              <p>By consenting, you authorize Desktop Kitchen to:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Analyze your order history, revenue data, and payment method distribution</li>
-                <li>Calculate a financial risk score based on your sales performance</li>
-                <li>Generate financing offers based on your profile</li>
-                <li>Share aggregated, anonymized data for underwriting purposes</li>
-              </ul>
-              <p>You may revoke consent at any time from the Financing screen. Revoking consent will remove your financial profile and any pending offers.</p>
-              <p>This consent does not create any obligation to accept financing offers. Accepting an offer is a separate action that signals intent and is subject to additional terms.</p>
-            </div>
+            {termsLoading ? (
+              <p className="text-neutral-400">{t('consent.terms.loading')}</p>
+            ) : termsData ? (
+              <div className="text-neutral-300 text-sm space-y-4">
+                <h4 className="text-white font-semibold">{termsData.title}</h4>
+                <p>{termsData.intro}</p>
+                {termsData.sections?.map((s: any, i: number) => (
+                  <div key={i}>
+                    <p className="text-white font-medium">{s.heading}</p>
+                    <p className="text-neutral-400">{s.body}</p>
+                  </div>
+                ))}
+                {termsData.dataWeAnalyze && (
+                  <div>
+                    <p className="text-white font-medium">{termsData.dataWeAnalyze.heading}:</p>
+                    <ul className="list-disc pl-5 text-neutral-400 space-y-1">
+                      {termsData.dataWeAnalyze.items?.map((item: string, i: number) => <li key={i}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {termsData.dataWeDoNotAccess && (
+                  <div>
+                    <p className="text-white font-medium">{termsData.dataWeDoNotAccess.heading}:</p>
+                    <ul className="list-disc pl-5 text-neutral-400 space-y-1">
+                      {termsData.dataWeDoNotAccess.items?.map((item: string, i: number) => <li key={i}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {termsData.rights && (
+                  <div>
+                    <p className="text-white font-medium">{termsData.rights.heading}:</p>
+                    <ul className="list-disc pl-5 text-neutral-400 space-y-1">
+                      {termsData.rights.items?.map((item: string, i: number) => <li key={i}>{item}</li>)}
+                    </ul>
+                    {termsData.rights.retention && (
+                      <p className="text-neutral-500 text-xs mt-2">{termsData.rights.retention}</p>
+                    )}
+                  </div>
+                )}
+                {termsData.transfer && (
+                  <div>
+                    <p className="text-white font-medium">{termsData.transfer.heading}:</p>
+                    <p className="text-neutral-400">{termsData.transfer.body}</p>
+                  </div>
+                )}
+                <p className="text-neutral-500 text-xs">{t('consent.terms.version', { version: termsData.version })}</p>
+              </div>
+            ) : (
+              <p className="text-neutral-400">{t('consent.terms.loadError')}</p>
+            )}
           </div>
         </div>
       )}

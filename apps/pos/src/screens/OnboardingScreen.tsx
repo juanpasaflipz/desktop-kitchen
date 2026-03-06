@@ -48,6 +48,7 @@ const OnboardingScreen: React.FC = () => {
 
   // Form state
   const [form, setForm] = useState<FormData>({ restaurant_name: '', email: '', password: '' });
+  const [financingConsent, setFinancingConsent] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState('');
@@ -180,12 +181,13 @@ const OnboardingScreen: React.FC = () => {
     setSubmitError('');
 
     try {
-      const body: Record<string, string> = {
+      const body: Record<string, string | boolean> = {
         email: form.email,
         password: form.password,
         restaurant_name: form.restaurant_name,
       };
       if (promoCode) body.promo_code = promoCode;
+      if (financingConsent) body.financing_consent = true;
 
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
@@ -544,6 +546,21 @@ const OnboardingScreen: React.FC = () => {
             onBlur={() => handleBlur('password')}
             onEnter={handleSubmit}
           />
+
+          {/* Financing consent — optional */}
+          <div style={{ marginBottom: 16, background: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.15)', borderRadius: 10, padding: '14px 14px 12px' }}>
+            <p style={{ color: '#d1d5db', fontSize: 13, fontWeight: 600, margin: '0 0 4px' }}>Want access to working capital?</p>
+            <p style={{ color: '#6b7280', fontSize: 12, margin: '0 0 10px' }}>Let us analyze your sales data to determine eligibility for funding.</p>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={financingConsent}
+                onChange={e => setFinancingConsent(e.target.checked)}
+                style={{ marginTop: 2, accentColor: '#0d9488' }}
+              />
+              <span style={{ color: '#9ca3af', fontSize: 12 }}>I agree to data analysis for financial services</span>
+            </label>
+          </div>
 
           {/* Promo code — collapsed by default */}
           <PromoSection

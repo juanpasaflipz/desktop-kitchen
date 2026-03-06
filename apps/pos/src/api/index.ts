@@ -110,8 +110,8 @@ function getCapacitorApiBase(): string {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (isCapacitor ? getCapacitorApiBase() : '/api');
 
-// For iOS: try multiple LAN IPs when the primary fails
-const IOS_FALLBACK_URLS = (import.meta.env.VITE_API_URL_FALLBACKS || '')
+// Try multiple LAN IPs when the primary fails
+const FALLBACK_URLS = (import.meta.env.VITE_API_URL_FALLBACKS || '')
   .split(',')
   .filter(Boolean);
 
@@ -119,7 +119,7 @@ let activeBaseUrl = API_BASE_URL;
 let fallbackResolved = false;
 
 async function resolveBaseUrl(): Promise<string> {
-  if (fallbackResolved || !IOS_FALLBACK_URLS.length) return activeBaseUrl;
+  if (fallbackResolved || !FALLBACK_URLS.length) return activeBaseUrl;
 
   // Try the primary URL first
   try {
@@ -130,7 +130,7 @@ async function resolveBaseUrl(): Promise<string> {
     // Primary failed, try fallbacks
   }
 
-  for (const url of IOS_FALLBACK_URLS) {
+  for (const url of FALLBACK_URLS) {
     try {
       await fetch(`${url}/menu/categories`, { signal: AbortSignal.timeout(2000) });
       activeBaseUrl = url;
@@ -185,7 +185,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const url = `${base}${endpoint}`;
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ export async function applyMenuTemplate(templateId: string, mode: 'append' | 're
 }
 
 export async function applyMenuTemplateAsOwner(templateId: string, ownerToken: string, mode: 'append' | 'replace' = 'replace'): Promise<MenuImportStats> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${ownerToken}`,
@@ -269,7 +269,7 @@ export async function applyMenuTemplateAsOwner(templateId: string, ownerToken: s
 }
 
 export async function previewMenuCSV(file: File): Promise<CSVImportPreview> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const formData = new FormData();
   formData.append('file', file);
   const headers: Record<string, string> = {};
@@ -291,7 +291,7 @@ export async function previewMenuCSV(file: File): Promise<CSVImportPreview> {
 }
 
 export async function commitMenuCSV(file: File, columnMap?: Record<string, string>, importMode: 'append' | 'replace' = 'append'): Promise<MenuImportStats> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const formData = new FormData();
   formData.append('file', file);
   if (columnMap) formData.append('column_map', JSON.stringify(columnMap));
@@ -324,7 +324,7 @@ export async function parseMenuWithAI(text: string): Promise<AIMenuParseResult> 
 }
 
 export async function parseMenuWithAIAsOwner(text: string, ownerToken: string): Promise<AIMenuParseResult> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${ownerToken}`,
@@ -353,7 +353,7 @@ export async function commitAIMenu(payload: AIMenuParseResult['data'], mode: 'ap
 }
 
 export async function commitAIMenuAsOwner(payload: AIMenuParseResult['data'], ownerToken: string, mode: 'append' | 'replace' = 'replace'): Promise<MenuImportStats> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${ownerToken}`,
@@ -1584,14 +1584,14 @@ export async function getBillingStatus(): Promise<{
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
 }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/billing`, { headers: ownerHeaders() });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch billing status');
   return res.json();
 }
 
 export async function createCheckoutSession(plan: 'pro', promo_code?: string, interval: 'monthly' | 'annual' = 'monthly'): Promise<{ url: string }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const body: Record<string, string> = { plan, interval };
   if (promo_code) body.promo_code = promo_code;
   const res = await fetch(`${base}/billing/checkout`, {
@@ -1609,13 +1609,13 @@ export async function validatePromoCode(code: string): Promise<{
   discount_description?: string;
   message?: string;
 }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/billing/promo/validate?code=${encodeURIComponent(code.trim().toUpperCase())}`);
   return res.json();
 }
 
 export async function createPortalSession(): Promise<{ url: string }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/billing/portal`, {
     method: 'POST',
     headers: ownerHeaders(),
@@ -1633,7 +1633,7 @@ import type {
 } from '../types/financing';
 
 export async function postFinancingConsent(consent_types: string[]): Promise<{ success: boolean }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/consent`, {
     method: 'POST',
     headers: ownerHeaders(),
@@ -1644,14 +1644,14 @@ export async function postFinancingConsent(consent_types: string[]): Promise<{ s
 }
 
 export async function getFinancingConsent(): Promise<ConsentStatus> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/consent`, { headers: ownerHeaders() });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch consent');
   return res.json();
 }
 
 export async function deleteFinancingConsent(): Promise<{ success: boolean }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/consent`, {
     method: 'DELETE',
     headers: ownerHeaders(),
@@ -1661,7 +1661,7 @@ export async function deleteFinancingConsent(): Promise<{ success: boolean }> {
 }
 
 export async function getFinancingProfile(): Promise<FinancialProfile | null> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/profile`, { headers: ownerHeaders() });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch profile');
@@ -1669,14 +1669,14 @@ export async function getFinancingProfile(): Promise<FinancialProfile | null> {
 }
 
 export async function getFinancingOffers(): Promise<FinancingOffer[]> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/offers`, { headers: ownerHeaders() });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch offers');
   return res.json();
 }
 
 export async function viewFinancingOffer(offerId: string): Promise<FinancingOffer> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/offers/${offerId}/view`, {
     method: 'POST',
     headers: ownerHeaders(),
@@ -1686,7 +1686,7 @@ export async function viewFinancingOffer(offerId: string): Promise<FinancingOffe
 }
 
 export async function acceptFinancingOffer(offerId: string): Promise<FinancingOffer> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/offers/${offerId}/accept`, {
     method: 'POST',
     headers: ownerHeaders(),
@@ -1696,7 +1696,7 @@ export async function acceptFinancingOffer(offerId: string): Promise<FinancingOf
 }
 
 export async function declineFinancingOffer(offerId: string, reason?: string): Promise<FinancingOffer> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/financing/offers/${offerId}/decline`, {
     method: 'POST',
     headers: ownerHeaders(),
@@ -1706,10 +1706,24 @@ export async function declineFinancingOffer(offerId: string, reason?: string): P
   return res.json();
 }
 
+export async function getFinancingConsentTerms(locale: string = 'en'): Promise<{ version: string; consent: any }> {
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/consent/terms?locale=${locale}`, { headers: ownerHeaders() });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch terms');
+  return res.json();
+}
+
+export async function exportFinancingData(): Promise<any> {
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const res = await fetch(`${base}/financing/export`, { headers: ownerHeaders() });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to export data');
+  return res.json();
+}
+
 /* ==================== Account Endpoints (Owner JWT Auth) ==================== */
 
 export async function getAccount(): Promise<any> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/account`, { headers: ownerHeaders() });
   if (!res.ok) {
     const msg = (await res.json().catch(() => ({}))).error || 'Failed to fetch account';
@@ -1721,7 +1735,7 @@ export async function getAccount(): Promise<any> {
 }
 
 export async function updateAccount(data: { name?: string; email?: string }): Promise<{ name: string; email: string }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/account`, {
     method: 'PUT',
     headers: ownerHeaders(),
@@ -1732,7 +1746,7 @@ export async function updateAccount(data: { name?: string; email?: string }): Pr
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/account/password`, {
     method: 'PUT',
     headers: ownerHeaders(),
@@ -1767,7 +1781,7 @@ export async function updateCfdiConfig(data: {
 }
 
 export async function uploadCSD(formData: FormData): Promise<{ config: CfdiConfig; message: string }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const headers: Record<string, string> = {};
   if (currentEmployeeToken) {
     headers['Authorization'] = `Bearer ${currentEmployeeToken}`;
@@ -1842,7 +1856,7 @@ export async function getInvoiceToken(orderId: number): Promise<CfdiInvoiceToken
 /* ==================== Password Reset Endpoints (no auth) ==================== */
 
 export async function ownerLogin(email: string, password: string): Promise<{ token: string; tenant: { id: string; subdomain: string; name: string } }> {
-  const base = isCapacitor ? 'https://pos.desktop.kitchen/api' : (IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl);
+  const base = isCapacitor ? 'https://pos.desktop.kitchen/api' : (FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl);
   const res = await fetch(`${base}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1854,7 +1868,7 @@ export async function ownerLogin(email: string, password: string): Promise<{ tok
 }
 
 export async function requestPasswordReset(email: string): Promise<{ message: string }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1868,7 +1882,7 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1895,7 +1909,7 @@ export async function getCfdiPublicOrder(token: string): Promise<{
   tenant_color: string;
   emisor_postal_code: string;
 }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/cfdi-public/${token}`);
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -1911,7 +1925,7 @@ export async function issueCfdiPublicInvoice(token: string, data: {
   postal_code: string;
   uso_cfdi?: string;
 }): Promise<{ uuid_fiscal: string; pdf_url: string; xml_url: string; invoice_id: number }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/cfdi-public/${token}/issue`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1999,7 +2013,7 @@ export async function runStressTest(
   onComplete: (results: StressTestResults) => void,
   onError: (error: string) => void,
 ): Promise<void> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (currentEmployeeToken) headers['Authorization'] = `Bearer ${currentEmployeeToken}`;
   if (!isCapacitor && window.location.hostname === 'localhost') { const tenantId = localStorage.getItem('tenant_id'); if (tenantId) headers['X-Tenant-ID'] = tenantId; }
@@ -2108,14 +2122,14 @@ export interface ChaosAgentResults {
 }
 
 export async function getFeatureFlags(): Promise<{ stressTest: boolean }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}/api/features`);
   if (!res.ok) return { stressTest: false };
   return res.json();
 }
 
 export async function getChaosStatus(): Promise<{ running: boolean }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const adminSecret = sessionStorage.getItem('admin_secret') || '';
   const res = await fetch(`${base}/chaos/status`, {
     headers: { 'X-Admin-Secret': adminSecret },
@@ -2130,7 +2144,7 @@ export async function runChaosAgent(
   onComplete: (results: ChaosAgentResults) => void,
   onError: (error: string) => void,
 ): Promise<void> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const adminSecret = sessionStorage.getItem('admin_secret') || '';
 
   const response = await fetch(`${base}/chaos/run`, {
@@ -2243,7 +2257,7 @@ export interface BankingSummary {
 }
 
 async function ownerApiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const res = await fetch(`${base}${endpoint}`, {
     ...options,
     headers: { ...ownerHeaders(), ...(options.headers || {}) },
@@ -2293,7 +2307,7 @@ export async function getBankTransactions(params: {
   limit?: number;
   offset?: number;
 }): Promise<{ transactions: BankTransaction[]; totalCount: number }> {
-  const base = IOS_FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
   const qs = new URLSearchParams();
   if (params.accountId) qs.append('accountId', params.accountId);
   if (params.startDate) qs.append('startDate', params.startDate);

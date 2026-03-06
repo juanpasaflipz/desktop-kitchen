@@ -29,6 +29,11 @@
       "button": "Comenzar",
       "submitting": "Enviando..."
     },
+    "terms": {
+      "loading": "Cargando términos...",
+      "loadError": "No se pudieron cargar los términos. Intenta de nuevo.",
+      "version": "Versión de consentimiento: {{version}}"
+    },
     "trust": "Tus datos están encriptados y se procesan de forma segura. Puedes revocar el consentimiento en cualquier momento."
   },
   "profile": {
@@ -162,6 +167,36 @@
       "type": "Tipo de Evento",
       "details": "Detalles",
       "filterAll": "Todos los Tipos"
+    },
+    "activity": {
+      "title": "Feed de Actividad",
+      "noActivity": "Sin actividad reciente",
+      "filterAll": "Todos los Eventos"
     }
+  },
+  "privacy": {
+    "title": "Datos y Privacidad",
+    "financialDataAnalysis": "Análisis de Datos Financieros",
+    "consented": "Consentimiento otorgado",
+    "notConsented": "Sin consentimiento",
+    "version": "Versión {{version}}",
+    "viewTerms": "Ver Términos Completos",
+    "downloadData": "Descargar Mis Datos",
+    "exporting": "Exportando...",
+    "revokeConsent": "Revocar Consentimiento",
+    "revokeTitle": "Revocar Consentimiento de Datos",
+    "revokeWarning": "¿Estás seguro? Esto hará lo siguiente:",
+    "revokeEffect1": "Dejar de analizar tus datos de transacciones",
+    "revokeEffect2": "Eliminar cualquier oferta de financiamiento activa",
+    "revokeEffect3": "Puedes volver a activarlo en cualquier momento",
+    "revokeRetention": "Los datos históricos se conservan por cumplimiento regulatorio.",
+    "revoking": "Revocando...",
+    "cancel": "Cancelar",
+    "termsTitle": "Términos de Procesamiento de Datos"
+  },
+  "registration": {
+    "consentHeadline": "¿Quieres acceso a capital de trabajo?",
+    "consentDescription": "Permítenos analizar tus datos de ventas para determinar tu elegibilidad para financiamiento.",
+    "consentCheckbox": "Acepto el análisis de datos para elegibilidad de financiamiento"
   }
 }

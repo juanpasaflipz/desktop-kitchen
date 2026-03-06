@@ -6,6 +6,8 @@ import rateLimit from 'express-rate-limit';
 import { createTenant, getTenantByEmail, updateTenant } from '../tenants.js';
 import { adminSql } from '../db/index.js';
 import { sendPinEmail, sendPasswordResetEmail } from '../helpers/email.js';
+import { auditFinancing } from '../lib/auditLog.js';
+import { CONSENT_VERSION } from '../templates/financing-consent.js';
 
 import { BCRYPT_ROUNDS, JWT_SECRET, JWT_OWNER_EXPIRY } from '../lib/constants.js';
 
@@ -70,7 +72,7 @@ async function seedNewTenant(tenantId) {
  */
 router.post('/register', registerLimiter, async (req, res) => {
   try {
-    const { email, password, restaurant_name, subdomain, primaryColor, logoUrl, promo_code } = req.body;
+    const { email, password, restaurant_name, subdomain, primaryColor, logoUrl, promo_code, financing_consent } = req.body;
 
     if (!email || !password || !restaurant_name) {
       return res.status(400).json({ error: 'Required: email, password, restaurant_name' });
@@ -136,6 +138,39 @@ router.post('/register', registerLimiter, async (req, res) => {
 
     // Seed example menu category + items so POS isn't empty on first login
     await seedNewTenant(slug);
+
+    // Record financing consent if opted in during registration
+    if (financing_consent) {
+      const ip = req.ip;
+      const userAgent = req.headers['user-agent'] || '';
+      const consentTypes = ['financial_data_analysis', 'financing_offers'];
+
+      for (const consentType of consentTypes) {
+        await adminSql`
+          INSERT INTO data_processing_consent (tenant_id, consent_type, accepted, accepted_at, ip_address, user_agent, consent_version)
+          VALUES (${slug}, ${consentType}, true, NOW(), ${ip}, ${userAgent}, ${CONSENT_VERSION})
+        `;
+      }
+
+      await adminSql`
+        UPDATE tenants
+        SET financing_consent_at = NOW(),
+            financing_consent_ip = ${ip},
+            financing_consent_version = ${CONSENT_VERSION}
+        WHERE id = ${slug}
+      `;
+
+      auditFinancing({
+        tenantId: slug,
+        actorType: 'owner',
+        actorId: email,
+        eventType: 'consent_granted',
+        resource: 'financing_consent',
+        details: { consent_types: consentTypes, version: CONSENT_VERSION, source: 'registration' },
+        ip,
+        userAgent,
+      });
+    }
 
     // Fire-and-forget email with PIN (include tenant subdomain for login URL)
     sendPinEmail(email, pin, restaurant_name, slug).catch(() => {});

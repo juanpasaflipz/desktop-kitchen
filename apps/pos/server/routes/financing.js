@@ -27,14 +27,18 @@ import { adminSql, getConn, getTenantId } from '../db/index.js';
 import { requireOwner } from '../middleware/ownerAuth.js';
 import { getTenant } from '../tenants.js';
 import { calculateMerchantProfile } from '../services/financing/scoringEngine.js';
+import { auditFinancing } from '../lib/auditLog.js';
+import { CONSENT_VERSION, consentText, getConsentDocument } from '../templates/financing-consent.js';
+import { notifyOfferAccepted } from '../services/financing/webhooks.js';
 
 const router = Router();
 
 // ─── Rate limiters ───────────────────────────────────────────────────
 
 const consentLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 60 * 1000, // 1 hour
   max: 5,
+  keyGenerator: (req) => `consent-${req.owner?.tenantId || req.ip}`,
   message: { error: 'Too many consent requests, please try again later' },
 });
 
@@ -43,17 +47,6 @@ const acceptLimiter = rateLimit({
   max: 3,
   message: { error: 'Too many acceptance requests, please try again later' },
 });
-
-// ─── Helpers ─────────────────────────────────────────────────────────
-
-function logEvent(tenantId, eventType, details = {}) {
-  adminSql`
-    INSERT INTO merchant_financing_events (tenant_id, event_type, details)
-    VALUES (${tenantId}, ${eventType}, ${JSON.stringify(details)}::jsonb)
-  `.catch(err => {
-    console.error('[Financing] Failed to log event:', err.message);
-  });
-}
 
 /**
  * Generate eligibility tips based on profile metrics.
@@ -109,8 +102,8 @@ router.post('/consent', requireOwner, consentLimiter, async (req, res) => {
     // Record each consent type via tenant-scoped connection (RLS)
     for (const consentType of consent_types) {
       await conn`
-        INSERT INTO data_processing_consent (consent_type, accepted, accepted_at, ip_address, user_agent)
-        VALUES (${consentType}, true, NOW(), ${ip}, ${userAgent})
+        INSERT INTO data_processing_consent (consent_type, accepted, accepted_at, ip_address, user_agent, consent_version)
+        VALUES (${consentType}, true, NOW(), ${ip}, ${userAgent}, ${CONSENT_VERSION})
       `;
     }
 
@@ -119,7 +112,7 @@ router.post('/consent', requireOwner, consentLimiter, async (req, res) => {
       UPDATE tenants
       SET financing_consent_at = NOW(),
           financing_consent_ip = ${ip},
-          financing_consent_version = '1.0'
+          financing_consent_version = ${CONSENT_VERSION}
       WHERE id = ${tenantId}
     `;
 
@@ -128,7 +121,16 @@ router.post('/consent', requireOwner, consentLimiter, async (req, res) => {
       console.error(`[Financing] Initial profile calc failed for tenant ${tenantId}:`, err.message);
     });
 
-    logEvent(tenantId, 'consent_granted', { consent_types, ip });
+    auditFinancing({
+      tenantId,
+      actorType: 'owner',
+      actorId: req.owner.email,
+      eventType: 'consent_granted',
+      resource: 'financing_consent',
+      details: { consent_types, version: CONSENT_VERSION },
+      ip,
+      userAgent,
+    });
 
     res.json({ consented: true, consent_at: new Date().toISOString() });
   } catch (error) {
@@ -145,13 +147,14 @@ router.get('/consent', requireOwner, async (req, res) => {
 
     const conn = getConn();
     const consents = await conn`
-      SELECT consent_type FROM data_processing_consent
+      SELECT consent_type, consent_version, accepted_at FROM data_processing_consent
       WHERE accepted = true AND revoked_at IS NULL
     `;
 
     res.json({
       consented: !!tenant.financing_consent_at,
       consent_at: tenant.financing_consent_at || null,
+      consent_version: tenant.financing_consent_version || null,
       consent_types: consents.map(c => c.consent_type),
     });
   } catch (error) {
@@ -160,10 +163,19 @@ router.get('/consent', requireOwner, async (req, res) => {
   }
 });
 
+// GET /api/financing/consent/terms
+router.get('/consent/terms', requireOwner, async (req, res) => {
+  const locale = req.query.locale || 'en';
+  const text = consentText[locale] || consentText.en;
+  res.json({ version: CONSENT_VERSION, consent: text });
+});
+
 // DELETE /api/financing/consent
-router.delete('/consent', requireOwner, async (req, res) => {
+router.delete('/consent', requireOwner, consentLimiter, async (req, res) => {
   try {
     const tenantId = req.owner.tenantId;
+    const ip = req.ip;
+    const userAgent = req.headers['user-agent'] || '';
     const conn = getConn();
 
     // Revoke all active consents (don't delete — regulatory requirement)
@@ -173,6 +185,15 @@ router.delete('/consent', requireOwner, async (req, res) => {
       WHERE accepted = true AND revoked_at IS NULL
     `;
 
+    // Withdraw any active financing offers
+    const withdrawn = await adminSql`
+      UPDATE merchant_financing_offers
+      SET status = 'withdrawn', admin_notes = 'Auto-withdrawn: consent revoked'
+      WHERE tenant_id = ${tenantId}
+        AND status IN ('available', 'viewed')
+      RETURNING id
+    `;
+
     // Clear financing_consent_at on tenant
     await adminSql`
       UPDATE tenants
@@ -180,9 +201,18 @@ router.delete('/consent', requireOwner, async (req, res) => {
       WHERE id = ${tenantId}
     `;
 
-    logEvent(tenantId, 'consent_revoked', { ip: req.ip });
+    auditFinancing({
+      tenantId,
+      actorType: 'owner',
+      actorId: req.owner.email,
+      eventType: 'consent_revoked',
+      resource: 'financing_consent',
+      details: { withdrawn_offers: withdrawn.map(o => o.id) },
+      ip,
+      userAgent,
+    });
 
-    res.json({ revoked: true });
+    res.json({ revoked: true, offers_withdrawn: withdrawn.length });
   } catch (error) {
     console.error('[Financing] Consent revoke error:', error.message);
     res.status(500).json({ error: 'Failed to revoke consent' });
@@ -278,7 +308,16 @@ router.post('/offers/:id/view', requireOwner, async (req, res) => {
       return res.status(404).json({ error: 'Offer not found or already viewed' });
     }
 
-    logEvent(tenantId, 'offer_viewed', { offer_id: offerId });
+    auditFinancing({
+      tenantId,
+      actorType: 'owner',
+      actorId: req.owner.email,
+      eventType: 'offer_viewed',
+      resource: 'financing_offer',
+      resourceId: offerId,
+      details: { offer_id: offerId },
+      ip: req.ip,
+    });
     res.json({ status: 'viewed' });
   } catch (error) {
     console.error('[Financing] Offer view error:', error.message);
@@ -305,11 +344,29 @@ router.post('/offers/:id/accept', requireOwner, acceptLimiter, async (req, res) 
       return res.status(404).json({ error: 'Offer not found or not in acceptable state' });
     }
 
-    logEvent(tenantId, 'offer_accepted', {
-      offer_id: offerId,
-      offer_amount: parseFloat(offer.offer_amount),
-      factor_rate: parseFloat(offer.factor_rate),
+    auditFinancing({
+      tenantId,
+      actorType: 'owner',
+      actorId: req.owner.email,
+      eventType: 'offer_accepted',
+      resource: 'financing_offer',
+      resourceId: offerId,
+      details: {
+        offer_id: offerId,
+        offer_amount: parseFloat(offer.offer_amount),
+        factor_rate: parseFloat(offer.factor_rate),
+        holdback_percent: parseFloat(offer.holdback_percent),
+      },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || '',
     });
+
+    // Notify webhook (fire-and-forget)
+    const tenant = await getTenant(tenantId);
+    const [profile] = await adminSql`
+      SELECT * FROM merchant_financial_profiles WHERE tenant_id = ${tenantId}
+    `;
+    notifyOfferAccepted(offer, profile, tenant).catch(() => {});
 
     res.json({
       status: 'accepted',
@@ -341,15 +398,86 @@ router.post('/offers/:id/decline', requireOwner, async (req, res) => {
       return res.status(404).json({ error: 'Offer not found or not in declinable state' });
     }
 
-    logEvent(tenantId, 'offer_declined', {
-      offer_id: offerId,
-      reason: reason || null,
+    auditFinancing({
+      tenantId,
+      actorType: 'owner',
+      actorId: req.owner.email,
+      eventType: 'offer_declined',
+      resource: 'financing_offer',
+      resourceId: offerId,
+      details: { offer_id: offerId, reason: reason || null },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || '',
     });
 
     res.json({ status: 'declined' });
   } catch (error) {
     console.error('[Financing] Offer decline error:', error.message);
     res.status(500).json({ error: 'Failed to decline offer' });
+  }
+});
+
+// GET /api/financing/export — download financial profile as JSON (ARCO: Access)
+router.get('/export', requireOwner, async (req, res) => {
+  try {
+    const tenantId = req.owner.tenantId;
+    const tenant = await getTenant(tenantId);
+
+    if (!tenant.financing_consent_at) {
+      return res.status(403).json({ error: 'Financing consent required' });
+    }
+
+    const [profile] = await adminSql`
+      SELECT * FROM merchant_financial_profiles WHERE tenant_id = ${tenantId}
+    `;
+
+    const offers = await adminSql`
+      SELECT id, offer_amount, holdback_percent, factor_rate, total_repayment,
+             estimated_repayment_days, status, created_at, expires_at,
+             accepted_at, declined_at
+      FROM merchant_financing_offers
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC
+    `;
+
+    const events = await adminSql`
+      SELECT event_type, details, created_at
+      FROM merchant_financing_events
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC
+      LIMIT 500
+    `;
+
+    const conn = getConn();
+    const consents = await conn`
+      SELECT consent_type, accepted, accepted_at, revoked_at, consent_version
+      FROM data_processing_consent
+      ORDER BY accepted_at DESC
+    `;
+
+    auditFinancing({
+      tenantId,
+      actorType: 'owner',
+      actorId: req.owner.email,
+      eventType: 'data_export_requested',
+      resource: 'financial_profile',
+      details: { export_format: 'json' },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || '',
+    });
+
+    res.json({
+      exported_at: new Date().toISOString(),
+      tenant_id: tenantId,
+      tenant_name: tenant.name,
+      profile: profile || null,
+      offers: Array.from(offers),
+      consent_records: Array.from(consents),
+      events: Array.from(events),
+    });
+  } catch (error) {
+    console.error('[Financing] Export error:', error.message);
+    res.status(500).json({ error: 'Failed to export data' });
   }
 });
 
@@ -556,6 +684,17 @@ adminRouter.post('/profiles/:tenantId/recalculate', async (req, res) => {
   try {
     const tenantId = parseInt(req.params.tenantId, 10);
     const profile = await calculateMerchantProfile(tenantId);
+
+    auditFinancing({
+      tenantId,
+      actorType: 'admin',
+      actorId: 'super_admin',
+      eventType: 'profile_recalculated',
+      resource: 'financial_profile',
+      details: { trigger: 'manual', risk_score: profile?.risk_score },
+      ip: req.ip,
+    });
+
     res.json({ profile });
   } catch (error) {
     console.error('[Financing Admin] Recalculate error:', error.message);
@@ -672,9 +811,28 @@ adminRouter.patch('/offers/:id', async (req, res) => {
       RETURNING *
     `;
 
-    logEvent(existing.tenant_id, 'offer_admin_updated', {
-      offer_id: offerId,
-      changes: { offer_amount, holdback_percent, factor_rate, status, admin_notes },
+    // Determine event type
+    const isWithdraw = status === 'withdrawn' && existing.status !== 'withdrawn';
+    const eventType = isWithdraw ? 'offer_withdrawn' : 'offer_modified';
+
+    auditFinancing({
+      tenantId: existing.tenant_id,
+      actorType: 'admin',
+      actorId: 'super_admin',
+      eventType,
+      resource: 'financing_offer',
+      resourceId: offerId,
+      details: {
+        offer_id: offerId,
+        changes: { offer_amount, holdback_percent, factor_rate, status, admin_notes },
+        previous: {
+          offer_amount: parseFloat(existing.offer_amount),
+          holdback_percent: parseFloat(existing.holdback_percent),
+          factor_rate: parseFloat(existing.factor_rate),
+          status: existing.status,
+        },
+      },
+      ip: req.ip,
     });
 
     res.json({ offer: updated });
@@ -742,6 +900,61 @@ adminRouter.get('/events', async (req, res) => {
   } catch (error) {
     console.error('[Financing Admin] Events list error:', error.message);
     res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
+// GET /admin/financing/activity — real-time activity feed (last 50 events)
+adminRouter.get('/activity', async (req, res) => {
+  try {
+    const { event_type, since } = req.query;
+
+    let events;
+    if (since) {
+      // Poll mode: get events since a timestamp
+      if (event_type) {
+        events = await adminSql`
+          SELECT e.*, t.name AS tenant_name
+          FROM merchant_financing_events e
+          JOIN tenants t ON t.id = e.tenant_id
+          WHERE e.created_at > ${since} AND e.event_type = ${event_type}
+          ORDER BY e.created_at DESC
+          LIMIT 50
+        `;
+      } else {
+        events = await adminSql`
+          SELECT e.*, t.name AS tenant_name
+          FROM merchant_financing_events e
+          JOIN tenants t ON t.id = e.tenant_id
+          WHERE e.created_at > ${since}
+          ORDER BY e.created_at DESC
+          LIMIT 50
+        `;
+      }
+    } else {
+      if (event_type) {
+        events = await adminSql`
+          SELECT e.*, t.name AS tenant_name
+          FROM merchant_financing_events e
+          JOIN tenants t ON t.id = e.tenant_id
+          WHERE e.event_type = ${event_type}
+          ORDER BY e.created_at DESC
+          LIMIT 50
+        `;
+      } else {
+        events = await adminSql`
+          SELECT e.*, t.name AS tenant_name
+          FROM merchant_financing_events e
+          JOIN tenants t ON t.id = e.tenant_id
+          ORDER BY e.created_at DESC
+          LIMIT 50
+        `;
+      }
+    }
+
+    res.json({ events: Array.from(events) });
+  } catch (error) {
+    console.error('[Financing Admin] Activity feed error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch activity feed' });
   }
 });
 

@@ -29,6 +29,11 @@
       "button": "Get Started",
       "submitting": "Submitting..."
     },
+    "terms": {
+      "loading": "Loading terms...",
+      "loadError": "Could not load terms. Please try again.",
+      "version": "Consent version: {{version}}"
+    },
     "trust": "Your data is encrypted and processed securely. You can revoke consent at any time."
   },
   "profile": {
@@ -162,6 +167,36 @@
       "type": "Event Type",
       "details": "Details",
       "filterAll": "All Types"
+    },
+    "activity": {
+      "title": "Activity Feed",
+      "noActivity": "No recent activity",
+      "filterAll": "All Events"
     }
+  },
+  "privacy": {
+    "title": "Data & Privacy",
+    "financialDataAnalysis": "Financial Data Analysis",
+    "consented": "Consented",
+    "notConsented": "Not consented",
+    "version": "Version {{version}}",
+    "viewTerms": "View Full Terms",
+    "downloadData": "Download My Data",
+    "exporting": "Exporting...",
+    "revokeConsent": "Revoke Consent",
+    "revokeTitle": "Revoke Data Consent",
+    "revokeWarning": "Are you sure? This will:",
+    "revokeEffect1": "Stop analyzing your transaction data",
+    "revokeEffect2": "Remove any active financing offers",
+    "revokeEffect3": "You can re-enable this at any time",
+    "revokeRetention": "Historical data is retained for regulatory compliance.",
+    "revoking": "Revoking...",
+    "cancel": "Cancel",
+    "termsTitle": "Data Processing Terms"
+  },
+  "registration": {
+    "consentHeadline": "Want access to working capital?",
+    "consentDescription": "Let us analyze your sales data to determine eligibility for funding.",
+    "consentCheckbox": "I agree to data analysis for financing eligibility"
   }
 }

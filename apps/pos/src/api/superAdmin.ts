@@ -361,3 +361,11 @@ export function getFinancingEvents(params?: { tenant_id?: string; event_type?: s
   const s = qs.toString();
   return adminRequest<FinancingEvent[]>(`/financing/events${s ? `?${s}` : ''}`);
 }
+
+export function getFinancingActivity(params?: { event_type?: string; since?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.event_type) qs.set('event_type', params.event_type);
+  if (params?.since) qs.set('since', params.since);
+  const s = qs.toString();
+  return adminRequest<{ events: FinancingEvent[] }>(`/financing/activity${s ? `?${s}` : ''}`);
+}

@@ -1,0 +1,117 @@
+name: Deploy Vercel Apps
+
+on:
+  push:
+    branches: [main]
+
+env:
+  VERCEL_ORG_ID: team_N6U2XdgXTAMNB3ZEv6k84D0c
+
+jobs:
+  deploy-docs:
+    name: Deploy Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff HEAD^ HEAD --quiet -- apps/docs/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_Eo2MnJk7BroJ5dDnwzD84yBUEh8H
+        run: |
+          npm i -g vercel@latest
+          cd apps/docs
+          vercel --prod --token "$VERCEL_TOKEN" --yes
+
+  deploy-es-landing:
+    name: Deploy ES Landing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff HEAD^ HEAD --quiet -- apps/es-landing/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_oOeFOjXLX7wD70K69LL1dcbip3bG
+        run: |
+          npm i -g vercel@latest
+          cd apps/es-landing
+          vercel --prod --token "$VERCEL_TOKEN" --yes
+
+  deploy-marketing:
+    name: Deploy Marketing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff HEAD^ HEAD --quiet -- apps/marketing/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_XaoBnwNL5CWRr7RDoWZJBeSoYd1S
+        run: |
+          npm i -g vercel@latest
+          cd apps/marketing
+          vercel --prod --token "$VERCEL_TOKEN" --yes
+
+  deploy-sales:
+    name: Deploy Sales
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff HEAD^ HEAD --quiet -- apps/sales/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to Vercel
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_Rl6rbBy6ahhnUKdWROEHLEuTe4K8
+        run: |
+          npm i -g vercel@latest
+          cd apps/sales
+          vercel --prod --token "$VERCEL_TOKEN" --yes

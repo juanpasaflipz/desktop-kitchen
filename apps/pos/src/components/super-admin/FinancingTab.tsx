@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
-import { RefreshCw, ChevronDown, ChevronUp, Save, X } from 'lucide-react';
+import { RefreshCw, ChevronDown, ChevronUp, Save, X, Activity } from 'lucide-react';
 import {
   getFinancingOverview,
   getFinancingProfiles,
   getFinancingOffers as getAdminOffers,
   getFinancingEvents,
+  getFinancingActivity,
   recalculateFinancingProfile,
   updateFinancingOffer,
 } from '../../api/superAdmin';
@@ -75,7 +76,42 @@ export default function FinancingTab() {
   // Recalculate loading
   const [recalcTenantId, setRecalcTenantId] = useState<string | null>(null);
 
+  // Activity feed
+  const [activity, setActivity] = useState<FinancingEvent[]>([]);
+  const [activityFilter, setActivityFilter] = useState('');
+  const lastActivityTs = useRef<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [openSection, setOpenSection] = useState<Section>('profiles');
+
+  const fetchActivity = useCallback(async () => {
+    try {
+      const result = await getFinancingActivity({
+        event_type: activityFilter || undefined,
+        since: lastActivityTs.current || undefined,
+      });
+      const newEvents = result.events || [];
+      if (newEvents.length > 0) {
+        setActivity(prev => {
+          const merged = [...newEvents, ...prev].slice(0, 50);
+          lastActivityTs.current = merged[0]?.created_at || null;
+          return merged;
+        });
+      }
+    } catch {}
+  }, [activityFilter]);
+
+  // Poll activity every 30 seconds + on tab focus
+  useEffect(() => {
+    fetchActivity();
+    pollRef.current = setInterval(fetchActivity, 30000);
+    const onFocus = () => fetchActivity();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [fetchActivity]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -191,6 +227,61 @@ export default function FinancingTab() {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* Activity Feed */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-2">
+            <Activity size={16} className="text-brand-400" />
+            <h3 className="text-white font-bold">Activity Feed</h3>
+            <span className="text-neutral-500 text-xs">(auto-refreshes)</span>
+          </div>
+          <select
+            value={activityFilter}
+            onChange={(e) => { setActivityFilter(e.target.value); lastActivityTs.current = null; setActivity([]); }}
+            className="bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-sm text-neutral-300"
+          >
+            <option value="">All Types</option>
+            <option value="consent_granted">Consent Granted</option>
+            <option value="consent_revoked">Consent Revoked</option>
+            <option value="profile_calculated">Profile Calculated</option>
+            <option value="offer_generated">Offer Generated</option>
+            <option value="offer_viewed">Offer Viewed</option>
+            <option value="offer_accepted">Offer Accepted</option>
+            <option value="offer_declined">Offer Declined</option>
+            <option value="offer_expired">Offer Expired</option>
+            <option value="offer_withdrawn">Offer Withdrawn</option>
+            <option value="offer_modified">Offer Modified</option>
+            <option value="data_export_requested">Data Export</option>
+          </select>
+        </div>
+        <div className="max-h-64 overflow-y-auto border-t border-neutral-800">
+          {activity.length === 0 ? (
+            <p className="px-4 py-6 text-center text-neutral-500 text-sm">No recent activity</p>
+          ) : (
+            <div className="divide-y divide-neutral-800/50">
+              {activity.map((ev) => {
+                const isPositive = ['consent_granted', 'offer_accepted'].includes(ev.event_type);
+                const isNegative = ['consent_revoked', 'offer_declined', 'offer_withdrawn', 'offer_expired'].includes(ev.event_type);
+                const dotColor = isPositive ? 'bg-green-400' : isNegative ? 'bg-red-400' : 'bg-amber-400';
+                return (
+                  <div key={ev.id} className="px-4 py-2.5 flex items-start gap-3 text-sm hover:bg-neutral-800/30">
+                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${dotColor}`} />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-neutral-500 text-xs mr-2">
+                        {new Date(ev.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="text-white font-medium">{ev.tenant_name || ev.tenant_id}</span>
+                      <span className="text-neutral-400 mx-1">&mdash;</span>
+                      <span className="text-neutral-300">{ev.event_type.replace(/_/g, ' ')}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Profiles Table */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">

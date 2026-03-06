@@ -1,12 +1,12 @@
 # Privacy Policy
 
-**Desktop Kitchen POS — iPad App**
+**Desktop Kitchen POS**
 
 *Last updated: February 27, 2026*
 
 ## Overview
 
-Desktop Kitchen POS is a business-to-business (B2B) restaurant point-of-sale application for iPad. The app connects to your organization's self-hosted or cloud-hosted Desktop Kitchen server to process orders, manage inventory, and run kitchen operations.
+Desktop Kitchen POS is a business-to-business (B2B) restaurant point-of-sale application for tablets. The app connects to your organization's self-hosted or cloud-hosted Desktop Kitchen server to process orders, manage inventory, and run kitchen operations.
 
 ## Data Collection and Storage
 

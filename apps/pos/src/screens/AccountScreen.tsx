@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   ArrowLeft, User, BarChart3, CreditCard, Settings, Lock,
   Check, AlertCircle, Crown, Smartphone, Wifi, WifiOff, X, Loader2,
-  Landmark, Shield,
+  Landmark, Shield, FileText, Download, ShieldOff,
 } from 'lucide-react';
-import { getAccount, updateAccount, changePassword, createCheckoutSession, createPortalSession, getMpTerminals, setMpDefaultTerminal as apiSetMpDefaultTerminal, validatePromoCode, getBankConnections, getBankAccounts, syncBankConnection, deleteBankConnection, type BankConnection, type BankAccount } from '../api';
+import { getAccount, updateAccount, changePassword, createCheckoutSession, createPortalSession, getMpTerminals, setMpDefaultTerminal as apiSetMpDefaultTerminal, validatePromoCode, getBankConnections, getBankAccounts, syncBankConnection, deleteBankConnection, getFinancingConsent, deleteFinancingConsent, exportFinancingData, getFinancingConsentTerms, type BankConnection, type BankAccount } from '../api';
 import { usePlan } from '../context/PlanContext';
 import BankConnectionCard from '../components/banking/BankConnectionCard';
 import ConnectBankButton from '../components/banking/ConnectBankButton';
@@ -108,6 +108,14 @@ export default function AccountScreen() {
   const [bankLoading, setBankLoading] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
 
+  // Data & Privacy
+  const [consentStatus, setConsentStatus] = useState<{ consented: boolean; consent_at?: string; consent_version?: string } | null>(null);
+  const [showConsentTerms, setShowConsentTerms] = useState(false);
+  const [consentTerms, setConsentTerms] = useState<any>(null);
+  const [showRevokeModal, setShowRevokeModal] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+
   const { plan, limits } = usePlan();
   const isBankingPlan = plan === 'pro';
   const maxBankConns = limits.maxBankConnections || 0;
@@ -149,6 +157,10 @@ export default function AccountScreen() {
         if (data.plan === 'pro') {
           loadBankData();
         }
+        // Load consent status
+        getFinancingConsent()
+          .then(cs => setConsentStatus({ consented: cs.consented ?? cs.has_consent, consent_at: cs.consented_at ?? (cs as any).consent_at, consent_version: (cs as any).consent_version }))
+          .catch(() => {});
       })
       .catch((err: any) => {
         setError(err.message || 'Failed to load account');
@@ -729,6 +741,185 @@ export default function AccountScreen() {
                 )}
 
                 <SecurityInfoModal open={showSecurityModal} onClose={() => setShowSecurityModal(false)} />
+              </div>
+            )}
+
+            {/* Data & Privacy */}
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Shield className="text-brand-500" size={22} />
+                <h2 className="text-lg font-bold text-white">Data & Privacy</h2>
+              </div>
+
+              {/* Consent Status */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-neutral-400 text-sm">Financial Data Analysis</p>
+                    <p className="text-white text-sm font-medium mt-0.5">
+                      {consentStatus?.consented ? (
+                        <span className="text-green-400 flex items-center gap-1">
+                          <Check size={14} /> Consented
+                          {consentStatus.consent_at && (
+                            <span className="text-neutral-500 font-normal ml-1">
+                              ({new Date(consentStatus.consent_at).toLocaleDateString()})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-neutral-500">Not consented</span>
+                      )}
+                    </p>
+                    {consentStatus?.consent_version && (
+                      <p className="text-neutral-600 text-xs mt-0.5">Version {consentStatus.consent_version}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {/* View Terms */}
+                  <button
+                    onClick={async () => {
+                      if (!consentTerms) {
+                        try {
+                          const result = await getFinancingConsentTerms('en');
+                          setConsentTerms(result.consent);
+                        } catch {}
+                      }
+                      setShowConsentTerms(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-neutral-800 border border-neutral-700 text-neutral-300 text-sm rounded-lg hover:bg-neutral-700 transition-colors"
+                  >
+                    <FileText size={14} /> View Full Terms
+                  </button>
+
+                  {/* Download Data */}
+                  {consentStatus?.consented && (
+                    <button
+                      onClick={async () => {
+                        setExportLoading(true);
+                        try {
+                          const data = await exportFinancingData();
+                          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `financial-profile-${new Date().toISOString().slice(0, 10)}.json`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        } catch {}
+                        setExportLoading(false);
+                      }}
+                      disabled={exportLoading}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-neutral-800 border border-neutral-700 text-neutral-300 text-sm rounded-lg hover:bg-neutral-700 transition-colors disabled:opacity-50"
+                    >
+                      <Download size={14} /> {exportLoading ? 'Exporting...' : 'Download My Data'}
+                    </button>
+                  )}
+
+                  {/* Revoke Consent */}
+                  {consentStatus?.consented && (
+                    <button
+                      onClick={() => setShowRevokeModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 border border-red-800/50 text-red-400 text-sm rounded-lg hover:bg-red-900/20 transition-colors"
+                    >
+                      <ShieldOff size={14} /> Revoke Consent
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* View Terms Modal */}
+            {showConsentTerms && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowConsentTerms(false)}>
+                <div className="bg-neutral-900 border border-neutral-700 rounded-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white font-bold text-lg">Data Processing Terms</h3>
+                    <button onClick={() => setShowConsentTerms(false)} className="text-neutral-400 hover:text-white">
+                      <X size={20} />
+                    </button>
+                  </div>
+                  {consentTerms ? (
+                    <div className="text-neutral-300 text-sm space-y-4">
+                      <h4 className="text-white font-semibold">{consentTerms.title}</h4>
+                      <p>{consentTerms.intro}</p>
+                      {consentTerms.sections?.map((s: any, i: number) => (
+                        <div key={i}>
+                          <p className="text-white font-medium">{s.heading}</p>
+                          <p className="text-neutral-400">{s.body}</p>
+                        </div>
+                      ))}
+                      <div>
+                        <p className="text-white font-medium">{consentTerms.dataWeAnalyze?.heading}:</p>
+                        <ul className="list-disc pl-5 text-neutral-400 space-y-1">
+                          {consentTerms.dataWeAnalyze?.items?.map((item: string, i: number) => <li key={i}>{item}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{consentTerms.dataWeDoNotAccess?.heading}:</p>
+                        <ul className="list-disc pl-5 text-neutral-400 space-y-1">
+                          {consentTerms.dataWeDoNotAccess?.items?.map((item: string, i: number) => <li key={i}>{item}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{consentTerms.rights?.heading}:</p>
+                        <ul className="list-disc pl-5 text-neutral-400 space-y-1">
+                          {consentTerms.rights?.items?.map((item: string, i: number) => <li key={i}>{item}</li>)}
+                        </ul>
+                        <p className="text-neutral-500 text-xs mt-2">{consentTerms.rights?.retention}</p>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{consentTerms.transfer?.heading}:</p>
+                        <p className="text-neutral-400">{consentTerms.transfer?.body}</p>
+                      </div>
+                      <p className="text-neutral-500 text-xs">Consent version: {consentTerms.version}</p>
+                    </div>
+                  ) : (
+                    <p className="text-neutral-400">Loading terms...</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Revoke Consent Modal */}
+            {showRevokeModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowRevokeModal(false)}>
+                <div className="bg-neutral-900 border border-neutral-700 rounded-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                  <h3 className="text-white font-bold text-lg">Revoke Data Consent</h3>
+                  <div className="text-neutral-300 text-sm space-y-2">
+                    <p>Are you sure? This will:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-neutral-400">
+                      <li>Stop analyzing your transaction data</li>
+                      <li>Remove any active financing offers</li>
+                      <li>You can re-enable this at any time</li>
+                    </ul>
+                    <p className="text-neutral-500 text-xs">Historical data is retained for regulatory compliance.</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={async () => {
+                        setRevokeLoading(true);
+                        try {
+                          await deleteFinancingConsent();
+                          setConsentStatus({ consented: false });
+                          setShowRevokeModal(false);
+                        } catch {}
+                        setRevokeLoading(false);
+                      }}
+                      disabled={revokeLoading}
+                      className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {revokeLoading ? 'Revoking...' : 'Revoke Consent'}
+                    </button>
+                    <button
+                      onClick={() => setShowRevokeModal(false)}
+                      className="px-6 py-2.5 border border-neutral-600 text-neutral-300 rounded-lg hover:bg-neutral-800 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </>
