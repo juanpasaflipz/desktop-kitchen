@@ -1360,23 +1360,71 @@ const Investors: NextPage = () => {
               </h2>
               <p className="mt-6 text-lg text-white/40 max-w-xl">
                 {isSpanish
-                  ? "Significativamente por debajo de competidores establecidos mientras ofrece capacidades superiores de IA. El código promotor MEXICO50 da 50% de descuento el primer año."
-                  : "Significantly below established competitors while offering superior AI capabilities. Promoter code MEXICO50 gives 50% off year one."}
+                  ? "Dos planes simples. Sin complejidad. El código promotor MEXICO50 da 50% de descuento el primer año."
+                  : "Two simple plans. No complexity. Promoter code MEXICO50 gives 50% off year one."}
               </p>
             </FadeIn>
 
-            <div className="mt-16 md:mt-20 grid md:grid-cols-3 gap-6">
+            <div className="mt-16 md:mt-20 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {[
                 {
-                  name: "Starter",
-                  price: "$29",
+                  name: isSpanish ? "Gratis para Siempre" : "Free for Life",
+                  price: "$0",
                   period: isSpanish
-                    ? "por mes \u00b7 1 marca"
-                    : "per month \u00b7 1 brand",
+                    ? "50 transacciones/día · 1 marca"
+                    : "50 transactions/day · 1 brand",
                   featured: false,
                   features: [
                     {
                       text: isSpanish ? "1 marca virtual" : "1 virtual brand",
+                      active: true,
+                    },
+                    {
+                      text: isSpanish
+                        ? "POS esencial (pedidos, pagos, recibos)"
+                        : "Core POS (orders, payments, receipts)",
+                      active: true,
+                    },
+                    {
+                      text: isSpanish
+                        ? "Gestión básica de menú"
+                        : "Basic menu management",
+                      active: true,
+                    },
+                    {
+                      text: isSpanish
+                        ? "Soporte por email"
+                        : "Email support",
+                      active: true,
+                    },
+                    {
+                      text: isSpanish
+                        ? "Integración con delivery"
+                        : "Delivery integration",
+                      active: false,
+                    },
+                    {
+                      text: isSpanish
+                        ? "IA y precios dinámicos"
+                        : "AI & dynamic pricing",
+                      active: false,
+                    },
+                  ],
+                  cta: isSpanish ? "Empezar Gratis" : "Start Free",
+                },
+                {
+                  name: "Pro",
+                  price: "$80",
+                  period: isSpanish
+                    ? "por mes · todo ilimitado"
+                    : "per month · unlimited everything",
+                  featured: true,
+                  badge: isSpanish ? "Todo Incluido" : "Everything Included",
+                  features: [
+                    {
+                      text: isSpanish
+                        ? "Marcas y sucursales ilimitadas"
+                        : "Unlimited brands & locations",
                       active: true,
                     },
                     {
@@ -1387,74 +1435,20 @@ const Investors: NextPage = () => {
                     },
                     {
                       text: isSpanish
-                        ? "Tracking de comisiones por plataforma"
-                        : "Commission tracking per platform",
+                        ? "Asistente IA — copiloto 24/7"
+                        : "AI Assistant — 24/7 copilot",
                       active: true,
                     },
                     {
                       text: isSpanish
-                        ? "Reportes básicos de P&L delivery"
-                        : "Basic delivery P&L reports",
+                        ? "Upselling y precios dinámicos con IA"
+                        : "AI-powered upselling & dynamic pricing",
                       active: true,
                     },
                     {
                       text: isSpanish
-                        ? "Múltiples marcas virtuales"
-                        : "Multiple virtual brands",
-                      active: false,
-                    },
-                    {
-                      text: isSpanish
-                        ? "IA upselling y pricing dinámico"
-                        : "AI upselling & dynamic pricing",
-                      active: false,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Recaptura de clientes por SMS"
-                        : "SMS customer recapture",
-                      active: false,
-                    },
-                  ],
-                  cta: isSpanish ? "Comenzar" : "Get Started",
-                },
-                {
-                  name: "Pro",
-                  price: "$79",
-                  period: isSpanish
-                    ? "por mes \u00b7 hasta 3 marcas"
-                    : "per month \u00b7 up to 3 brands",
-                  featured: true,
-                  badge: isSpanish ? "Más Popular" : "Most Popular",
-                  features: [
-                    {
-                      text: isSpanish
-                        ? "Hasta 3 marcas virtuales"
-                        : "Up to 3 virtual brands",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Las 3 plataformas de delivery"
-                        : "All 3 delivery platforms",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Inteligencia de márgenes completa"
-                        : "Full margin intelligence",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Motor de upselling con IA"
-                        : "AI-powered upselling engine",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Recaptura de clientes por SMS"
-                        : "SMS customer recapture",
+                        ? "Acceso a financiamiento"
+                        : "Access to financing",
                       active: true,
                     },
                     {
@@ -1465,65 +1459,18 @@ const Investors: NextPage = () => {
                     },
                     {
                       text: isSpanish
-                        ? "Marcas ilimitadas"
-                        : "Unlimited brands",
-                      active: false,
-                    },
-                  ],
-                  cta: isSpanish ? "Comenzar" : "Get Started",
-                },
-                {
-                  name: "Ghost Kitchen",
-                  price: "$129",
-                  period: isSpanish
-                    ? "por mes \u00b7 marcas ilimitadas"
-                    : "per month \u00b7 unlimited brands",
-                  featured: false,
-                  features: [
-                    {
-                      text: isSpanish
-                        ? "Marcas virtuales ilimitadas"
-                        : "Unlimited virtual brands",
+                        ? "Recaptura de clientes por SMS"
+                        : "SMS customer recapture",
                       active: true,
                     },
                     {
                       text: isSpanish
-                        ? "Ubicaciones ilimitadas"
-                        : "Unlimited locations",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Dashboard multi-ubicación"
-                        : "Multi-location dashboard",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Inventario compartido entre marcas"
-                        : "Cross-brand inventory pooling",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Onboarding y setup dedicado"
-                        : "Dedicated onboarding & setup",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Integración WhatsApp Business"
-                        : "WhatsApp Business integration",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Soporte prioritario por teléfono y WhatsApp"
-                        : "Priority phone & WhatsApp support",
+                        ? "Onboarding dedicado y soporte prioritario"
+                        : "Dedicated onboarding & priority support",
                       active: true,
                     },
                   ],
-                  cta: isSpanish ? "Contactar Ventas" : "Contact Sales",
+                  cta: isSpanish ? "Comenzar Pro" : "Start Pro",
                 },
               ].map((plan, i) => (
                 <FadeIn key={i} delay={i * 0.1}>

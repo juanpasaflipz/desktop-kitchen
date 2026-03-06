@@ -423,9 +423,7 @@ function PricingCard({
 
 const pricingPlans = [
   { key: "free", usd: 0, annualUsd: 0, highlight: false },
-  { key: "starter", usd: 29, annualUsd: 261, highlight: false },
-  { key: "pro", usd: 79, annualUsd: 711, highlight: true },
-  { key: "ghost", usd: 129, annualUsd: 1161, highlight: false },
+  { key: "pro", usd: 80, annualUsd: 720, highlight: true },
 ] as const;
 
 function PricingSection({ t, onCtaClick }: { t: typeof en; onCtaClick: () => void }) {
@@ -502,7 +500,7 @@ function PricingSection({ t, onCtaClick }: { t: typeof en; onCtaClick: () => voi
           </div>
         </FadeIn>
 
-        <div className="mt-16 md:mt-20 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="mt-16 md:mt-20 grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {pricingPlans.map((plan, i) => (
             <FadeIn key={plan.key} delay={i * 0.1}>
               <PricingCard
@@ -627,28 +625,18 @@ function StructuredData({ locale, t }: { locale: string; t: typeof en }) {
         "@type": "Offer",
         price: "0",
         priceCurrency: "USD",
-        name: isSpanish ? "Plan Gratis" : "Free Plan",
+        name: isSpanish ? "Gratis para Siempre" : "Free for Life",
         description: isSpanish ? "50 transacciones/día, 1 marca virtual" : "50 transactions/day, 1 virtual brand",
       },
       {
         "@type": "Offer",
-        price: "29",
-        priceCurrency: "USD",
-        name: "Starter",
-        priceValidUntil: "2026-12-31",
-        description: isSpanish
-          ? "Transacciones ilimitadas, integración con Rappi, Uber Eats y DiDi"
-          : "Unlimited transactions, Rappi, Uber Eats & DiDi integration",
-      },
-      {
-        "@type": "Offer",
-        price: "79",
+        price: "80",
         priceCurrency: "USD",
         name: "Pro",
-        priceValidUntil: "2026-12-31",
+        priceValidUntil: "2027-12-31",
         description: isSpanish
-          ? "IA, marcas virtuales, P&L multi-marca por plataforma"
-          : "AI, virtual brands, multi-brand P&L by platform",
+          ? "Todo ilimitado: marcas, sucursales, IA, delivery, lealtad y más"
+          : "Unlimited everything: brands, locations, AI, delivery, loyalty and more",
       },
     ],
     featureList: isSpanish

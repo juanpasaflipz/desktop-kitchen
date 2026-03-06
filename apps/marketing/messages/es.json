@@ -44,8 +44,8 @@
   "pricingHeadline": "PRECIOS SIMPLES Y TRANSPARENTES.",
   "pricingSub": "Sin cuotas ocultas. Sin cobros por transacción. Cancela cuando quieras.",
 
-  "pricing_free_name": "Gratis",
-  "pricing_free_tagline": "Pruébalo con tu primera marca",
+  "pricing_free_name": "Gratis para Siempre",
+  "pricing_free_tagline": "Todo lo que necesitas para empezar",
   "pricing_free_limits": "50 transacciones/día · 1 marca",
   "pricing_free_cta": "Empezar Gratis",
   "pricing_free_features": [
@@ -56,73 +56,42 @@
     "Soporte por email"
   ],
   "pricing_free_missing": [
+    "Transacciones ilimitadas",
+    "Asistente IA — tu copiloto 24/7",
+    "Acceso a financiamiento para tu negocio",
     "Integración con plataformas de delivery",
-    "Seguimiento de comisiones",
-    "Upselling con IA",
-    "Recaptura de clientes por SMS",
-    "P&L multi-marca"
-  ],
-
-  "pricing_starter_name": "Starter",
-  "pricing_starter_tagline": "Para operadores de una sola marca con delivery",
-  "pricing_starter_limits": "Transacciones ilimitadas · 1 marca",
-  "pricing_starter_cta": "Comenzar",
-  "pricing_starter_features": [
-    "1 marca virtual",
-    "POS completo con transacciones ilimitadas",
-    "Integración con Rappi, Uber Eats y DiDi Food",
-    "Seguimiento de comisiones por plataforma",
-    "Reportes básicos de P&L de delivery",
-    "Gestión de inventario",
-    "Gestión de empleados y PINs",
-    "Soporte por email y chat"
-  ],
-  "pricing_starter_missing": [
-    "Múltiples marcas virtuales",
     "Upselling y precios dinámicos con IA",
     "Recaptura de clientes por SMS",
-    "P&L multi-marca"
+    "Multi-marca y multi-sucursal",
+    "Programas de lealtad y tarjetas de sellos"
   ],
 
   "pricing_pro_name": "Pro",
-  "pricing_pro_tagline": "Para operadores delivery-first listos para escalar",
-  "pricing_pro_badge": "Más Popular",
-  "pricing_pro_limits": "Transacciones ilimitadas · 3 marcas",
+  "pricing_pro_tagline": "Todo ilimitado para operadores listos para escalar",
+  "pricing_pro_badge": "Todo Incluido",
+  "pricing_pro_limits": "Transacciones ilimitadas · Marcas ilimitadas",
   "pricing_pro_cta": "Comenzar Pro",
   "pricing_pro_features": [
-    "Hasta 3 marcas virtuales",
-    "Todo lo de Starter",
-    "Motor de upselling con IA",
-    "Sugerencias de precios dinámicos",
-    "Campañas de recaptura por SMS",
-    "P&L completo multi-marca por plataforma",
-    "Pronóstico de inventario",
-    "Programas de lealtad y tarjetas de sellos",
-    "Soporte prioritario"
-  ],
-  "pricing_pro_missing": [
-    "Marcas ilimitadas",
-    "Gestión multi-sucursal",
-    "Onboarding dedicado"
-  ],
-
-  "pricing_ghost_name": "Ghost Kitchen",
-  "pricing_ghost_tagline": "Para operadores multi-sucursal y multi-marca",
-  "pricing_ghost_limits": "Transacciones ilimitadas · Marcas ilimitadas",
-  "pricing_ghost_cta": "Contáctanos",
-  "pricing_ghost_features": [
     "Marcas virtuales ilimitadas",
     "Sucursales ilimitadas",
-    "Todo lo de Pro",
+    "POS completo con transacciones ilimitadas",
+    "Asistente IA — tu copiloto 24/7 para tu restaurante",
+    "Upselling y precios dinámicos con IA",
+    "Acceso a financiamiento para tu negocio",
+    "Integración con Rappi, Uber Eats y DiDi Food",
+    "Seguimiento de comisiones y P&L de delivery",
+    "Campañas de recaptura por SMS",
+    "P&L completo multi-marca por plataforma",
+    "Gestión de inventario y pronósticos",
+    "Programas de lealtad y tarjetas de sellos",
+    "Gestión de empleados y PINs",
     "Dashboard multi-sucursal",
-    "Inventario compartido entre marcas",
-    "Benchmarking de rendimiento por marca",
     "Reglas de markup personalizadas por marca",
     "Onboarding y configuración dedicados",
     "Integración con WhatsApp Business",
     "Soporte prioritario por teléfono y WhatsApp"
   ],
-  "pricing_ghost_missing": [],
+  "pricing_pro_missing": [],
 
   "pricingMonthly": "Mensual",
   "pricingAnnual": "Anual",
@@ -182,7 +151,7 @@
     },
     {
       "q": "¿Cuánto cuesta el software punto de venta Desktop Kitchen?",
-      "a": "Desktop Kitchen ofrece un plan gratuito para siempre con hasta 50 transacciones diarias. Los planes de pago empiezan desde $29 USD/mes (aproximadamente $565 MXN) con transacciones ilimitadas, integración con plataformas de delivery y gestión de inventario."
+      "a": "Desktop Kitchen ofrece un plan Gratis para Siempre con hasta 50 transacciones diarias. El plan Pro a $80 USD/mes (aproximadamente $1,560 MXN) desbloquea todo ilimitado — transacciones, marcas, sucursales, IA, integración con delivery y más."
     },
     {
       "q": "¿Qué es una ghost kitchen o cocina fantasma?",
