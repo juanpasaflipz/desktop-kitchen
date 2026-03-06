@@ -32,7 +32,7 @@ jobs:
           VERCEL_PROJECT_ID: prj_Eo2MnJk7BroJ5dDnwzD84yBUEh8H
         run: |
           npm i -g vercel@latest
-          vercel --prod --token "$VERCEL_TOKEN" --yes
+          vercel --cwd apps/docs --prod --token "$VERCEL_TOKEN" --yes
 
   deploy-es-landing:
     name: Deploy ES Landing
@@ -58,7 +58,7 @@ jobs:
           VERCEL_PROJECT_ID: prj_oOeFOjXLX7wD70K69LL1dcbip3bG
         run: |
           npm i -g vercel@latest
-          vercel --prod --token "$VERCEL_TOKEN" --yes
+          vercel --cwd apps/es-landing --prod --token "$VERCEL_TOKEN" --yes
 
   deploy-marketing:
     name: Deploy Marketing
@@ -84,7 +84,7 @@ jobs:
           VERCEL_PROJECT_ID: prj_XaoBnwNL5CWRr7RDoWZJBeSoYd1S
         run: |
           npm i -g vercel@latest
-          vercel --prod --token "$VERCEL_TOKEN" --yes
+          vercel --cwd apps/marketing --prod --token "$VERCEL_TOKEN" --yes
 
   deploy-sales:
     name: Deploy Sales
@@ -110,4 +110,4 @@ jobs:
           VERCEL_PROJECT_ID: prj_Rl6rbBy6ahhnUKdWROEHLEuTe4K8
         run: |
           npm i -g vercel@latest
-          vercel --prod --token "$VERCEL_TOKEN" --yes
+          vercel --cwd apps/sales --prod --token "$VERCEL_TOKEN" --yes
