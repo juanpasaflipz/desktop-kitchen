@@ -15,7 +15,7 @@
 
   "featuresLabel": "Features",
   "featuresHeadline": "EVERYTHING YOUR KITCHEN NEEDS.",
-  "featuresSub": "Six powerful modules. One platform. Zero friction.",
+  "featuresSub": "Eight powerful modules. One platform. Zero friction.",
 
   "feature1Title": "Point of Sale",
   "feature1Desc": "Fast, intuitive ordering with modifiers, combos, split payments, and Stripe integration. Built for speed at the counter.",
@@ -29,6 +29,10 @@
   "feature5Desc": "Stamp cards, SMS campaigns, and customer profiles. Turn first-time visitors into regulars automatically.",
   "feature6Title": "AI Intelligence",
   "feature6Desc": "Smart upsell suggestions, dynamic pricing, combo recommendations, and shrinkage detection — powered by real-time data.",
+  "feature7Title": "AI Assistant",
+  "feature7Desc": "Your 24/7 restaurant copilot. Ask questions about your sales, get menu optimization advice, and receive actionable insights in plain language.",
+  "feature8Title": "Financing",
+  "feature8Desc": "Access financing for your business based on your real sales data. Grow faster with capital that understands your restaurant.",
 
   "howLabel": "How It Works",
   "howHeadline": "UP AND RUNNING IN MINUTES.",

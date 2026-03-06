@@ -15,7 +15,7 @@
 
   "featuresLabel": "Funciones del Sistema Punto de Venta",
   "featuresHeadline": "TODO LO QUE TU RESTAURANTE NECESITA.",
-  "featuresSub": "Seis módulos de software POS para restaurantes. Una plataforma. Cero fricción.",
+  "featuresSub": "Ocho módulos de software POS para restaurantes. Una plataforma. Cero fricción.",
 
   "feature1Title": "Punto de Venta (POS)",
   "feature1Desc": "Toma de pedidos rápida e intuitiva con modificadores, combos, pagos divididos e integración con Stripe. Sistema punto de venta hecho para velocidad en mostrador y servicio rápido.",
@@ -29,6 +29,10 @@
   "feature5Desc": "Tarjetas de sellos, campañas SMS y perfiles de clientes. Programa de lealtad que convierte visitantes en clientes frecuentes automáticamente.",
   "feature6Title": "Inteligencia Artificial",
   "feature6Desc": "Sugerencias de upsell con IA, precios dinámicos, recomendaciones de combos y detección de merma — impulsado por datos de tu restaurante en tiempo real.",
+  "feature7Title": "Asistente IA",
+  "feature7Desc": "Tu copiloto 24/7 para tu restaurante. Haz preguntas sobre tus ventas, recibe consejos de optimización de menú e insights accionables en lenguaje natural.",
+  "feature8Title": "Financiamiento",
+  "feature8Desc": "Accede a financiamiento para tu negocio basado en tus datos reales de ventas. Crece más rápido con capital que entiende tu restaurante.",
 
   "howLabel": "Cómo Funciona",
   "howHeadline": "TU POS LISTO EN MINUTOS.",
