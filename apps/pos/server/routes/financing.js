@@ -30,6 +30,7 @@ import { calculateMerchantProfile } from '../services/financing/scoringEngine.js
 import { auditFinancing } from '../lib/auditLog.js';
 import { CONSENT_VERSION, consentText, getConsentDocument } from '../templates/financing-consent.js';
 import { notifyOfferAccepted } from '../services/financing/webhooks.js';
+import { disburseMCA } from '../services/settlement/mcaDisbursement.js';
 
 const router = Router();
 
@@ -39,15 +40,18 @@ const consentLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5,
   keyGenerator: (req) => `consent-${req.owner?.tenantId || 'anon'}`,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many consent requests, please try again later' },
-  validate: false,
+  validate: { ip: false },
 });
 
 const acceptLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many acceptance requests, please try again later' },
-  validate: false,
 });
 
 /**
@@ -370,13 +374,85 @@ router.post('/offers/:id/accept', requireOwner, acceptLimiter, async (req, res) 
     `;
     notifyOfferAccepted(offer, profile, tenant).catch(() => {});
 
-    res.json({
-      status: 'accepted',
-      message: 'Our team will contact you within 24 hours.',
-    });
+    // Try to automatically disburse MCA
+    try {
+      const { advance, transfer } = await disburseMCA(tenantId, offerId);
+      return res.json({
+        status: 'accepted',
+        message: 'Advance approved! Disbursement is being processed.',
+        advance_id: advance.id,
+        transfer_status: transfer.status,
+      });
+    } catch (mcaErr) {
+      // MCA disbursement failed (no bank account, no capital, etc.)
+      // Still accepted, but manual follow-up needed
+      console.warn(`[Financing] Auto-disbursement failed for offer ${offerId}:`, mcaErr.message);
+      res.json({
+        status: 'accepted',
+        message: 'Offer accepted. Our team will process your advance shortly.',
+        disbursement_note: mcaErr.message,
+      });
+    }
   } catch (error) {
     console.error('[Financing] Offer accept error:', error.message);
     res.status(500).json({ error: 'Failed to accept offer' });
+  }
+});
+
+// GET /api/financing/advance — current active advance
+router.get('/advance', requireOwner, async (req, res) => {
+  try {
+    const tenantId = req.owner.tenantId;
+
+    const [advance] = await adminSql`
+      SELECT * FROM merchant_advances
+      WHERE tenant_id = ${tenantId}
+        AND status IN ('active', 'paused', 'pending_disbursement')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    res.json(advance || null);
+  } catch (error) {
+    console.error('[Financing] Active advance error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch active advance' });
+  }
+});
+
+// GET /api/financing/advance/repayments — repayment log
+router.get('/advance/repayments', requireOwner, async (req, res) => {
+  try {
+    const tenantId = req.owner.tenantId;
+    const { limit = '30' } = req.query;
+    const limitNum = Math.min(parseInt(limit, 10) || 30, 100);
+
+    const [advance] = await adminSql`
+      SELECT id FROM merchant_advances
+      WHERE tenant_id = ${tenantId}
+        AND status IN ('active', 'paused')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    if (!advance) {
+      return res.json({ repayments: [], total: 0 });
+    }
+
+    const [{ count: total }] = await adminSql`
+      SELECT COUNT(*)::int AS count FROM mca_repayment_log WHERE advance_id = ${advance.id}
+    `;
+
+    const repayments = await adminSql`
+      SELECT * FROM mca_repayment_log
+      WHERE advance_id = ${advance.id}
+      ORDER BY settlement_date DESC
+      LIMIT ${limitNum}
+    `;
+
+    res.json({ repayments: Array.from(repayments), total });
+  } catch (error) {
+    console.error('[Financing] Repayments error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch repayments' });
   }
 });
 
@@ -494,6 +570,8 @@ export const adminRouter = Router();
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many admin requests, please try again later' },
 });
 

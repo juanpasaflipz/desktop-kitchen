@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,7 +13,7 @@ import { tenantMiddleware } from './middleware/tenant.js';
 // Import routes
 import menuRoutes from './routes/menu.js';
 import ordersRoutes from './routes/orders.js';
-import paymentsRoutes, { mpOAuthCallback, mpWebhook } from './routes/payments.js';
+import paymentsRoutes, { mpOAuthCallback, mpWebhook, conektaWebhook } from './routes/payments.js';
 import inventoryRoutes from './routes/inventory.js';
 import employeesRoutes from './routes/employees.js';
 import reportsRoutes from './routes/reports.js';
@@ -48,7 +49,12 @@ import demoProvisionRoutes from './routes/demo-provision.js';
 import salesRoutes from './routes/sales.js';
 import onboardingRoutes from './routes/onboarding.js';
 import financingRoutes, { adminRouter as financingAdminRoutes } from './routes/financing.js';
+import settlementRoutes, { adminRouter as settlementAdminRoutes } from './routes/settlement.js';
+import merchantBankingRoutes from './routes/merchant-banking.js';
+import { startSettlementScheduler, stopSettlementScheduler } from './services/settlement/scheduler.js';
 import plaidWebhook from './routes/webhooks/plaid.js';
+import getnetWebhook from './routes/getnetWebhook.js';
+import getnetRoutes from './routes/getnet.js';
 import { initAI, shutdownAI } from './ai/index.js';
 import { startBankingSyncScheduler } from './services/banking/SyncScheduler.js';
 import { startFinancingScheduler, stopFinancingScheduler } from './services/financing/scheduler.js';
@@ -127,9 +133,21 @@ app.get('/api/features', (_req, res) => {
   res.json({ stressTest: chaosEnabled });
 });
 
+// Global API rate limiter — safety net for all /api and /admin routes
+const globalApiLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 minute window
+  max: 200,                  // 200 requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
+});
+app.use('/api', globalApiLimiter);
+app.use('/admin', globalApiLimiter);
+
 // Admin routes (uses admin pool, not tenant-scoped)
 app.use('/admin', adminRoutes);
 app.use('/admin/financing', financingAdminRoutes);
+app.use('/admin/settlement', settlementAdminRoutes);
 if (adminStressTestRoutesLazy) app.use('/admin/stress-test', adminStressTestRoutesLazy);
 
 // Chaos agent (only when ENABLE_CHAOS=true)
@@ -147,6 +165,12 @@ app.use('/api/cfdi-public', cfdiPublicRoutes);
 // Mercado Pago OAuth callback and webhook (before tenant middleware — no tenant context)
 app.get('/api/payments/mp/callback', mpOAuthCallback);
 app.post('/api/payments/mp/webhook', mpWebhook);
+
+// Conekta webhook (before tenant middleware — cross-tenant lookup by conekta_order_id)
+app.post('/api/payments/conekta/webhook', conektaWebhook);
+
+// Getnet webhook (before tenant middleware — cross-tenant lookup by getnet_payment_id)
+app.use('/webhooks/getnet', getnetWebhook);
 
 // Promo code validation (public, no tenant context needed)
 app.get('/api/billing/promo/validate', promoValidateHandler);
@@ -207,6 +231,9 @@ app.use('/api/demo-data', demoDataRoutes);
 app.use('/api/banking', bankingRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/financing', financingRoutes);
+app.use('/api/settlement', settlementRoutes);
+app.use('/api/merchant-banking', merchantBankingRoutes);
+app.use('/api/getnet', getnetRoutes);
 
 // Serve index.html for all other routes (SPA)
 app.get('*', (req, res) => {
@@ -248,6 +275,9 @@ async function gracefulShutdown(signal) {
   // 2b. Stop financing scheduler
   stopFinancingScheduler();
 
+  // 2c. Stop settlement scheduler
+  stopSettlementScheduler();
+
   // 3. Close database connection pools
   await shutdownDb();
   console.log('[Shutdown] Database pools closed');
@@ -284,6 +314,9 @@ process.on('SIGINT', () => shutdownWithTimeout('SIGINT'));
 
     // Financing scoring scheduler
     startFinancingScheduler();
+
+    // Settlement & MCA scheduler
+    startSettlementScheduler();
 
     server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Desktop Kitchen POS server running on port ${PORT}`);

@@ -13,6 +13,8 @@ const pinLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 15,
   keyGenerator: (req) => `pin-login:${ipKeyGenerator(req.ip)}:${req.tenant?.id || 'unknown'}`,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many login attempts, please try again later' },
 });
 
