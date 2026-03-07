@@ -21,6 +21,21 @@ const SERVICE_SCHEMA = {
       { key: 'webhook_secret', label: 'Webhook Secret (whsec_...)', secret: true },
     ],
   },
+  conekta: {
+    label: 'Conekta',
+    fields: [
+      { key: 'private_key', label: 'Private API Key (key_...)', secret: true },
+      { key: 'public_key', label: 'Public API Key (key_...)', secret: false },
+    ],
+  },
+  getnet: {
+    label: 'Getnet (Santander)',
+    fields: [
+      { key: 'client_id', label: 'Client ID', secret: false },
+      { key: 'client_secret', label: 'Client Secret', secret: true },
+      { key: 'merchant_id', label: 'Merchant ID (Seller ID)', secret: false },
+    ],
+  },
   twilio: {
     label: 'Twilio (SMS)',
     fields: [

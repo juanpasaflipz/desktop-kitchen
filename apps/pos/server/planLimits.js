@@ -22,6 +22,7 @@ export const PLAN_LIMITS = {
     dataExport: { locked: true },
     cfdi: { locked: true },
     financing: { locked: true },
+    settlement: { locked: false },
   },
   pro: {
     menuItems: Infinity,
@@ -46,6 +47,7 @@ export const PLAN_LIMITS = {
     dataExport: { locked: false },
     cfdi: { locked: false },
     financing: { locked: false },
+    settlement: { locked: false },
   },
 };
 

@@ -77,6 +77,12 @@ import {
   CSVImportPreview,
   AIMenuParseResult,
   MenuEngineeringReport,
+  SettlementSummary,
+  DisbursementRecord,
+  SettlementStatement,
+  MerchantBankAccount,
+  MerchantAdvance,
+  MCARepayment,
 } from '../types';
 
 // Employee ID for display/sync use - set after login
@@ -1973,6 +1979,167 @@ export async function mpCancelCharge(order_id: number): Promise<{ success: boole
   });
 }
 
+/* ==================== Conekta Payments ==================== */
+
+export async function conektaOxxoPayment(data: { order_id: number; tip?: number }): Promise<{
+  success: boolean;
+  reference: string;
+  barcode_url: string;
+  expires_at: string;
+  conekta_order_id: string;
+  amount: number;
+}> {
+  return apiRequest('/payments/conekta/oxxo', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function conektaSpeiPayment(data: { order_id: number; tip?: number }): Promise<{
+  success: boolean;
+  clabe: string;
+  bank: string;
+  expires_at: string;
+  conekta_order_id: string;
+  amount: number;
+}> {
+  return apiRequest('/payments/conekta/spei', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function conektaCardPayment(data: { order_id: number; token_id: string; tip?: number }): Promise<{
+  success: boolean;
+  payment_status: string;
+  conekta_order_id: string;
+}> {
+  return apiRequest('/payments/conekta/card', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getConektaPaymentStatus(orderId: number): Promise<{
+  payment_status: string;
+  conekta_status?: string;
+}> {
+  return apiRequest(`/payments/conekta/status/${orderId}`);
+}
+
+/* ==================== Getnet Payments ==================== */
+
+export async function getGetnetStatus(): Promise<{
+  configured: boolean;
+  enabled: boolean;
+  tapOnPhoneEnabled: boolean;
+  environment: string;
+}> {
+  return apiRequest('/getnet/status');
+}
+
+export async function setupGetnet(data: {
+  merchant_id: string;
+  terminal_id?: string;
+  environment?: string;
+  tap_on_phone_enabled?: boolean;
+}): Promise<{ success: boolean; message: string }> {
+  return ownerApiRequest('/getnet/setup', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function disableGetnet(): Promise<{ success: boolean }> {
+  return ownerApiRequest('/getnet/setup', { method: 'DELETE' });
+}
+
+export async function getnetTokenize(data: {
+  card_number: string;
+  expiration_month: string;
+  expiration_year: string;
+  security_code: string;
+  holder_name?: string;
+}): Promise<{ number_token: string; brand?: string; last_four: string }> {
+  return apiRequest('/getnet/tokenize', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getnetCharge(data: {
+  order_id: number;
+  card_token: string;
+  tip?: number;
+}): Promise<{
+  success: boolean;
+  payment_status: string;
+  getnet_payment_id: string;
+  authorization_code?: string;
+  card_brand?: string;
+  card_last_four?: string;
+  invoice_token?: string;
+}> {
+  return apiRequest('/getnet/charge', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getnetTapCharge(data: {
+  order_id: number;
+  getnet_payment_id: string;
+  authorization_code?: string;
+  card_brand?: string;
+  card_last_four?: string;
+  tip?: number;
+}): Promise<{ success: boolean; payment_status: string; getnet_payment_id: string }> {
+  return apiRequest('/getnet/tap-charge', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getGetnetTransactions(params?: {
+  start_date?: string;
+  end_date?: string;
+  limit?: number;
+}): Promise<any[]> {
+  const qs = new URLSearchParams();
+  if (params?.start_date) qs.set('start_date', params.start_date);
+  if (params?.end_date) qs.set('end_date', params.end_date);
+  if (params?.limit) qs.set('limit', String(params.limit));
+  return apiRequest(`/getnet/transactions?${qs}`);
+}
+
+export async function getGetnetFees(startDate?: string, endDate?: string): Promise<{
+  summary: Array<{
+    processor: string;
+    transactions: number;
+    gross: number;
+    processorFees: number;
+    platformFees: number;
+    net: number;
+  }>;
+}> {
+  const qs = new URLSearchParams();
+  if (startDate) qs.set('start_date', startDate);
+  if (endDate) qs.set('end_date', endDate);
+  return apiRequest(`/getnet/fees?${qs}`);
+}
+
+export async function getGetnetSavings(days?: number): Promise<{
+  periodDays: number;
+  totalVolume: number;
+  totalTransactions: number;
+  currentFees: number;
+  proFees: number;
+  monthlySavings: number;
+}> {
+  const qs = days ? `?days=${days}` : '';
+  return apiRequest(`/getnet/savings${qs}`);
+}
+
 /* ==================== Credentials / Integrations ==================== */
 
 export interface ServiceField {
@@ -2421,5 +2588,71 @@ export async function generateDemoData(): Promise<{ run_id: string; summary: Rec
 
 export async function clearDemoData(): Promise<{ deleted: Record<string, number> }> {
   return apiRequest('/demo-data', { method: 'DELETE' });
+}
+
+// ==================== Settlement ====================
+
+export async function getSettlementSummary(): Promise<SettlementSummary> {
+  return apiRequest('/settlement/summary', { headers: ownerHeaders() });
+}
+
+export async function getSettlementHistory(params?: { limit?: number; offset?: number }): Promise<{ history: DisbursementRecord[]; total: number }> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.offset) qs.set('offset', String(params.offset));
+  const s = qs.toString();
+  return apiRequest(`/settlement/history${s ? `?${s}` : ''}`, { headers: ownerHeaders() });
+}
+
+export async function getSettlementStatement(month: string): Promise<SettlementStatement> {
+  return apiRequest(`/settlement/statement/${month}`, { headers: ownerHeaders() });
+}
+
+export async function downloadSettlementStatement(month: string): Promise<Blob> {
+  const base = activeBaseUrl;
+  const res = await fetch(`${base}/settlement/statement/${month}/download`, {
+    headers: { ...ownerHeaders() },
+  });
+  if (!res.ok) throw new Error('Failed to download statement');
+  return res.blob();
+}
+
+// ==================== Merchant Banking ====================
+
+export async function getMerchantBankAccounts(): Promise<MerchantBankAccount[]> {
+  return apiRequest('/merchant-banking/accounts', { headers: ownerHeaders() });
+}
+
+export async function addMerchantBankAccount(data: { clabe: string; beneficiary_name: string; alias?: string }): Promise<MerchantBankAccount> {
+  return apiRequest('/merchant-banking/accounts', {
+    method: 'POST',
+    headers: ownerHeaders(),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function setPrimaryMerchantBankAccount(id: number): Promise<MerchantBankAccount> {
+  return apiRequest(`/merchant-banking/accounts/${id}/primary`, {
+    method: 'PUT',
+    headers: ownerHeaders(),
+  });
+}
+
+export async function deleteMerchantBankAccount(id: number): Promise<{ deleted: boolean }> {
+  return apiRequest(`/merchant-banking/accounts/${id}`, {
+    method: 'DELETE',
+    headers: ownerHeaders(),
+  });
+}
+
+// ==================== Advance ====================
+
+export async function getActiveAdvance(): Promise<MerchantAdvance | null> {
+  return apiRequest('/financing/advance', { headers: ownerHeaders() });
+}
+
+export async function getAdvanceRepayments(params?: { limit?: number }): Promise<{ repayments: MCARepayment[]; total: number }> {
+  const qs = params?.limit ? `?limit=${params.limit}` : '';
+  return apiRequest(`/financing/advance/repayments${qs}`, { headers: ownerHeaders() });
 }
 

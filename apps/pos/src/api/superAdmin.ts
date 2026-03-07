@@ -369,3 +369,102 @@ export function getFinancingActivity(params?: { event_type?: string; since?: str
   const s = qs.toString();
   return adminRequest<{ events: FinancingEvent[] }>(`/financing/activity${s ? `?${s}` : ''}`);
 }
+
+// ==================== Settlement ====================
+
+export function getSettlementOverview() {
+  return adminRequest<any>('/settlement/overview');
+}
+
+export function getSettlementBatches(params?: { limit?: number; offset?: number; status?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.offset) qs.set('offset', String(params.offset));
+  if (params?.status) qs.set('status', params.status);
+  const s = qs.toString();
+  return adminRequest<any>(`/settlement/batches${s ? `?${s}` : ''}`);
+}
+
+export function getSettlementBatchDetail(id: number) {
+  return adminRequest<any>(`/settlement/batches/${id}`);
+}
+
+export function getDisbursementQueue(params?: { status?: string; limit?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set('status', params.status);
+  if (params?.limit) qs.set('limit', String(params.limit));
+  const s = qs.toString();
+  return adminRequest<any>(`/settlement/disbursements${s ? `?${s}` : ''}`);
+}
+
+export function approveDisbursement(lineId: number, bankReference?: string) {
+  return adminRequest<any>(`/settlement/disbursements/${lineId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ bank_reference: bankReference }),
+  });
+}
+
+export function holdDisbursement(lineId: number, reason?: string) {
+  return adminRequest<any>(`/settlement/disbursements/${lineId}/hold`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function triggerDisbursements(date?: string) {
+  return adminRequest<any>('/settlement/disbursements/process', {
+    method: 'POST',
+    body: JSON.stringify({ date }),
+  });
+}
+
+export function getHoldingLedger(params?: { limit?: number; offset?: number; entry_type?: string; tenant_id?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.offset) qs.set('offset', String(params.offset));
+  if (params?.entry_type) qs.set('entry_type', params.entry_type);
+  if (params?.tenant_id) qs.set('tenant_id', params.tenant_id);
+  const s = qs.toString();
+  return adminRequest<any>(`/settlement/ledger${s ? `?${s}` : ''}`);
+}
+
+// ==================== MCA Admin ====================
+
+export function getMCAPortfolio() {
+  return adminRequest<any>('/mca/portfolio');
+}
+
+export function getMCAAdvanceDetail(id: number) {
+  return adminRequest<any>(`/mca/advances/${id}`);
+}
+
+export function pauseAdvance(id: number, reason?: string) {
+  return adminRequest<any>(`/mca/advances/${id}/pause`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export function resumeAdvance(id: number) {
+  return adminRequest<any>(`/mca/advances/${id}/resume`, {
+    method: 'POST',
+  });
+}
+
+export function adjustHoldback(id: number, holdbackPercent: number) {
+  return adminRequest<any>(`/mca/advances/${id}/holdback`, {
+    method: 'PATCH',
+    body: JSON.stringify({ holdback_percent: holdbackPercent }),
+  });
+}
+
+export function getCapitalPool() {
+  return adminRequest<any>('/mca/capital');
+}
+
+export function updateCapitalPool(action: 'add' | 'withdraw', amount: number) {
+  return adminRequest<any>('/mca/capital', {
+    method: 'POST',
+    body: JSON.stringify({ action, amount }),
+  });
+}

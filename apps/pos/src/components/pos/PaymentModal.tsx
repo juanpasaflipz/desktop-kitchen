@@ -9,10 +9,15 @@ export interface PaymentModalProps {
   orderId?: number;
   onCardPayment: (tip: number) => void;
   onCashPayment: (tip: number, amountReceived: number) => void;
+  onOxxoPayment?: (tip: number) => void;
+  onSpeiPayment?: (tip: number) => void;
+  onGetnetPayment?: (tip: number) => void;
   onTerminalPaymentSuccess?: () => void;
   onCancel: () => void;
   isProcessing: boolean;
   isOnline: boolean;
+  conektaConfigured?: boolean;
+  getnetEnabled?: boolean;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -20,10 +25,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   orderId,
   onCardPayment,
   onCashPayment,
+  onOxxoPayment,
+  onSpeiPayment,
+  onGetnetPayment,
   onTerminalPaymentSuccess,
   onCancel,
   isProcessing,
   isOnline,
+  conektaConfigured,
+  getnetEnabled,
 }) => {
   const { t } = useTranslation('pos');
   const { isMpConnected } = usePlan();
@@ -309,6 +319,35 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   className="w-full py-4 bg-neutral-700 text-white text-xl font-bold rounded-lg hover:bg-neutral-600 disabled:bg-neutral-800 transition-all touch-manipulation"
                 >
                   {t('payment.cashPayment')}
+                </button>
+              )}
+              {/* Getnet — only when enabled */}
+              {getnetEnabled && onGetnetPayment && (
+                <button
+                  onClick={() => onGetnetPayment(tip)}
+                  disabled={isProcessing || !isOnline}
+                  className="w-full py-4 bg-red-600 text-white text-xl font-bold rounded-lg hover:bg-red-700 disabled:bg-neutral-700 disabled:text-neutral-400 transition-all touch-manipulation"
+                >
+                  {isProcessing ? t('payment.processing') : 'Pagar con Getnet (~1.8%)'}
+                </button>
+              )}
+              {/* Conekta OXXO + SPEI — only when Conekta is configured */}
+              {conektaConfigured && onOxxoPayment && (
+                <button
+                  onClick={() => onOxxoPayment(tip)}
+                  disabled={isProcessing || !isOnline}
+                  className="w-full py-4 bg-orange-600 text-white text-xl font-bold rounded-lg hover:bg-orange-700 disabled:bg-neutral-700 disabled:text-neutral-400 transition-all touch-manipulation"
+                >
+                  {isProcessing ? t('payment.processing') : 'Pagar en OXXO'}
+                </button>
+              )}
+              {conektaConfigured && onSpeiPayment && (
+                <button
+                  onClick={() => onSpeiPayment(tip)}
+                  disabled={isProcessing || !isOnline}
+                  className="w-full py-4 bg-blue-600 text-white text-xl font-bold rounded-lg hover:bg-blue-700 disabled:bg-neutral-700 disabled:text-neutral-400 transition-all touch-manipulation"
+                >
+                  {isProcessing ? t('payment.processing') : 'Transferencia SPEI'}
                 </button>
               )}
               <button

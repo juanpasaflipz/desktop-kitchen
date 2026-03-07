@@ -13,6 +13,10 @@ import {
   createOrderTemplate,
   getOrders,
   getOrder,
+  conektaOxxoPayment,
+  conektaSpeiPayment,
+  getnetTokenize,
+  getnetCharge,
 } from '../api';
 import {
   getCachedCategories,
@@ -28,6 +32,8 @@ import { MenuCategory, MenuItem, CartItem, Order, AISuggestion, LoyaltyCustomer,
 import RefundModal from '../components/RefundModal';
 import NotesModal from '../components/pos/NotesModal';
 import PaymentModal from '../components/pos/PaymentModal';
+import OxxoReferenceModal from '../components/pos/OxxoReferenceModal';
+import SpeiReferenceModal from '../components/pos/SpeiReferenceModal';
 import ReceiptModal from '../components/pos/ReceiptModal';
 import { formatPrice, TAX_RATE, TAX_LABEL } from '../utils/currency';
 import { useAISuggestions } from '../hooks/useAISuggestions';
@@ -75,7 +81,7 @@ const POSScreen: React.FC = () => {
   const { isOnline, pendingSyncCount } = useNetworkStatus();
   const { isTablet, isPortrait } = useDeviceType();
   const showDrawerCart = isTablet && isPortrait;
-  const { plan, ownerEmail, isMpConnected } = usePlan();
+  const { plan, ownerEmail, isMpConnected, isConektaConfigured, isGetnetEnabled } = usePlan();
 
   // State Management
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -114,6 +120,10 @@ const POSScreen: React.FC = () => {
 
   // Pre-created order for terminal payments (MP Point)
   const [preCreatedOrderId, setPreCreatedOrderId] = useState<number | null>(null);
+
+  // Conekta async payment results
+  const [oxxoResult, setOxxoResult] = useState<{ reference: string; barcode_url: string; amount: number; expires_at: string } | null>(null);
+  const [speiResult, setSpeiResult] = useState<{ clabe: string; bank: string; amount: number; expires_at: string } | null>(null);
 
   // Unpaid orders (for Cobrar flow)
   const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([]);
@@ -555,7 +565,7 @@ const POSScreen: React.FC = () => {
   }));
 
   const openPaymentModal = async () => {
-    if (isMpConnected && cart.length > 0) {
+    if ((isMpConnected || isConektaConfigured) && cart.length > 0) {
       try {
         const order = await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() });
         setPreCreatedOrderId(order.id);
@@ -615,6 +625,69 @@ const POSScreen: React.FC = () => {
       }
     } catch (error) {
       addToast(error instanceof Error ? error.message : t('toast.cashFailed'), 'error');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleOxxoPayment = async (tip: number) => {
+    if (cart.length === 0 && !preCreatedOrderId) { addToast(t('toast.cartEmpty'), 'error'); return; }
+    setIsProcessingPayment(true);
+    try {
+      const orderId = preCreatedOrderId || (await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() })).id;
+      const result = await conektaOxxoPayment({ order_id: orderId, tip });
+      setOxxoResult({
+        reference: result.reference,
+        barcode_url: result.barcode_url,
+        amount: result.amount,
+        expires_at: result.expires_at,
+      });
+      setShowPaymentModal(false);
+      setPreCreatedOrderId(null);
+      clearCart();
+      addToast('Referencia OXXO generada', 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Error al crear pago OXXO', 'error');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleSpeiPayment = async (tip: number) => {
+    if (cart.length === 0 && !preCreatedOrderId) { addToast(t('toast.cartEmpty'), 'error'); return; }
+    setIsProcessingPayment(true);
+    try {
+      const orderId = preCreatedOrderId || (await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() })).id;
+      const result = await conektaSpeiPayment({ order_id: orderId, tip });
+      setSpeiResult({
+        clabe: result.clabe,
+        bank: result.bank,
+        amount: result.amount,
+        expires_at: result.expires_at,
+      });
+      setShowPaymentModal(false);
+      setPreCreatedOrderId(null);
+      clearCart();
+      addToast('CLABE SPEI generada', 'success');
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Error al crear pago SPEI', 'error');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleGetnetPayment = async (tip: number) => {
+    if (cart.length === 0 && !preCreatedOrderId) { addToast(t('toast.cartEmpty'), 'error'); return; }
+    setIsProcessingPayment(true);
+    try {
+      const orderId = preCreatedOrderId || (await createOrder({ employee_id: currentEmployee!.id, items: buildOrderItems() })).id;
+      // For Getnet card payments, the card tokenization happens on the server side
+      // In a full implementation, the card form would collect and tokenize first
+      // For now, this creates the order and marks it for Getnet processing
+      addToast('Getnet payment integration ready — card form coming soon', 'info');
+      setPreCreatedOrderId(orderId);
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Error al procesar pago Getnet', 'error');
     } finally {
       setIsProcessingPayment(false);
     }
@@ -890,6 +963,9 @@ const POSScreen: React.FC = () => {
           orderId={preCreatedOrderId ?? undefined}
           onCardPayment={handleCardPayment}
           onCashPayment={handleCashPayment}
+          onOxxoPayment={handleOxxoPayment}
+          onSpeiPayment={handleSpeiPayment}
+          onGetnetPayment={handleGetnetPayment}
           onTerminalPaymentSuccess={() => {
             clearCart();
             setShowPaymentModal(false);
@@ -899,6 +975,8 @@ const POSScreen: React.FC = () => {
           onCancel={() => { setShowPaymentModal(false); setPreCreatedOrderId(null); }}
           isProcessing={isProcessingPayment}
           isOnline={isOnline}
+          conektaConfigured={isConektaConfigured}
+          getnetEnabled={isGetnetEnabled}
         />
       )}
 
@@ -907,6 +985,26 @@ const POSScreen: React.FC = () => {
           order={completedOrder}
           onClose={() => { setShowReceiptModal(false); setCompletedOrder(null); }}
           onPrint={() => { window.print(); }}
+        />
+      )}
+
+      {oxxoResult && (
+        <OxxoReferenceModal
+          reference={oxxoResult.reference}
+          barcodeUrl={oxxoResult.barcode_url}
+          amount={oxxoResult.amount}
+          expiresAt={oxxoResult.expires_at}
+          onClose={() => setOxxoResult(null)}
+        />
+      )}
+
+      {speiResult && (
+        <SpeiReferenceModal
+          clabe={speiResult.clabe}
+          bank={speiResult.bank}
+          amount={speiResult.amount}
+          expiresAt={speiResult.expires_at}
+          onClose={() => setSpeiResult(null)}
         />
       )}
 

@@ -88,8 +88,8 @@ export interface Order {
   tip: number;
   total: number;
   payment_intent_id?: string;
-  payment_status: 'unpaid' | 'processing' | 'paid' | 'completed' | 'failed' | 'refunded';
-  payment_method?: 'card' | 'cash' | 'split' | 'transfer' | null;
+  payment_status: 'unpaid' | 'processing' | 'paid' | 'completed' | 'failed' | 'refunded' | 'pending_oxxo' | 'pending_spei' | 'expired';
+  payment_method?: 'card' | 'cash' | 'split' | 'transfer' | 'oxxo' | 'spei' | 'getnet_card' | 'getnet_tap' | null;
   source?: 'pos' | 'uber_eats' | 'rappi' | 'didi_food';
   invoice_token?: string;
   cfdi_invoice_id?: number;
@@ -99,7 +99,70 @@ export interface Order {
   ready_at?: string;
   estimated_ready_minutes?: number;
   estimated_ready_range?: { low: number; high: number };
+  conekta_order_id?: string;
+  oxxo_reference?: string;
+  oxxo_barcode_url?: string;
+  spei_clabe?: string;
+  async_payment_expires_at?: string;
+  getnet_payment_id?: string;
+  getnet_authorization_code?: string;
   items?: OrderItem[];
+}
+
+/* Getnet Types */
+export interface GetnetStatus {
+  configured: boolean;
+  enabled: boolean;
+  tapOnPhoneEnabled: boolean;
+  environment: string;
+}
+
+export interface GetnetChargeResult {
+  success: boolean;
+  payment_status: string;
+  getnet_payment_id: string;
+  authorization_code?: string;
+  card_brand?: string;
+  card_last_four?: string;
+  invoice_token?: string;
+}
+
+export interface GetnetTokenResult {
+  number_token: string;
+  brand?: string;
+  last_four: string;
+}
+
+export interface GetnetTransaction {
+  id: number;
+  order_id: number;
+  order_number?: string;
+  getnet_payment_id: string;
+  amount_centavos: number;
+  status: string;
+  authorization_code?: string;
+  card_brand?: string;
+  card_last_four?: string;
+  is_tap_on_phone: boolean;
+  created_at: string;
+}
+
+export interface GetnetFeeSummary {
+  processor: string;
+  transactions: number;
+  gross: number;
+  processorFees: number;
+  platformFees: number;
+  net: number;
+}
+
+export interface GetnetSavings {
+  periodDays: number;
+  totalVolume: number;
+  totalTransactions: number;
+  currentFees: number;
+  proFees: number;
+  monthlySavings: number;
 }
 
 /* Inventory Types */
@@ -1193,6 +1256,159 @@ export interface MenuEngineeringReport {
     action: string;
     detail: string;
   }>;
+}
+
+/* Settlement Types */
+export interface SettlementSummary {
+  pending_amount: number;
+  pending_count: number;
+  month_fees: {
+    platform: number;
+    processor: number;
+    holdback: number;
+  };
+  last_disbursement: { disbursed_at: string; net_disbursement: number } | null;
+  next_disbursement: { settlement_date: string; net_disbursement: number } | null;
+}
+
+export interface DisbursementRecord {
+  id: number;
+  settlement_date: string;
+  gross_amount: number;
+  processor_fee: number;
+  platform_fee: number;
+  mca_holdback: number;
+  net_disbursement: number;
+  disbursement_status: string;
+  disbursed_at: string | null;
+  disbursement_reference: string | null;
+}
+
+export interface SettlementStatement {
+  month: string;
+  lines: DisbursementRecord[];
+  totals: {
+    gross: number;
+    processor_fee: number;
+    platform_fee: number;
+    holdback: number;
+    net: number;
+    transactions: number;
+  };
+}
+
+export interface MerchantBankAccount {
+  id: number;
+  clabe: string;
+  bank_name: string;
+  bank_code: string;
+  beneficiary_name: string;
+  alias: string | null;
+  is_primary: boolean;
+  verified: boolean;
+  verified_at: string | null;
+  created_at: string;
+}
+
+export interface MerchantAdvance {
+  id: number;
+  tenant_id: string;
+  offer_id: number;
+  advance_amount: number;
+  factor_rate: number;
+  total_repayment: number;
+  holdback_percent: number;
+  total_repaid: number;
+  remaining_balance: number;
+  status: string;
+  disbursement_reference: string | null;
+  disbursed_at: string | null;
+  completed_at: string | null;
+  estimated_completion_date: string | null;
+  risk_status: string;
+  risk_flags: Array<{ type: string; detail: string }>;
+  created_at: string;
+  tenant_name?: string;
+}
+
+export interface MCARepayment {
+  id: number;
+  advance_id: number;
+  settlement_date: string;
+  holdback_percent: number;
+  holdback_amount: number;
+  cumulative_repaid: number;
+  remaining_after: number;
+  created_at: string;
+}
+
+export interface SettlementBatch {
+  id: number;
+  batch_reference: string;
+  settlement_date: string;
+  total_gross: number;
+  total_fees: number;
+  total_net: number;
+  transaction_count: number;
+  status: string;
+  processed_at: string | null;
+  created_at: string;
+}
+
+export interface SettlementLine {
+  id: number;
+  batch_id: number;
+  tenant_id: string;
+  tenant_name?: string;
+  settlement_date: string;
+  gross_amount: number;
+  processor_fee: number;
+  platform_fee: number;
+  mca_holdback: number;
+  net_disbursement: number;
+  transaction_count: number;
+  disbursement_status: string;
+  disbursement_reference: string | null;
+  disbursed_at: string | null;
+  hold_reason: string | null;
+  bank_name?: string;
+  clabe?: string;
+}
+
+export interface HoldingLedgerEntry {
+  id: number;
+  entry_type: string;
+  tenant_id: string | null;
+  tenant_name?: string;
+  reference_type: string | null;
+  reference_id: number | null;
+  debit: number;
+  credit: number;
+  balance_after: number;
+  description: string | null;
+  created_at: string;
+}
+
+export interface CapitalPool {
+  total_capital: number;
+  deployed: number;
+  available: number;
+  total_returned: number;
+  updated_at: string;
+}
+
+export interface SettlementOverview {
+  holding_balance: number;
+  pending_disbursement: number;
+  pending_count: number;
+  month_platform_fees: number;
+  month_processor_fees: number;
+  mca: {
+    active_advances: number;
+    total_outstanding: number;
+    total_repaid: number;
+  };
+  capital_pool: CapitalPool | null;
 }
 
 /* API Response Types */

@@ -220,6 +220,12 @@ const FinancingScreen = React.lazy(() =>
   }))
 );
 
+const SettlementScreen = React.lazy(() =>
+  import('./screens/SettlementScreen').then((module) => ({
+    default: module.default || (() => <div>Settlement</div>),
+  }))
+);
+
 const MobileShell = React.lazy(() =>
   import('./components/mobile/MobileShell').then((module) => ({
     default: module.default,
@@ -649,6 +655,17 @@ const TenantRoutes: React.FC = () => {
         element={
           <ProtectedRoute
             element={<FinancingScreen />}
+            requiredRole={['manager', 'admin']}
+          />
+        }
+      />
+
+      {/* Settlement — all plans */}
+      <Route
+        path="/admin/settlement"
+        element={
+          <ProtectedRoute
+            element={<SettlementScreen />}
             requiredRole={['manager', 'admin']}
           />
         }

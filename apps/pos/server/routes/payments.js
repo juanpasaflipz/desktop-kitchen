@@ -15,6 +15,14 @@ import {
   cancelPointOrder,
 } from '../services/mercadopago.js';
 import { getServiceCredentials } from '../helpers/tenantCredentials.js';
+import {
+  createOxxoOrder,
+  createSpeiOrder,
+  createCardOrder as conektaCardOrder,
+  createConektaRefund,
+  getConektaOrder,
+} from '../conekta.js';
+import { refundPayment as getnetRefundPayment } from '../services/getnet/payments.js';
 
 const router = Router();
 
@@ -276,7 +284,7 @@ router.post('/refund', refundLimiter, requireAuth('process_refunds'), async (req
     }
 
     const order = await get(`
-      SELECT id, payment_intent_id, payment_status, payment_method, total, tip, refund_total
+      SELECT id, payment_intent_id, conekta_order_id, getnet_payment_id, payment_status, payment_method, total, tip, refund_total
       FROM orders
       WHERE id = $1
     `, [order_id]);
@@ -343,9 +351,36 @@ router.post('/refund', refundLimiter, requireAuth('process_refunds'), async (req
       return res.status(400).json({ error: 'Invalid refund amount' });
     }
 
-    // Process Stripe refund for card payments
+    // Process refund via the appropriate payment processor
     let stripeRefundId = null;
-    if (order.payment_intent_id && order.payment_method === 'card') {
+    let conektaRefundId = null;
+    let getnetRefundId = null;
+
+    if (order.conekta_order_id && (order.payment_method === 'card' || order.payment_method === 'oxxo' || order.payment_method === 'spei')) {
+      // Conekta refund
+      try {
+        const refund = await createConektaRefund(order.conekta_order_id, refundAmount);
+        conektaRefundId = refund.refund_id;
+      } catch (conektaError) {
+        console.error('Conekta refund error:', conektaError);
+        return res.status(500).json({ error: 'Conekta refund failed. Please try again or contact support.' });
+      }
+    } else if (order.getnet_payment_id && (order.payment_method === 'getnet_card' || order.payment_method === 'getnet_tap')) {
+      // Getnet refund
+      try {
+        const tenantId = req.tenant?.id;
+        const configRows = await adminSql`
+          SELECT environment FROM getnet_merchant_configs WHERE tenant_id = ${tenantId} AND enabled = true LIMIT 1
+        `;
+        const env = configRows[0]?.environment || 'sandbox';
+        const refund = await getnetRefundPayment(tenantId, env, order.getnet_payment_id, refundAmount);
+        getnetRefundId = refund.refund_id;
+      } catch (getnetError) {
+        console.error('Getnet refund error:', getnetError);
+        return res.status(500).json({ error: 'Getnet refund failed. Please try again or contact support.' });
+      }
+    } else if (order.payment_intent_id && order.payment_method === 'card') {
+      // Stripe refund
       try {
         const refund = await createRefund(order.payment_intent_id, refundAmount);
         stripeRefundId = refund.id;
@@ -359,9 +394,9 @@ router.post('/refund', refundLimiter, requireAuth('process_refunds'), async (req
     const employeeId = req.employee?.id || null;
     const refundTid = getTenantId();
     const result = await run(`
-      INSERT INTO refunds (tenant_id, order_id, stripe_refund_id, amount, reason, refund_type, refunded_by, items_json, inventory_restored)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `, [refundTid, order_id, stripeRefundId, refundAmount, reason || null, refundType, employeeId, itemsJson, refundItems.length > 0]);
+      INSERT INTO refunds (tenant_id, order_id, stripe_refund_id, conekta_refund_id, getnet_refund_id, amount, reason, refund_type, refunded_by, items_json, inventory_restored)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `, [refundTid, order_id, stripeRefundId, conektaRefundId, getnetRefundId, refundAmount, reason || null, refundType, employeeId, itemsJson, refundItems.length > 0]);
 
     // Update order refund_total
     const newRefundTotal = existingRefundTotal + refundAmount;
@@ -382,6 +417,8 @@ router.post('/refund', refundLimiter, requireAuth('process_refunds'), async (req
       success: true,
       refund_id: result.lastInsertRowid,
       stripe_refund_id: stripeRefundId,
+      conekta_refund_id: conektaRefundId,
+      getnet_refund_id: getnetRefundId,
       amount: refundAmount,
       refund_type: refundType,
       new_refund_total: newRefundTotal,
@@ -444,6 +481,182 @@ router.get('/refunds', async (req, res) => {
   }
 });
 
+
+// ==================== Conekta Endpoints ====================
+
+// POST /api/payments/conekta/oxxo — create OXXO cash payment reference
+router.post('/conekta/oxxo', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
+  try {
+    const { order_id, tip = 0 } = req.body;
+    if (!order_id) return res.status(400).json({ error: 'Missing order_id' });
+
+    const order = await get(
+      'SELECT id, order_number, total, payment_status FROM orders WHERE id = $1',
+      [order_id]
+    );
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.payment_status === 'paid') return res.status(400).json({ error: 'Order is already paid' });
+
+    const tipAmount = typeof tip === 'number' ? tip : 0;
+    const totalAmount = Number(order.total) + tipAmount;
+
+    const result = await createOxxoOrder(
+      totalAmount,
+      { order_id: String(order_id), order_number: String(order.order_number), tenant_id: getTenantId() },
+      {},
+      72 // 72 hours expiry
+    );
+
+    await run(`
+      UPDATE orders
+      SET conekta_order_id = $1, conekta_charge_id = $2,
+          oxxo_reference = $3, oxxo_barcode_url = $4,
+          async_payment_expires_at = $5,
+          payment_status = 'pending_oxxo', payment_method = 'oxxo', tip = $6
+      WHERE id = $7
+    `, [
+      result.conekta_order_id, result.conekta_charge_id,
+      result.reference, result.barcode_url,
+      result.expires_at, tipAmount, order_id,
+    ]);
+
+    res.json({
+      success: true,
+      reference: result.reference,
+      barcode_url: result.barcode_url,
+      expires_at: result.expires_at,
+      conekta_order_id: result.conekta_order_id,
+      amount: totalAmount,
+    });
+  } catch (error) {
+    console.error('Conekta OXXO error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create OXXO payment' });
+  }
+});
+
+// POST /api/payments/conekta/spei — create SPEI bank transfer reference
+router.post('/conekta/spei', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
+  try {
+    const { order_id, tip = 0 } = req.body;
+    if (!order_id) return res.status(400).json({ error: 'Missing order_id' });
+
+    const order = await get(
+      'SELECT id, order_number, total, payment_status FROM orders WHERE id = $1',
+      [order_id]
+    );
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.payment_status === 'paid') return res.status(400).json({ error: 'Order is already paid' });
+
+    const tipAmount = typeof tip === 'number' ? tip : 0;
+    const totalAmount = Number(order.total) + tipAmount;
+
+    const result = await createSpeiOrder(
+      totalAmount,
+      { order_id: String(order_id), order_number: String(order.order_number), tenant_id: getTenantId() },
+      {},
+      72 // 72 hours expiry
+    );
+
+    await run(`
+      UPDATE orders
+      SET conekta_order_id = $1, conekta_charge_id = $2,
+          spei_clabe = $3,
+          async_payment_expires_at = $4,
+          payment_status = 'pending_spei', payment_method = 'spei', tip = $5
+      WHERE id = $6
+    `, [
+      result.conekta_order_id, result.conekta_charge_id,
+      result.clabe,
+      result.expires_at, tipAmount, order_id,
+    ]);
+
+    res.json({
+      success: true,
+      clabe: result.clabe,
+      bank: result.bank,
+      expires_at: result.expires_at,
+      conekta_order_id: result.conekta_order_id,
+      amount: totalAmount,
+    });
+  } catch (error) {
+    console.error('Conekta SPEI error:', error);
+    res.status(500).json({ error: error.message || 'Failed to create SPEI payment' });
+  }
+});
+
+// POST /api/payments/conekta/card — create Conekta card charge
+router.post('/conekta/card', paymentLimiter, requireAuth('pos_access'), async (req, res) => {
+  try {
+    const { order_id, token_id, tip = 0 } = req.body;
+    if (!order_id || !token_id) return res.status(400).json({ error: 'Missing order_id or token_id' });
+
+    const order = await get(
+      'SELECT id, order_number, total, payment_status FROM orders WHERE id = $1',
+      [order_id]
+    );
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.payment_status === 'paid') return res.status(400).json({ error: 'Order is already paid' });
+
+    const tipAmount = typeof tip === 'number' ? tip : 0;
+    const totalAmount = Number(order.total) + tipAmount;
+
+    const result = await conektaCardOrder(
+      totalAmount,
+      token_id,
+      { order_id: String(order_id), order_number: String(order.order_number) },
+      {}
+    );
+
+    if (result.status === 'paid' || result.status === 'pre_authorized') {
+      await run(`
+        UPDATE orders
+        SET conekta_order_id = $1, conekta_charge_id = $2,
+            payment_status = 'paid', payment_method = 'card', tip = $3, paid_at = NOW()
+        WHERE id = $4
+      `, [result.conekta_order_id, result.conekta_charge_id, tipAmount, order_id]);
+
+      await deductInventoryForOrder(order_id);
+
+      res.json({
+        success: true,
+        payment_status: 'paid',
+        conekta_order_id: result.conekta_order_id,
+      });
+    } else {
+      res.status(400).json({ error: 'Card payment failed', status: result.status });
+    }
+  } catch (error) {
+    console.error('Conekta card error:', error);
+    res.status(500).json({ error: error.message || 'Failed to process card payment' });
+  }
+});
+
+// GET /api/payments/conekta/status/:order_id — check async payment status
+router.get('/conekta/status/:order_id', requireAuth('pos_access'), async (req, res) => {
+  try {
+    const { order_id } = req.params;
+    const order = await get(
+      'SELECT id, conekta_order_id, payment_status FROM orders WHERE id = $1',
+      [order_id]
+    );
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (!order.conekta_order_id) return res.json({ payment_status: order.payment_status });
+
+    const conektaOrder = await getConektaOrder(order.conekta_order_id);
+    res.json({
+      payment_status: order.payment_status,
+      conekta_status: conektaOrder.payment_status,
+      charges: conektaOrder.charges?.data?.map(c => ({
+        id: c.id,
+        status: c.status,
+        paid_at: c.paid_at,
+      })) || [],
+    });
+  } catch (error) {
+    console.error('Conekta status check error:', error);
+    res.status(500).json({ error: 'Failed to check payment status' });
+  }
+});
 
 // ==================== Mercado Pago Point Endpoints (Pro+) ====================
 
@@ -799,6 +1012,87 @@ export async function mpWebhook(req, res) {
     }
   } catch (error) {
     console.error('MP webhook processing error:', error);
+  }
+}
+
+// ==================== Conekta Webhook (mounted before tenant middleware) ====================
+export async function conektaWebhook(req, res) {
+  // Always respond 200 immediately (Conekta requires fast acknowledgement)
+  res.sendStatus(200);
+
+  try {
+    const { type, data } = req.body || {};
+    if (!type || !data) return;
+
+    const chargeObj = data?.object;
+    if (!chargeObj) return;
+
+    // Extract order_id from the Conekta order's metadata or look up by charge/order ID
+    const conektaOrderId = chargeObj.order_id || null;
+    const conektaChargeId = chargeObj.id || null;
+
+    if (!conektaOrderId && !conektaChargeId) return;
+
+    // Look up the POS order using conekta_order_id or conekta_charge_id
+    const orders = await adminSql`
+      SELECT id, tenant_id, payment_status
+      FROM orders
+      WHERE conekta_order_id = ${conektaOrderId || ''}
+         OR conekta_charge_id = ${conektaChargeId || ''}
+      LIMIT 1
+    `;
+
+    if (orders.length === 0) return;
+    const ord = orders[0];
+
+    if (type === 'charge.paid' || type === 'order.paid') {
+      if (ord.payment_status === 'paid') return; // already processed
+
+      await adminSql`
+        UPDATE orders
+        SET payment_status = 'paid', status = 'preparing', paid_at = NOW()
+        WHERE id = ${ord.id}
+      `;
+
+      // Deduct inventory (fire-and-forget since we're outside tenant context)
+      try {
+        // Use adminSql for cross-tenant inventory deduction
+        const items = await adminSql`
+          SELECT oi.menu_item_id, oi.quantity
+          FROM order_items oi
+          WHERE oi.order_id = ${ord.id}
+        `;
+        for (const item of items) {
+          await adminSql`
+            UPDATE inventory_items ii
+            SET quantity = ii.quantity - (
+              SELECT COALESCE(SUM(ri.quantity_used * ${item.quantity}), 0)
+              FROM recipe_ingredients ri
+              WHERE ri.menu_item_id = ${item.menu_item_id}
+                AND ri.inventory_item_id = ii.id
+            )
+            WHERE ii.tenant_id = ${ord.tenant_id}
+              AND ii.id IN (
+                SELECT ri.inventory_item_id
+                FROM recipe_ingredients ri
+                WHERE ri.menu_item_id = ${item.menu_item_id}
+              )
+          `;
+        }
+      } catch (invErr) {
+        console.error('Conekta webhook: inventory deduction error:', invErr.message);
+      }
+    } else if (type === 'charge.expired' || type === 'order.expired') {
+      if (ord.payment_status === 'paid') return; // don't expire a paid order
+
+      await adminSql`
+        UPDATE orders
+        SET payment_status = 'expired'
+        WHERE id = ${ord.id}
+      `;
+    }
+  } catch (error) {
+    console.error('Conekta webhook processing error:', error);
   }
 }
 

@@ -34,6 +34,9 @@ interface PlanContextType {
   isPaid: boolean;
   isFree: boolean;
   isMpConnected: boolean;
+  isConektaConfigured: boolean;
+  isGetnetConfigured: boolean;
+  isGetnetEnabled: boolean;
   isAtLimit: (resource: 'menuItems' | 'inventoryItems' | 'employees' | 'modifierGroups' | 'combos', currentCount: number) => boolean;
   isFeatureLocked: (feature: 'printers' | 'delivery' | 'permissions' | 'loyalty' | 'prepForecast' | 'banking' | 'bankReconciliation' | 'dataExport' | 'cfdi') => boolean;
   refresh: () => Promise<void>;
@@ -66,6 +69,9 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
   const [mpUserId, setMpUserId] = useState<string | null>(null);
   const [mpDefaultTerminalId, setMpDefaultTerminalId] = useState<string | null>(null);
+  const [conektaConfigured, setConektaConfigured] = useState(false);
+  const [getnetConfigured, setGetnetConfigured] = useState(false);
+  const [getnetEnabled, setGetnetEnabled] = useState(false);
 
   const fetchPlan = useCallback(async () => {
     try {
@@ -84,6 +90,9 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (data.ownerEmail !== undefined) setOwnerEmail(data.ownerEmail);
         if (data.mpUserId !== undefined) setMpUserId(data.mpUserId);
         if (data.mpDefaultTerminalId !== undefined) setMpDefaultTerminalId(data.mpDefaultTerminalId);
+        if (data.conektaConfigured !== undefined) setConektaConfigured(data.conektaConfigured);
+        if (data.getnetConfigured !== undefined) setGetnetConfigured(data.getnetConfigured);
+        if (data.getnetEnabled !== undefined) setGetnetEnabled(data.getnetEnabled);
       }
     } catch {
       // Server unreachable — keep defaults
@@ -95,6 +104,9 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isPaid = plan === 'pro';
   const isFree = plan === 'free';
   const isMpConnected = !!mpUserId && plan === 'pro';
+  const isConektaConfigured = conektaConfigured;
+  const isGetnetConfigured = getnetConfigured;
+  const isGetnetEnabled = getnetEnabled;
 
   const isAtLimit = useCallback((resource: string, currentCount: number) => {
     const max = (limits as unknown as Record<string, unknown>)[resource];
@@ -114,7 +126,7 @@ export const PlanProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [limits]);
 
   return (
-    <PlanContext.Provider value={{ plan, limits, ownerEmail, mpUserId, mpDefaultTerminalId, isPaid, isFree, isMpConnected, isAtLimit, isFeatureLocked, refresh: fetchPlan }}>
+    <PlanContext.Provider value={{ plan, limits, ownerEmail, mpUserId, mpDefaultTerminalId, isPaid, isFree, isMpConnected, isConektaConfigured, isGetnetConfigured, isGetnetEnabled, isAtLimit, isFeatureLocked, refresh: fetchPlan }}>
       {children}
     </PlanContext.Provider>
   );

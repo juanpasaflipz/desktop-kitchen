@@ -7,6 +7,8 @@ import { requireOwner } from '../middleware/ownerAuth.js';
 import { requireAuth } from '../middleware/auth.js';
 import { updateTenant, getTenant } from '../tenants.js';
 import { getPlanLimits, planUpgradeError } from '../planLimits.js';
+import { isConektaConfigured } from '../conekta.js';
+import { isGetnetConfigured } from '../services/getnet/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, '../../data/uploads');
@@ -45,7 +47,7 @@ const router = Router();
  * Returns primaryColor, logoUrl, restaurantName, tagline for CSS theming.
  * Works with tenant middleware — no auth required.
  */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const tenant = req.tenant;
 
   // No tenant resolved — check branding.json for default mode
@@ -65,6 +67,16 @@ router.get('/', (req, res) => {
 
   const branding = tenant.branding || {};
   const plan = tenant.plan || 'free';
+
+  let conektaConfigured = false;
+  let getnetConfigured = false;
+  try {
+    conektaConfigured = await isConektaConfigured(tenant.id);
+  } catch { /* non-blocking */ }
+  try {
+    getnetConfigured = await isGetnetConfigured(tenant.id);
+  } catch { /* non-blocking */ }
+
   res.json({
     primaryColor: branding.primaryColor || '#0d9488',
     logoUrl: branding.logoUrl || null,
@@ -76,6 +88,9 @@ router.get('/', (req, res) => {
     ownerEmail: tenant.owner_email || null,
     mpUserId: tenant.mp_user_id || null,
     mpDefaultTerminalId: tenant.mp_default_terminal_id || null,
+    conektaConfigured,
+    getnetConfigured,
+    getnetEnabled: !!tenant.getnet_enabled,
   });
 });
 
