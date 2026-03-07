@@ -431,39 +431,39 @@ export function getHoldingLedger(params?: { limit?: number; offset?: number; ent
 // ==================== MCA Admin ====================
 
 export function getMCAPortfolio() {
-  return adminRequest<any>('/mca/portfolio');
+  return adminRequest<any>('/settlement/mca/portfolio');
 }
 
 export function getMCAAdvanceDetail(id: number) {
-  return adminRequest<any>(`/mca/advances/${id}`);
+  return adminRequest<any>(`/settlement/mca/advances/${id}`);
 }
 
 export function pauseAdvance(id: number, reason?: string) {
-  return adminRequest<any>(`/mca/advances/${id}/pause`, {
+  return adminRequest<any>(`/settlement/mca/advances/${id}/pause`, {
     method: 'POST',
     body: JSON.stringify({ reason }),
   });
 }
 
 export function resumeAdvance(id: number) {
-  return adminRequest<any>(`/mca/advances/${id}/resume`, {
+  return adminRequest<any>(`/settlement/mca/advances/${id}/resume`, {
     method: 'POST',
   });
 }
 
 export function adjustHoldback(id: number, holdbackPercent: number) {
-  return adminRequest<any>(`/mca/advances/${id}/holdback`, {
+  return adminRequest<any>(`/settlement/mca/advances/${id}/holdback`, {
     method: 'PATCH',
     body: JSON.stringify({ holdback_percent: holdbackPercent }),
   });
 }
 
 export function getCapitalPool() {
-  return adminRequest<any>('/mca/capital');
+  return adminRequest<any>('/settlement/mca/capital');
 }
 
 export function updateCapitalPool(action: 'add' | 'withdraw', amount: number) {
-  return adminRequest<any>('/mca/capital', {
+  return adminRequest<any>('/settlement/mca/capital', {
     method: 'POST',
     body: JSON.stringify({ action, amount }),
   });
