@@ -288,7 +288,7 @@ function DemoModal({
 
 /* ── Pricing helpers ── */
 
-const MXN_RATE = 19.5;
+const MXN_RATE = 17.1;
 
 function formatMXN(usd: number) {
   if (usd === 0) return "Gratis";
@@ -439,12 +439,12 @@ function PricingCard({
 
 const pricingPlans = [
   { key: "free", usd: 0, annualUsd: 0, highlight: false },
-  { key: "pro", usd: 80, annualUsd: 720, highlight: true },
+  { key: "pro", usd: 60, annualUsd: 540, highlight: true },
 ] as const;
 
 function PricingSection({ t, onCtaClick }: { t: typeof en; onCtaClick: () => void }) {
   const [currency, setCurrency] = useState("USD");
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const [billing, setBilling] = useState<"monthly" | "annual">("annual");
 
   const tAny = t as any;
 
@@ -646,7 +646,7 @@ function StructuredData({ locale, t }: { locale: string; t: typeof en }) {
       },
       {
         "@type": "Offer",
-        price: "80",
+        price: "60",
         priceCurrency: "USD",
         name: "Pro",
         priceValidUntil: "2027-12-31",

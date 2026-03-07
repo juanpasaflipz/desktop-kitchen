@@ -1414,7 +1414,7 @@ const Investors: NextPage = () => {
                 },
                 {
                   name: "Pro",
-                  price: "$80",
+                  price: "$60",
                   period: isSpanish
                     ? "por mes · todo ilimitado"
                     : "per month · unlimited everything",
