@@ -2,7 +2,7 @@
 
 **Desktop Kitchen POS**
 
-*Last updated: February 27, 2026*
+*Last updated: March 8, 2026*
 
 ## Overview
 
@@ -12,9 +12,11 @@ Desktop Kitchen POS is a business-to-business (B2B) restaurant point-of-sale app
 
 ### What the app stores on your device
 
-- **Server connection settings**: The URL of your POS server, tenant identifier, and authentication credentials are stored locally in the app's preferences (UserDefaults) so you don't have to re-enter them each time you open the app.
+- **Server connection settings**: The URL of your POS server, tenant identifier, and authentication credentials are stored locally in the app's preferences so you don't have to re-enter them each time you open the app.
+- **Offline order queue**: When the device loses internet connectivity, the app temporarily stores pending orders in a local database on the device. These orders are automatically synced to your server when connectivity is restored and then removed from the device.
+- **Menu cache**: The app may cache menu data locally so it remains available during brief network interruptions.
 
-That is the only data stored on the device. The app does not store order data, customer information, payment details, or any other business data locally.
+No customer personal information, payment card details, or financial data is stored on the device.
 
 ### What the app sends to your server
 
