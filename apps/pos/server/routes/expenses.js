@@ -77,7 +77,7 @@ router.get('/', requireAuth('view_reports'), async (req, res) => {
 // POST /api/expenses — create expense
 router.post('/', requireAuth('manage_inventory'), async (req, res) => {
   try {
-    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes } = req.body;
+    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, receipt_data } = req.body;
 
     if (!category || !VALID_CATEGORIES.includes(category)) {
       return res.status(400).json({ error: `category must be one of: ${VALID_CATEGORIES.join(', ')}` });
@@ -96,10 +96,10 @@ router.post('/', requireAuth('manage_inventory'), async (req, res) => {
     const employeeId = req.employee?.id || null;
 
     const result = await get(
-      `INSERT INTO expenses (tenant_id, category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO expenses (tenant_id, category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, receipt_data, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [tenantId, category, vendor || null, description || null, amount, tax_amount || 0, expense_date, payment_method || null, notes || null, employeeId]
+      [tenantId, category, vendor || null, description || null, amount, tax_amount || 0, expense_date, payment_method || null, notes || null, receipt_image_url || null, receipt_data ? JSON.stringify(receipt_data) : null, employeeId]
     );
 
     res.json(result);
@@ -113,7 +113,7 @@ router.post('/', requireAuth('manage_inventory'), async (req, res) => {
 router.put('/:id', requireAuth('manage_inventory'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes } = req.body;
+    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url } = req.body;
 
     const existing = await get('SELECT id FROM expenses WHERE id = $1', [id]);
     if (!existing) {
@@ -137,16 +137,31 @@ router.put('/:id', requireAuth('manage_inventory'), async (req, res) => {
         expense_date = COALESCE($6, expense_date),
         payment_method = $7,
         notes = $8,
+        receipt_image_url = COALESCE($9, receipt_image_url),
         updated_at = NOW()
-      WHERE id = $9
+      WHERE id = $10
       RETURNING *`,
-      [category || null, vendor ?? null, description ?? null, amount || null, tax_amount ?? null, expense_date || null, payment_method ?? null, notes ?? null, id]
+      [category || null, vendor ?? null, description ?? null, amount || null, tax_amount ?? null, expense_date || null, payment_method ?? null, notes ?? null, receipt_image_url ?? null, id]
     );
 
     res.json(result);
   } catch (err) {
     console.error('[Expenses] Update error:', err.message);
     res.status(500).json({ error: 'Failed to update expense' });
+  }
+});
+
+// POST /api/expenses/upload-receipt — upload receipt image only (no AI parse)
+router.post('/upload-receipt', requireAuth('manage_inventory'), upload.single('receipt'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No receipt image uploaded' });
+    }
+    const imageUrl = `/uploads/receipts/${req.file.filename}`;
+    res.json({ image_url: imageUrl });
+  } catch (err) {
+    console.error('[Expenses] Upload error:', err.message);
+    res.status(500).json({ error: 'Failed to upload receipt' });
   }
 });
 

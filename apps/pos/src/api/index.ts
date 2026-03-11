@@ -2718,6 +2718,30 @@ export async function deleteExpense(id: number): Promise<{ success: boolean }> {
   return apiRequest(`/expenses/${id}`, { method: 'DELETE' });
 }
 
+export async function uploadReceipt(file: File): Promise<{ image_url: string }> {
+  const formData = new FormData();
+  formData.append('receipt', file);
+  const base = FALLBACK_URLS.length ? await resolveBaseUrl() : activeBaseUrl;
+  const headers: Record<string, string> = {};
+  if (currentEmployeeToken) {
+    headers['Authorization'] = `Bearer ${currentEmployeeToken}`;
+  }
+  if (!isCapacitor && window.location.hostname === 'localhost') {
+    const tenantId = localStorage.getItem('tenant_id');
+    if (tenantId) headers['X-Tenant-ID'] = tenantId;
+  }
+  const response = await fetch(`${base}/expenses/upload-receipt`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as Record<string, string>).error || 'Failed to upload receipt');
+  }
+  return response.json();
+}
+
 export async function scanReceipt(file: File): Promise<ReceiptScanResult> {
   const formData = new FormData();
   formData.append('receipt', file);

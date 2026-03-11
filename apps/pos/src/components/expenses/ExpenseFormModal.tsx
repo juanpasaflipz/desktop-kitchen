@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import type { Expense } from '../../api';
+import React, { useState, useRef } from 'react';
+import { X, Camera, Image, Loader2, Trash2 } from 'lucide-react';
+import { uploadReceipt, type Expense } from '../../api';
 
 const CATEGORIES = [
   { value: 'food_cost', label: 'Food & Ingredients' },
@@ -38,6 +38,39 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
   const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method || initialData?.payment_method || '');
   const [notes, setNotes] = useState(expense?.notes || initialData?.notes || '');
 
+  // Receipt image
+  const existingUrl = initialData?.receipt_image_url || expense?.receipt_image_url || null;
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(existingUrl);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(existingUrl);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show preview immediately
+    setReceiptPreview(URL.createObjectURL(file));
+    setUploading(true);
+
+    try {
+      const result = await uploadReceipt(file);
+      setReceiptUrl(result.image_url);
+    } catch (err) {
+      console.error('Failed to upload receipt:', err);
+      // Keep the preview but clear the URL so user knows it didn't save
+      setReceiptUrl(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveReceipt = () => {
+    setReceiptUrl(null);
+    setReceiptPreview(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
@@ -49,7 +82,7 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
       expense_date: expenseDate,
       payment_method: paymentMethod || undefined,
       notes: notes || undefined,
-      receipt_image_url: initialData?.receipt_image_url || expense?.receipt_image_url,
+      receipt_image_url: receiptUrl || undefined,
       receipt_data: initialData?.receipt_data || expense?.receipt_data,
     });
   };
@@ -68,6 +101,66 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* Receipt Photo */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-400 mb-2">Receipt Photo</label>
+            {receiptPreview ? (
+              <div className="relative inline-block">
+                <img
+                  src={receiptPreview}
+                  alt="Receipt"
+                  className="h-32 rounded-lg object-cover bg-neutral-800 border border-neutral-700"
+                />
+                {uploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                    <Loader2 size={20} className="animate-spin text-white" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRemoveReceipt}
+                  className="absolute -top-2 -right-2 p-1 bg-neutral-700 rounded-full text-white hover:bg-red-600 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-2 bg-neutral-800 text-white text-sm rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-colors"
+                >
+                  <Camera size={16} />
+                  Take Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-2 bg-neutral-800 text-white text-sm rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-colors"
+                >
+                  <Image size={16} />
+                  Choose File
+                </button>
+              </div>
+            )}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-1">Category *</label>
             <select
@@ -177,7 +270,7 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
             </button>
             <button
               type="submit"
-              disabled={saving || !amount || Number(amount) <= 0}
+              disabled={saving || uploading || !amount || Number(amount) <= 0}
               className="flex-1 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : expense ? 'Update' : 'Save'}
