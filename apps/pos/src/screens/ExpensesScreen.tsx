@@ -10,6 +10,13 @@ import {
   Receipt,
   DollarSign,
   Loader2,
+  Image,
+  X,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  CalendarDays,
+  Eye,
 } from 'lucide-react';
 import {
   getExpenses,
@@ -48,6 +55,118 @@ function getMonthRange() {
   return { from, to };
 }
 
+function formatDate(d: string) {
+  const date = new Date(d + 'T12:00:00');
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/* ==================== Receipt Image Viewer ==================== */
+
+const ReceiptViewer: React.FC<{ url: string; onClose: () => void }> = ({ url, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
+    <div className="relative max-w-2xl w-full max-h-[90vh]" onClick={e => e.stopPropagation()}>
+      <button
+        onClick={onClose}
+        className="absolute -top-3 -right-3 z-10 p-2 bg-neutral-800 rounded-full text-white hover:bg-neutral-700 transition-colors shadow-lg"
+      >
+        <X size={20} />
+      </button>
+      <img
+        src={url}
+        alt="Receipt"
+        className="w-full max-h-[85vh] object-contain rounded-xl bg-neutral-900 shadow-2xl"
+      />
+    </div>
+  </div>
+);
+
+/* ==================== Expanded Expense Detail ==================== */
+
+interface ExpenseDetailProps {
+  expense: Expense;
+  onEdit: () => void;
+  onDelete: () => void;
+  onViewReceipt: (url: string) => void;
+}
+
+const ExpenseDetail: React.FC<ExpenseDetailProps> = ({ expense, onEdit, onDelete, onViewReceipt }) => {
+  const receiptItems = (expense.receipt_data as any)?.items as { description: string; amount: number }[] | undefined;
+
+  return (
+    <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-top-2">
+      {/* Receipt image + parsed items side by side */}
+      {(expense.receipt_image_url || receiptItems) && (
+        <div className="flex gap-3">
+          {expense.receipt_image_url && (
+            <button
+              onClick={() => onViewReceipt(expense.receipt_image_url!)}
+              className="relative group shrink-0 w-24 h-32 rounded-lg overflow-hidden bg-neutral-800 border border-neutral-700 hover:border-brand-500 transition-colors"
+            >
+              <img
+                src={expense.receipt_image_url}
+                alt="Receipt"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Eye size={20} className="text-white" />
+              </div>
+            </button>
+          )}
+          {receiptItems && receiptItems.length > 0 && (
+            <div className="flex-1 bg-neutral-800/50 rounded-lg p-3 text-sm space-y-1 max-h-32 overflow-y-auto">
+              <p className="text-xs font-medium text-neutral-500 uppercase mb-1.5">Parsed Items</p>
+              {receiptItems.map((item, i) => (
+                <div key={i} className="flex justify-between text-neutral-300">
+                  <span className="truncate mr-2">{item.description}</span>
+                  <span className="shrink-0 text-white font-medium">{formatPrice(Number(item.amount))}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Extra details row */}
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-neutral-400">
+        {expense.description && (
+          <div className="flex items-center gap-1.5">
+            <FileText size={13} />
+            <span>{expense.description}</span>
+          </div>
+        )}
+        {expense.notes && (
+          <div className="flex items-center gap-1.5 italic">
+            <span>"{expense.notes}"</span>
+          </div>
+        )}
+        {expense.created_by_name && (
+          <span>Added by {expense.created_by_name}</span>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 pt-1">
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-white text-sm rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-colors"
+        >
+          <Pencil size={13} />
+          Edit
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-red-400 text-sm rounded-lg border border-neutral-700 hover:bg-red-950/30 hover:border-red-800 transition-colors"
+        >
+          <Trash2 size={13} />
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ==================== Main Screen ==================== */
+
 const ExpensesScreen: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +180,10 @@ const ExpensesScreen: React.FC = () => {
   const [scanInitialData, setScanInitialData] = useState<Partial<Expense> | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Detail/receipt viewer
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
@@ -101,6 +224,7 @@ const ExpensesScreen: React.FC = () => {
     if (!confirm('Delete this expense?')) return;
     try {
       await deleteExpense(id);
+      setExpandedId(null);
       fetchExpenses();
     } catch (err) {
       console.error('Failed to delete expense:', err);
@@ -133,11 +257,12 @@ const ExpensesScreen: React.FC = () => {
 
   // Summary calculations
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount) + Number(e.tax_amount || 0), 0);
+  const expenseCount = expenses.length;
   const categoryBreakdown = expenses.reduce<Record<string, number>>((acc, e) => {
-    const key = e.category;
-    acc[key] = (acc[key] || 0) + Number(e.amount) + Number(e.tax_amount || 0);
+    acc[e.category] = (acc[e.category] || 0) + Number(e.amount) + Number(e.tax_amount || 0);
     return acc;
   }, {});
+  const receiptCount = expenses.filter(e => e.receipt_image_url).length;
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
@@ -145,13 +270,13 @@ const ExpensesScreen: React.FC = () => {
       <div className="bg-neutral-900 border-b border-neutral-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
-              to="/admin"
-              className="p-2 text-neutral-400 hover:text-white transition-colors"
-            >
+            <Link to="/admin" className="p-2 text-neutral-400 hover:text-white transition-colors">
               <ArrowLeft size={24} />
             </Link>
-            <h1 className="text-2xl font-bold">Expenses</h1>
+            <div>
+              <h1 className="text-2xl font-bold">Expenses</h1>
+              <p className="text-sm text-neutral-500">Track costs, scan receipts, export for your accountant</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -159,7 +284,7 @@ const ExpensesScreen: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-neutral-800 text-white rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-colors text-sm font-medium"
             >
               <Camera size={16} />
-              Scan Receipt
+              <span className="hidden sm:inline">Scan Receipt</span>
             </button>
             <button
               onClick={() => {
@@ -170,7 +295,7 @@ const ExpensesScreen: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors text-sm font-medium"
             >
               <Plus size={16} />
-              Add Expense
+              <span className="hidden sm:inline">Add Expense</span>
             </button>
           </div>
         </div>
@@ -180,16 +305,14 @@ const ExpensesScreen: React.FC = () => {
         {/* Date Range + Export */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-neutral-400">From</label>
+            <CalendarDays size={16} className="text-neutral-500" />
             <input
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
               className="bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-1.5 text-white text-sm focus:border-brand-500 focus:outline-none"
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-neutral-400">To</label>
+            <span className="text-neutral-500">to</span>
             <input
               type="date"
               value={dateTo}
@@ -208,28 +331,42 @@ const ExpensesScreen: React.FC = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-4">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <DollarSign size={16} className="text-brand-500" />
-              <span className="text-sm text-neutral-400">Total Expenses</span>
+              <span className="text-sm text-neutral-400">Total</span>
             </div>
             <p className="text-2xl font-bold">{formatPrice(totalExpenses)}</p>
+            <p className="text-xs text-neutral-500 mt-1">{expenseCount} expense{expenseCount !== 1 ? 's' : ''}</p>
           </div>
+
+          <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Image size={16} className="text-brand-500" />
+              <span className="text-sm text-neutral-400">Receipts</span>
+            </div>
+            <p className="text-2xl font-bold">{receiptCount}</p>
+            <p className="text-xs text-neutral-500 mt-1">of {expenseCount} have photos</p>
+          </div>
+
           {Object.entries(categoryBreakdown)
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
+            .slice(0, 2)
             .map(([cat, total]) => (
               <div key={cat} className="bg-neutral-900 rounded-lg border border-neutral-800 p-4">
-                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${CATEGORY_COLORS[cat] || CATEGORY_COLORS.other}`}>
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-1 ${CATEGORY_COLORS[cat] || CATEGORY_COLORS.other}`}>
                   {CATEGORY_LABELS[cat] || cat}
                 </span>
                 <p className="text-2xl font-bold">{formatPrice(total)}</p>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {totalExpenses > 0 ? Math.round((total / totalExpenses) * 100) : 0}% of total
+                </p>
               </div>
             ))}
         </div>
 
-        {/* Expenses Table */}
+        {/* Expense List */}
         <div className="bg-neutral-900 rounded-lg border border-neutral-800 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12 text-neutral-400">
@@ -237,78 +374,107 @@ const ExpensesScreen: React.FC = () => {
               Loading expenses...
             </div>
           ) : expenses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-neutral-400">
+            <div className="flex flex-col items-center justify-center py-16 text-neutral-400">
               <Receipt size={48} className="mb-4 opacity-50" />
-              <p className="text-lg font-medium">No expenses found</p>
-              <p className="text-sm">Add your first expense or scan a receipt</p>
+              <p className="text-lg font-medium mb-1">No expenses yet</p>
+              <p className="text-sm mb-6">Snap a receipt photo or add one manually</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowScan(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-neutral-800 rounded-lg border border-neutral-700 hover:bg-neutral-700 transition-colors text-sm text-white"
+                >
+                  <Camera size={16} />
+                  Scan Receipt
+                </button>
+                <button
+                  onClick={() => { setEditingExpense(null); setScanInitialData(undefined); setShowForm(true); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-600 rounded-lg hover:bg-brand-700 transition-colors text-sm text-white"
+                >
+                  <Plus size={16} />
+                  Add Expense
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-neutral-800 text-left">
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400">Date</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400">Category</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400">Vendor</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400">Description</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400 text-right">Amount</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400 text-right">Tax</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400">Payment</th>
-                    <th className="px-4 py-3 text-sm font-medium text-neutral-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map(expense => (
-                    <tr key={expense.id} className="border-b border-neutral-800/50 hover:bg-neutral-800/30">
-                      <td className="px-4 py-3 text-sm whitespace-nowrap">
-                        {typeof expense.expense_date === 'string'
-                          ? expense.expense_date.slice(0, 10)
-                          : expense.expense_date}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.other}`}>
-                          {CATEGORY_LABELS[expense.category] || expense.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm">{expense.vendor || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-neutral-400 max-w-[200px] truncate">
-                        {expense.description || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right font-medium">
-                        {formatPrice(Number(expense.amount))}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right text-neutral-400">
-                        {formatPrice(Number(expense.tax_amount || 0))}
-                      </td>
-                      <td className="px-4 py-3 text-sm capitalize">
-                        {expense.payment_method || '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingExpense(expense);
-                              setScanInitialData(undefined);
-                              setShowForm(true);
-                            }}
-                            className="p-1.5 text-neutral-400 hover:text-white transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(expense.id)}
-                            className="p-1.5 text-neutral-400 hover:text-red-400 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+            <div className="divide-y divide-neutral-800/50">
+              {expenses.map(expense => {
+                const isExpanded = expandedId === expense.id;
+                const total = Number(expense.amount) + Number(expense.tax_amount || 0);
+                return (
+                  <div key={expense.id}>
+                    {/* Row — tap to expand */}
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : expense.id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-800/30 transition-colors text-left"
+                    >
+                      {/* Receipt thumbnail or category icon */}
+                      {expense.receipt_image_url ? (
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-neutral-800 shrink-0 border border-neutral-700">
+                          <img
+                            src={expense.receipt_image_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${CATEGORY_COLORS[expense.category]?.replace('text-', 'bg-').split(' ')[0] || 'bg-neutral-800'}`}>
+                          <Receipt size={18} className={CATEGORY_COLORS[expense.category]?.split(' ')[1] || 'text-neutral-400'} />
+                        </div>
+                      )}
+
+                      {/* Main info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-white truncate">
+                            {expense.vendor || CATEGORY_LABELS[expense.category] || expense.category}
+                          </span>
+                          {expense.receipt_image_url && (
+                            <Image size={12} className="text-brand-400 shrink-0" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-neutral-500">
+                          <span>{formatDate(typeof expense.expense_date === 'string' ? expense.expense_date.slice(0, 10) : expense.expense_date)}</span>
+                          <span className={`px-1.5 py-0.5 rounded-full ${CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.other}`}>
+                            {CATEGORY_LABELS[expense.category] || expense.category}
+                          </span>
+                          {expense.payment_method && (
+                            <span className="capitalize">{expense.payment_method}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Amount + expand */}
+                      <div className="text-right shrink-0 flex items-center gap-2">
+                        <div>
+                          <p className="font-bold text-white">{formatPrice(total)}</p>
+                          {Number(expense.tax_amount || 0) > 0 && (
+                            <p className="text-xs text-neutral-500">tax {formatPrice(Number(expense.tax_amount))}</p>
+                          )}
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp size={16} className="text-neutral-500" />
+                        ) : (
+                          <ChevronDown size={16} className="text-neutral-500" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Expanded detail */}
+                    {isExpanded && (
+                      <ExpenseDetail
+                        expense={expense}
+                        onEdit={() => {
+                          setEditingExpense(expense);
+                          setScanInitialData(undefined);
+                          setShowForm(true);
+                        }}
+                        onDelete={() => handleDelete(expense.id)}
+                        onViewReceipt={setViewingReceipt}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -333,6 +499,13 @@ const ExpensesScreen: React.FC = () => {
         <ReceiptScanModal
           onParsed={handleScanComplete}
           onClose={() => setShowScan(false)}
+        />
+      )}
+
+      {viewingReceipt && (
+        <ReceiptViewer
+          url={viewingReceipt}
+          onClose={() => setViewingReceipt(null)}
         />
       )}
     </div>
