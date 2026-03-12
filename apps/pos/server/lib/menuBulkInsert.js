@@ -111,7 +111,7 @@ export async function bulkInsertMenu(payload, { plan = 'free', mode = 'append' }
       invIdMap[ei.name.toLowerCase()] = ei.id;
     }
 
-    const { cnt: invCurrentCount } = await get('SELECT COUNT(*) as cnt FROM inventory_items WHERE active = true') || { cnt: 0 };
+    const { cnt: invCurrentCount } = await get('SELECT COUNT(*) as cnt FROM inventory_items') || { cnt: 0 };
     let invCount = Number(invCurrentCount);
     const maxInv = typeof limits.inventoryItems === 'number' ? limits.inventoryItems : Infinity;
 
@@ -125,8 +125,8 @@ export async function bulkInsertMenu(payload, { plan = 'free', mode = 'append' }
       }
 
       const result = await run(
-        `INSERT INTO inventory_items (tenant_id, name, unit, quantity, low_stock_threshold, category, cost_price, active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true)`,
+        `INSERT INTO inventory_items (tenant_id, name, unit, quantity, low_stock_threshold, category, cost_price)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [tid, inv.name.trim(), inv.unit || 'unit', inv.quantity || 0, inv.low_stock_threshold || 5, inv.category || 'General', inv.cost_price || 0]
       );
       invIdMap[key] = result.lastInsertRowid;
