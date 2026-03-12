@@ -988,6 +988,10 @@ export async function getDeliveryOrders(status?: string): Promise<DeliveryOrder[
   return apiRequest<DeliveryOrder[]>(endpoint);
 }
 
+export async function getActiveDeliveryOrders(): Promise<DeliveryOrder[]> {
+  return apiRequest<DeliveryOrder[]>('/delivery/orders/active');
+}
+
 export async function updateDeliveryOrderStatus(id: number, status: string): Promise<any> {
   return apiRequest(`/delivery/orders/${id}/status`, {
     method: 'PUT',

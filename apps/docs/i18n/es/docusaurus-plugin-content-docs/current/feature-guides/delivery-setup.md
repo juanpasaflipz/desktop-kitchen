@@ -61,9 +61,13 @@ Una sola cocina puede operar multiples "marcas" en plataformas de delivery. Cons
 ```
 Plataforma de Delivery → API → Backend Desktop Kitchen → Pantalla de Cocina
                                     │
+                                    ├── Banner de alerta en POS (en vivo)
                                     ├── Pedido etiquetado con origen
                                     ├── Reglas de markup aplicadas
                                     └── P&L rastreado por plataforma
 ```
 
-Todos los pedidos de delivery aparecen en la pantalla de cocina con una insignia de plataforma para que el personal pueda ver hacia donde va cada pedido.
+Cuando llega un pedido de delivery, suceden dos cosas:
+
+1. **Pantalla del POS**: Aparece un banner de alerta con color mostrando la plataforma, numero de pedido, nombre del cliente y un cronometro en vivo. El personal lo ve inmediatamente sin salir del POS. Consulta [Operaciones del POS — Banner de Alertas de Delivery](./pos-operations#banner-de-alertas-de-delivery) para mas detalles.
+2. **Pantalla de cocina**: El pedido aparece en la cola de cocina con una insignia de plataforma para que el personal de cocina pueda prepararlo.

@@ -759,6 +759,11 @@ export interface DeliveryOrder {
   platform_commission: number;
   customer_name: string;
   delivery_address: string;
+  created_at?: string;
+  platform_name?: string;
+  order_number?: string;
+  total?: number;
+  order_status?: string;
 }
 
 /* Refund Types */

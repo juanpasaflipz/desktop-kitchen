@@ -39,6 +39,26 @@ Combo items appear in the menu alongside regular items:
 3. Each slot restricts choices to specific categories or items
 4. The combo has a fixed price regardless of individual item prices
 
+## Delivery Alert Banner
+
+When delivery platforms (Uber Eats, Rappi, DiDi Food) are connected, the POS screen shows a live alert banner for incoming delivery orders. This ensures cashiers and staff are aware of active delivery orders without needing to navigate away from the POS.
+
+### How It Works
+
+- A colored banner appears at the top of the POS screen for each active delivery order
+- **Platform-specific colors** make it easy to identify the source at a glance:
+  - **Green**: Uber Eats
+  - **Orange**: Rappi
+  - **Amber**: DiDi Food
+- Each alert shows the **platform name**, **order number**, **customer name**, **total**, and a **live elapsed timer**
+- Orders older than **10 minutes** display a red pulsing timer to flag urgency
+- Tap the **X** button to dismiss an alert (it reappears on page refresh so nothing is missed)
+- The banner updates automatically every 20 seconds
+
+:::tip
+The delivery alert banner works on both the web POS and the Android POS app. No extra setup is needed — if delivery platforms are connected, alerts appear automatically.
+:::
+
 ## Payments
 
 ### Cash

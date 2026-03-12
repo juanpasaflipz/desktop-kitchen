@@ -282,6 +282,12 @@
     "loginOffline": "Inicio de sesión sin conexión",
     "firstLoginRequired": "Conecta a internet para el primer inicio de sesión"
   },
+  "deliveryAlert": {
+    "delivery": "Delivery",
+    "newOrder": "Nueva orden de delivery",
+    "elapsed": "Tiempo",
+    "urgent": "¡Requiere atención!"
+  },
   "mobilePOS": {
     "title": "POS",
     "allCategories": "Todos",

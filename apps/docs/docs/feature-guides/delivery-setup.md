@@ -61,9 +61,13 @@ A single kitchen can operate multiple "brands" on delivery platforms. See [Multi
 ```
 Delivery Platform → API → Desktop Kitchen Backend → Kitchen Display
                                     │
+                                    ├── POS alert banner (live)
                                     ├── Order tagged with source
                                     ├── Markup rules applied
                                     └── P&L tracked per platform
 ```
 
-All delivery orders appear on the kitchen display with a platform badge so staff can see where each order is headed.
+When a delivery order arrives, two things happen:
+
+1. **POS screen**: A colored alert banner appears showing the platform, order number, customer name, and a live elapsed timer. Staff see this immediately without leaving the POS. See [POS Operations — Delivery Alert Banner](./pos-operations#delivery-alert-banner) for details.
+2. **Kitchen display**: The order appears in the kitchen queue with a platform badge so kitchen staff can prepare it.

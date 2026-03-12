@@ -37,7 +37,9 @@ import SpeiReferenceModal from '../components/pos/SpeiReferenceModal';
 import ReceiptModal from '../components/pos/ReceiptModal';
 import { formatPrice, TAX_RATE, TAX_LABEL } from '../utils/currency';
 import { useAISuggestions } from '../hooks/useAISuggestions';
+import { useDeliveryAlerts } from '../hooks/useDeliveryAlerts';
 import AISuggestionBanner from '../components/AISuggestionBanner';
+import DeliveryAlertBanner from '../components/DeliveryAlertBanner';
 import SetupChecklistBanner from '../components/SetupChecklistBanner';
 import ModifierModal from '../components/ModifierModal';
 import ComboBuilder from '../components/ComboBuilder';
@@ -146,6 +148,9 @@ const POSScreen: React.FC = () => {
     employeeId: currentEmployee?.id,
     enabled: true,
   });
+
+  // Delivery alerts
+  const { alerts: deliveryAlerts, dismiss: dismissDeliveryAlert } = useDeliveryAlerts();
 
   const handleAcceptSuggestion = (suggestion: AISuggestion) => {
     const item = menuItems.find((mi) => mi.id === suggestion.data.suggested_item_id);
@@ -794,6 +799,7 @@ const POSScreen: React.FC = () => {
           onLogout={handleLogout}
         />
 
+        <DeliveryAlertBanner alerts={deliveryAlerts} onDismiss={dismissDeliveryAlert} />
         <TrialBanner />
         <DemoBanner />
         <FinancingBanner />

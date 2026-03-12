@@ -140,6 +140,27 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+// GET /api/delivery/orders/active - active delivery orders for POS alert banner
+router.get('/orders/active', async (req, res) => {
+  try {
+    const orders = await all(
+      `SELECT do2.*, dp.display_name as platform_name,
+              o.order_number, o.status as order_status, o.total
+       FROM delivery_orders do2
+       JOIN delivery_platforms dp ON do2.platform_id = dp.id
+       JOIN orders o ON do2.order_id = o.id
+       WHERE do2.platform_status IN ('received', 'accepted')
+         AND o.status NOT IN ('completed', 'cancelled')
+       ORDER BY do2.created_at ASC
+       LIMIT 20`
+    );
+    res.json(orders);
+  } catch (error) {
+    console.error('Error fetching active delivery orders:', error);
+    res.status(500).json({ error: 'Failed to fetch active delivery orders' });
+  }
+});
+
 // PUT /api/delivery/orders/:id/status - update delivery order status
 router.put('/orders/:id/status', requireAuth('manage_delivery'), requirePlanFeature('delivery'), async (req, res) => {
   try {
@@ -288,7 +309,7 @@ async function generateOrderNumber() {
 
   const [row] = await conn.unsafe(`
     SELECT pg_advisory_xact_lock(hashtext($1::text)),
-           COALESCE(MAX(order_number), $2::int) + 1 AS order_number
+           COALESCE(MAX(order_number), $2::bigint) + 1 AS order_number
     FROM orders
     WHERE created_at::date = $1::date
   `, [dateStr, dateNum]);

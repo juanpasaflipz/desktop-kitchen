@@ -39,6 +39,26 @@ Los combos aparecen en el menu junto a los articulos regulares:
 3. Cada slot restringe las opciones a categorias o articulos especificos
 4. El combo tiene un precio fijo sin importar los precios individuales de los articulos
 
+## Banner de Alertas de Delivery
+
+Cuando las plataformas de delivery (Uber Eats, Rappi, DiDi Food) estan conectadas, la pantalla del POS muestra un banner de alerta en vivo para los pedidos de delivery entrantes. Esto asegura que los cajeros y el personal esten al tanto de los pedidos de delivery activos sin necesidad de navegar fuera del POS.
+
+### Como Funciona
+
+- Un banner con color aparece en la parte superior de la pantalla del POS para cada pedido de delivery activo
+- **Colores por plataforma** facilitan identificar el origen de un vistazo:
+  - **Verde**: Uber Eats
+  - **Naranja**: Rappi
+  - **Ambar**: DiDi Food
+- Cada alerta muestra el **nombre de la plataforma**, **numero de pedido**, **nombre del cliente**, **total** y un **cronometro en vivo**
+- Los pedidos con mas de **10 minutos** muestran un cronometro rojo parpadeante para senalar urgencia
+- Toca el boton **X** para descartar una alerta (reaparece al refrescar la pagina para que nada se pierda)
+- El banner se actualiza automaticamente cada 20 segundos
+
+:::tip
+El banner de alertas de delivery funciona tanto en el POS web como en la app POS de Android. No se necesita configuracion adicional — si las plataformas de delivery estan conectadas, las alertas aparecen automaticamente.
+:::
+
 ## Pagos
 
 ### Efectivo

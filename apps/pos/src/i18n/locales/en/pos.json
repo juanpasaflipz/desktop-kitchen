@@ -282,6 +282,12 @@
     "loginOffline": "Offline login",
     "firstLoginRequired": "Connect to internet for first login"
   },
+  "deliveryAlert": {
+    "delivery": "Delivery",
+    "newOrder": "New delivery order",
+    "elapsed": "Elapsed",
+    "urgent": "Needs attention!"
+  },
   "mobilePOS": {
     "title": "POS",
     "allCategories": "All",
