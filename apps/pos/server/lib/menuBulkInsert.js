@@ -32,7 +32,7 @@ export async function bulkInsertMenu(payload, { plan = 'free', mode = 'append' }
   if (mode === 'replace') {
     await run('DELETE FROM menu_item_ingredients WHERE menu_item_id IN (SELECT id FROM menu_items WHERE is_example = true)');
     await run('DELETE FROM order_item_modifiers WHERE order_item_id IN (SELECT oi.id FROM order_items oi JOIN menu_items mi ON oi.menu_item_id = mi.id WHERE mi.is_example = true)');
-    await run('DELETE FROM modifier_group_items WHERE menu_item_id IN (SELECT id FROM menu_items WHERE is_example = true)');
+    await run('DELETE FROM menu_item_modifier_groups WHERE menu_item_id IN (SELECT id FROM menu_items WHERE is_example = true)');
     await run('DELETE FROM menu_items WHERE is_example = true');
     // Delete empty categories (no items left)
     await run(`DELETE FROM menu_categories WHERE id NOT IN (SELECT DISTINCT category_id FROM menu_items)`);
@@ -176,7 +176,7 @@ export async function bulkInsertMenu(payload, { plan = 'free', mode = 'append' }
         for (let i = 0; i < mg.modifiers.length; i++) {
           const mod = mg.modifiers[i];
           await run(
-            `INSERT INTO modifiers (tenant_id, modifier_group_id, name, price_adjustment, sort_order, active)
+            `INSERT INTO modifiers (tenant_id, group_id, name, price_adjustment, sort_order, active)
              VALUES ($1, $2, $3, $4, $5, true)`,
             [tid, mgId, mod.name, mod.price_adjustment || 0, i + 1]
           );
@@ -196,7 +196,7 @@ export async function bulkInsertMenu(payload, { plan = 'free', mode = 'append' }
           );
           for (const item of itemsInCat) {
             await run(
-              `INSERT INTO modifier_group_items (tenant_id, modifier_group_id, menu_item_id)
+              `INSERT INTO menu_item_modifier_groups (tenant_id, modifier_group_id, menu_item_id)
                VALUES ($1, $2, $3)
                ON CONFLICT DO NOTHING`,
               [tid, mgId, item.id]
