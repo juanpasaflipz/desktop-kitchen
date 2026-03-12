@@ -176,7 +176,7 @@ async function gatherUpsellSuggestions() {
 }
 
 async function gatherProfitMargins() {
-  const [menuData, revenueSummary] = await Promise.all([
+  const [menuData, revenueSummary, expensesByCategory, recentExpenses] = await Promise.all([
     all(`
       SELECT mi.name, mi.price, mc.name as category,
         COALESCE((SELECT SUM(r.quantity_used * ii.cost_price) FROM recipes r JOIN inventory_items ii ON r.inventory_item_id = ii.id WHERE r.menu_item_id = mi.id), 0) as cogs,
@@ -185,16 +185,22 @@ async function gatherProfitMargins() {
       WHERE mi.active = true ORDER BY qty_sold DESC LIMIT 30
     `),
     get(`SELECT COALESCE(SUM(total), 0) as total_revenue, COUNT(*) as total_orders FROM orders WHERE created_at >= NOW() - INTERVAL '30 days'`),
+    all(`SELECT category, COUNT(*) as count, COALESCE(SUM(amount), 0) as total_amount, COALESCE(SUM(tax_amount), 0) as total_tax FROM expenses WHERE expense_date >= NOW() - INTERVAL '30 days' GROUP BY category ORDER BY total_amount DESC`),
+    all(`SELECT vendor, description, category, amount, tax_amount, expense_date FROM expenses WHERE expense_date >= NOW() - INTERVAL '30 days' ORDER BY amount DESC LIMIT 20`),
   ]);
-  return { menuData, revenueSummary };
+  return { menuData, revenueSummary, expensesByCategory, recentExpenses };
 }
 
 async function gatherCustomOverview() {
-  const [menuSummary, orderSummary, inventorySummary, loyaltySummary] = await Promise.all([
+  const [menuSummary, orderSummary, inventorySummary, loyaltySummary, expenseSummary, expensesByCategory] = await Promise.all([
     get(`SELECT COUNT(*) as total_items, COUNT(DISTINCT category_id) as categories FROM menu_items WHERE active = true`),
     get(`SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue, COALESCE(AVG(total), 0) as avg_ticket FROM orders WHERE created_at >= NOW() - INTERVAL '30 days'`),
     get(`SELECT COUNT(*) as total_items, SUM(CASE WHEN quantity <= low_stock_threshold THEN 1 ELSE 0 END) as low_stock_count FROM inventory_items`),
     get(`SELECT COUNT(*) as total_customers FROM loyalty_customers`),
+    get(`SELECT COUNT(*) as total_expenses, COALESCE(SUM(amount), 0) as total_amount, COALESCE(SUM(tax_amount), 0) as total_tax FROM expenses WHERE expense_date >= NOW() - INTERVAL '30 days'`),
+    all(`SELECT category, COUNT(*) as count, COALESCE(SUM(amount), 0) as total_amount, COALESCE(SUM(tax_amount), 0) as total_tax FROM expenses WHERE expense_date >= NOW() - INTERVAL '30 days' GROUP BY category ORDER BY total_amount DESC`),
   ]);
-  return { menuSummary, orderSummary, inventorySummary, loyaltySummary };
+  // Also fetch recent individual expenses for detail questions
+  const recentExpenses = await all(`SELECT vendor, description, category, amount, tax_amount, expense_date, payment_method FROM expenses WHERE expense_date >= NOW() - INTERVAL '30 days' ORDER BY amount DESC LIMIT 20`);
+  return { menuSummary, orderSummary, inventorySummary, loyaltySummary, expenseSummary, expensesByCategory, recentExpenses };
 }
