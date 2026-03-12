@@ -35,15 +35,15 @@ export default function MenuGrid({
   const { t } = useTranslation('pos');
 
   return (
-    <div className="flex-1 overflow-y-auto p-4">
+    <div className="flex-1 overflow-y-auto p-5 lg:p-6">
       {/* Favorites / Popular Items Row */}
       {!searchQuery && filteredPopularItems.length > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
+        <div className="mb-6 pb-6 border-b border-neutral-800/60">
+          <div className="flex items-center gap-2 mb-3.5">
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-            <p className="text-sm font-bold text-amber-400 uppercase tracking-wider">{t('favorites.title')}</p>
+            <p className="text-sm font-semibold text-amber-400 uppercase tracking-wider">{t('favorites.title')}</p>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide">
             {filteredPopularItems.map((item) => {
               const isSoldOut = soldOutItemIds.has(item.id);
               return (
@@ -51,14 +51,14 @@ export default function MenuGrid({
                   key={`pop-${item.id}`}
                   onClick={() => !isSoldOut && onItemTap(item)}
                   disabled={isSoldOut}
-                  className={`flex-shrink-0 w-32 rounded-lg p-3 transition-all touch-manipulation border ${
+                  className={`flex-shrink-0 w-40 rounded-xl p-4 transition-all touch-manipulation border ${
                     isSoldOut
                       ? 'bg-neutral-900/40 border-neutral-700 opacity-50 cursor-not-allowed'
                       : 'bg-neutral-900 border-amber-600/50 hover:border-amber-500 active:scale-95'
                   }`}
                 >
-                  <p className="font-bold text-white text-xs line-clamp-2">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
-                  <p className="font-bold text-amber-400 text-sm mt-1">{formatPrice(brandItemMap?.get(item.id)?.custom_price ?? item.price)}</p>
+                  <p className="font-bold text-white text-sm line-clamp-2 leading-snug">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
+                  <p className="font-bold text-amber-400 text-base mt-2">{formatPrice(brandItemMap?.get(item.id)?.custom_price ?? item.price)}</p>
                 </button>
               );
             })}
@@ -66,7 +66,7 @@ export default function MenuGrid({
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
         {filteredItems.map((item) => {
           const isPush = pushItemIds.has(item.id);
           const isAvoid = avoidItemIds.has(item.id);
@@ -83,7 +83,7 @@ export default function MenuGrid({
                 }
               }}
               disabled={isSoldOut}
-              className={`rounded-lg hover:shadow-lg active:scale-95 transition-all touch-manipulation flex flex-col h-44 lg:h-52 overflow-hidden relative ${
+              className={`rounded-xl hover:shadow-lg active:scale-[0.97] transition-all touch-manipulation flex flex-col h-52 lg:h-60 overflow-hidden relative ${
                 isSoldOut
                   ? 'bg-neutral-900/40 border border-neutral-700 grayscale cursor-not-allowed'
                   : isLowStock
@@ -92,11 +92,11 @@ export default function MenuGrid({
                       ? 'bg-neutral-900 border-2 border-green-600 ring-1 ring-green-600/30'
                       : isAvoid
                         ? 'bg-neutral-900/60 border border-neutral-700 opacity-60'
-                        : 'bg-neutral-900 border border-neutral-800 hover:border-brand-600'
+                        : 'bg-neutral-900 border border-neutral-700 hover:border-brand-600'
               }`}
             >
               {/* Image or placeholder */}
-              <div className="h-28 w-full bg-neutral-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="h-28 lg:h-32 w-full bg-neutral-800 flex items-center justify-center overflow-hidden flex-shrink-0">
                 <MenuItemImage src={item.image_url} alt={item.name} />
               </div>
 
@@ -110,15 +110,15 @@ export default function MenuGrid({
               )}
 
               {/* Content */}
-              <div className="p-3 flex flex-col flex-1">
+              <div className="px-3.5 py-3.5 flex flex-col flex-1">
                 <div className="flex items-start justify-between flex-1">
-                  <p className="font-bold text-white text-sm line-clamp-2 flex-1">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
-                  <div className="flex items-center gap-1 ml-1 flex-shrink-0">
-                    {hasModifiers && <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />}
-                    {isPush && <span className="w-2 h-2 bg-green-500 rounded-full" />}
+                  <p className="font-semibold text-white text-sm lg:text-base leading-snug line-clamp-2 flex-1 text-left">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
+                  <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 mt-0.5">
+                    {hasModifiers && <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-500" />}
+                    {isPush && <span className="w-2.5 h-2.5 bg-green-500 rounded-full" />}
                   </div>
                 </div>
-                <p className={`font-bold text-lg ${
+                <p className={`font-bold text-lg mt-auto ${
                   isSoldOut ? 'text-neutral-600' : isAvoid ? 'text-neutral-500' : 'text-brand-500'
                 }`}>
                   {formatPrice(brandItemMap?.get(item.id)?.custom_price ?? item.price)}
