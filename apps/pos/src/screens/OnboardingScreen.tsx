@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Check, ArrowRight, Loader2, Tag, X, Sparkles, ChefHat, ChevronRight } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Tag, X, Sparkles, ChefHat, ChevronRight, LogIn, KeyRound } from 'lucide-react';
 import { useBranding } from '../context/BrandingContext';
 import { redirectToTenant, tenantUrl } from '../lib/tenantResolver';
 import { validatePromoCode, getMenuTemplates, applyMenuTemplateAsOwner, parseMenuWithAIAsOwner, commitAIMenuAsOwner } from '../api';
@@ -52,6 +52,7 @@ const OnboardingScreen: React.FC = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState('');
+  const [emailConflict, setEmailConflict] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Post-registration
@@ -114,6 +115,7 @@ const OnboardingScreen: React.FC = () => {
   const handleChange = (name: keyof FormData, value: string) => {
     setForm(p => ({ ...p, [name]: value }));
     setSubmitError('');
+    setEmailConflict(false);
     if (touched[name]) {
       setFieldErrors(p => ({ ...p, [name]: validateField(name, value) }));
     }
@@ -196,7 +198,15 @@ const OnboardingScreen: React.FC = () => {
       });
 
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Registration failed');
+      if (!res.ok) {
+        if (res.status === 409 && result.code === 'EMAIL_EXISTS') {
+          setEmailConflict(true);
+          setSubmitError(result.error);
+          setIsSubmitting(false);
+          return;
+        }
+        throw new Error(result.error || 'Registration failed');
+      }
 
       if (result.pin) setGeneratedPin(result.pin);
       if (result.tenant?.subdomain) setTenantSubdomain(result.tenant.subdomain);
@@ -579,9 +589,29 @@ const OnboardingScreen: React.FC = () => {
           />
 
           {/* Submit error */}
-          {submitError && (
+          {emailConflict ? (
+            <div style={styles.conflictBox}>
+              <p style={styles.conflictText}>An account with this email already exists.</p>
+              <div style={styles.conflictActions}>
+                <button
+                  type="button"
+                  style={styles.conflictPrimaryBtn}
+                  onClick={() => navigate(`/?email=${encodeURIComponent(form.email)}`)}
+                >
+                  <LogIn size={14} /> Log in to your account
+                </button>
+                <button
+                  type="button"
+                  style={styles.conflictSecondaryBtn}
+                  onClick={() => navigate(`/?email=${encodeURIComponent(form.email)}&view=forgot`)}
+                >
+                  <KeyRound size={14} /> Reset your password
+                </button>
+              </div>
+            </div>
+          ) : submitError ? (
             <div style={styles.errorBox}>{submitError}</div>
-          )}
+          ) : null}
 
           {/* CTA */}
           <button
@@ -850,6 +880,54 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 13,
     padding: '10px 12px',
     marginBottom: 12,
+  },
+  conflictBox: {
+    background: 'rgba(251,191,36,0.06)',
+    border: '1px solid rgba(251,191,36,0.25)',
+    borderRadius: 10,
+    padding: '14px 16px',
+    marginBottom: 12,
+  },
+  conflictText: {
+    color: '#fbbf24',
+    fontSize: 13,
+    fontWeight: 600,
+    margin: '0 0 12px',
+  },
+  conflictActions: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 8,
+  },
+  conflictPrimaryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: '100%',
+    padding: '10px 16px',
+    background: '#0d9488',
+    border: 'none',
+    borderRadius: 8,
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  conflictSecondaryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: '100%',
+    padding: '10px 16px',
+    background: 'transparent',
+    border: '1px solid #333',
+    borderRadius: 8,
+    color: '#9ca3af',
+    fontSize: 13,
+    fontWeight: 500,
+    cursor: 'pointer',
   },
   trustRow: {
     display: 'flex',

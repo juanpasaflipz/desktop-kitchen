@@ -412,6 +412,17 @@ router.patch('/tenants/:id', async (req, res) => {
 
     await updateTenant(req.params.id, updates);
 
+    // Auto-toggle AI (grok_api_enabled) based on plan: Pro → on, Free → off
+    if (updates.plan) {
+      const aiEnabled = updates.plan === 'pro' ? '1' : '0';
+      await adminSql`
+        INSERT INTO ai_config (tenant_id, key, value, description)
+        VALUES (${req.params.id}, 'grok_api_enabled', ${aiEnabled}, 'Enable Grok API for enhanced analysis')
+        ON CONFLICT (tenant_id, key) DO UPDATE SET value = ${aiEnabled}
+      `;
+      console.log(`[Admin] Tenant ${req.params.id} plan=${updates.plan} → grok_api_enabled=${aiEnabled}`);
+    }
+
     audit({
       tenantId: req.params.id,
       actorType: 'admin',

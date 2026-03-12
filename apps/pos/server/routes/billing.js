@@ -276,6 +276,16 @@ export async function stripeWebhook(req, res) {
             updates.signup_promo_code = promoCode;
           }
           await updateTenant(tenantId, updates);
+
+          // Auto-enable AI for paid plans
+          if (plan === 'pro') {
+            await adminSql`
+              INSERT INTO ai_config (tenant_id, key, value, description)
+              VALUES (${tenantId}, 'grok_api_enabled', '1', 'Enable Grok API for enhanced analysis')
+              ON CONFLICT (tenant_id, key) DO UPDATE SET value = '1'
+            `;
+          }
+
           console.log(`[Billing] Tenant ${tenantId} upgraded to ${plan}${promoCode ? ` with promo ${promoCode}` : ''}`);
         }
         break;
@@ -304,6 +314,14 @@ export async function stripeWebhook(req, res) {
             stripe_subscription_id: null,
             subscription_cancelled_at: new Date().toISOString(),
           });
+
+          // Disable AI on downgrade to free
+          await adminSql`
+            INSERT INTO ai_config (tenant_id, key, value, description)
+            VALUES (${tenant.id}, 'grok_api_enabled', '0', 'Enable Grok API for enhanced analysis')
+            ON CONFLICT (tenant_id, key) DO UPDATE SET value = '0'
+          `;
+
           console.log(`[Billing] Tenant ${tenant.id} subscription cancelled`);
         }
         break;

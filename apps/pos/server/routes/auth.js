@@ -85,7 +85,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     // Check email uniqueness
     const existing = await getTenantByEmail(email);
     if (existing) {
-      return res.status(409).json({ error: 'An account with this email already exists' });
+      return res.status(409).json({ error: 'An account with this email already exists', code: 'EMAIL_EXISTS' });
     }
 
     // Generate a URL-safe slug from restaurant name

@@ -615,7 +615,7 @@ router.post('/ai-import', requireMenuAuth, async (req, res) => {
     res.json(stats);
   } catch (error) {
     console.error('Error importing AI menu:', error);
-    res.status(500).json({ error: 'Failed to import menu' });
+    res.status(500).json({ error: `Failed to import menu: ${error.message || error}` });
   }
 });
 

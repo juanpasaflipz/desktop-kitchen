@@ -8,8 +8,19 @@ type View = 'login' | 'forgot' | 'forgot-sent';
 
 const PlatformGateway: React.FC = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState<View>('login');
-  const [email, setEmail] = useState('');
+
+  // Pre-fill email from URL param (e.g. /#/?email=user@example.com) or from onboarding redirect
+  const initialEmail = (() => {
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    return params.get('email') || '';
+  })();
+  const initialView: View = (() => {
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    return params.get('view') === 'forgot' ? 'forgot' : 'login';
+  })();
+
+  const [view, setView] = useState<View>(initialView);
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
