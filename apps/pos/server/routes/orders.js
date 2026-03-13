@@ -341,29 +341,56 @@ router.post('/', orderCreateLimiter, requireAuth('pos_access'), async (req, res)
       [prepEstimate.estimate, orderId]
     );
 
-    // Insert order items and their modifiers
+    // Batch insert all order items (1 query instead of N)
     const tenantId = req.tenant?.id || null;
-    for (const item of orderItems) {
-      const itemResult = await run(`
-        INSERT INTO order_items (tenant_id, order_id, menu_item_id, item_name, quantity, unit_price, notes, combo_instance_id, virtual_brand_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      `, [tenantId, orderId, item.menu_item_id, item.item_name, item.quantity, item.unit_price, item.notes, item.combo_instance_id, item.virtual_brand_id || null]);
+    const itemColCount = 9;
+    const itemValues = orderItems.map((_, i) => {
+      const o = i * itemColCount;
+      return `($${o+1},$${o+2},$${o+3},$${o+4},$${o+5},$${o+6},$${o+7},$${o+8},$${o+9})`;
+    }).join(',');
+    const itemParams = orderItems.flatMap(item => [
+      tenantId, orderId, item.menu_item_id, item.item_name,
+      item.quantity, item.unit_price, item.notes, item.combo_instance_id, item.virtual_brand_id || null,
+    ]);
 
-      const orderItemId = itemResult.lastInsertRowid;
+    const insertedItems = await conn.unsafe(`
+      INSERT INTO order_items (tenant_id, order_id, menu_item_id, item_name, quantity, unit_price, notes, combo_instance_id, virtual_brand_id)
+      VALUES ${itemValues}
+      RETURNING id
+    `, itemParams);
 
-      // Insert selected modifiers
-      if (item.modifiers && item.modifiers.length > 0) {
-        for (const mod of item.modifiers) {
-          await run(`
-            INSERT INTO order_item_modifiers (tenant_id, order_item_id, modifier_id, modifier_name, price_adjustment)
-            VALUES ($1, $2, $3, $4, $5)
-          `, [tenantId, orderItemId, mod.id, mod.name, mod.price_adjustment]);
-        }
-      }
+    // Correlate by index — Postgres preserves VALUES order in RETURNING
+    for (let i = 0; i < orderItems.length; i++) {
+      orderItems[i]._orderItemId = insertedItems[i].id;
+    }
+
+    // Batch insert all modifiers (1 query instead of M)
+    const allMods = orderItems.flatMap(item =>
+      (item.modifiers || []).map(mod => ({
+        orderItemId: item._orderItemId,
+        id: mod.id,
+        name: mod.name,
+        price_adjustment: mod.price_adjustment,
+      }))
+    );
+
+    if (allMods.length > 0) {
+      const modColCount = 5;
+      const modValues = allMods.map((_, i) => {
+        const o = i * modColCount;
+        return `($${o+1},$${o+2},$${o+3},$${o+4},$${o+5})`;
+      }).join(',');
+      const modParams = allMods.flatMap(m => [
+        tenantId, m.orderItemId, m.id, m.name, m.price_adjustment,
+      ]);
+      await conn.unsafe(`
+        INSERT INTO order_item_modifiers (tenant_id, order_item_id, modifier_id, modifier_name, price_adjustment)
+        VALUES ${modValues}
+      `, modParams);
     }
 
     // Fire-and-forget: record item pairs for AI analysis
-    setImmediate(() => recordOrderItemPairs(orderId));
+    setImmediate(() => recordOrderItemPairs(orderId, tenantId));
 
     audit({
       tenantId: req.tenant?.id || 'default',

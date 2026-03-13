@@ -2,8 +2,12 @@ import Stripe from 'stripe';
 import { tenantContext } from './db/index.js';
 import { getServiceCredentials } from './helpers/tenantCredentials.js';
 
-const platformKey = process.env.STRIPE_SECRET_KEY || 'sk_test_dummy';
-const platformStripe = new Stripe(platformKey);
+const platformKey = process.env.STRIPE_SECRET_KEY;
+if (!platformKey && process.env.NODE_ENV === 'production') {
+  console.error('FATAL: STRIPE_SECRET_KEY is required in production.');
+  process.exit(1);
+}
+const platformStripe = platformKey ? new Stripe(platformKey) : null;
 
 // Tenant Stripe client cache (5-min TTL to pick up credential changes)
 const _cache = new Map();
@@ -14,7 +18,10 @@ const _cache = new Map();
  */
 async function resolveStripe() {
   const tenantId = tenantContext.getStore()?.tenantId;
-  if (!tenantId) return platformStripe;
+  if (!tenantId) {
+    if (!platformStripe) throw new Error('Stripe is not configured (STRIPE_SECRET_KEY missing)');
+    return platformStripe;
+  }
 
   const cached = _cache.get(tenantId);
   if (cached && cached.ts > Date.now() - 300_000) return cached.client;
@@ -24,7 +31,8 @@ async function resolveStripe() {
   });
 
   const key = creds.secret_key || platformKey;
-  const client = key === platformKey ? platformStripe : new Stripe(key);
+  if (!key) throw new Error('Stripe is not configured (no platform or tenant key)');
+  const client = key === platformKey && platformStripe ? platformStripe : new Stripe(key);
   _cache.set(tenantId, { client, ts: Date.now() });
   return client;
 }

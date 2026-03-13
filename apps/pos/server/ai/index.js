@@ -26,26 +26,30 @@ export async function initAI() {
   console.log('[AI] Initializing AI intelligence layer...');
 
   // Seed default config per tenant (runs outside request context, needs explicit tenant_id)
-  try {
-    const tenants = await adminSql`SELECT id FROM tenants WHERE active = true`;
-    for (const tenant of tenants) {
-      try {
-        await adminSql.begin(async (tx) => {
-          await tx`SELECT set_config('app.tenant_id', ${tenant.id}, true)`;
-          await new Promise((resolve, reject) => {
-            tenantContext.run({ conn: tx }, async () => {
-              try { await seedDefaults(); resolve(); }
-              catch (e) { reject(e); }
+  if (process.env.NODE_ENV === 'test') {
+    console.log('[AI] Skipping config seed in test mode');
+  } else {
+    try {
+      const tenants = await adminSql`SELECT id FROM tenants WHERE active = true`;
+      for (const tenant of tenants) {
+        try {
+          await adminSql.begin(async (tx) => {
+            await tx`SELECT set_config('app.tenant_id', ${tenant.id}, true)`;
+            await new Promise((resolve, reject) => {
+              tenantContext.run({ conn: tx }, async () => {
+                try { await seedDefaults(); resolve(); }
+                catch (e) { reject(e); }
+              });
             });
           });
-        });
-      } catch (err) {
-        console.error(`[AI] Config seed failed for tenant ${tenant.id}:`, err.message);
+        } catch (err) {
+          console.error(`[AI] Config seed failed for tenant ${tenant.id}:`, err.message);
+        }
       }
+    } catch (err) {
+      // No tenants yet or table doesn't exist — skip seeding
+      console.log('[AI] Skipping config seed (no tenants yet)');
     }
-  } catch (err) {
-    // No tenants yet or table doesn't exist — skip seeding
-    console.log('[AI] Skipping config seed (no tenants yet)');
   }
 
   // Register scheduled jobs (all are now async — scheduler handles await)
@@ -60,7 +64,11 @@ export async function initAI() {
   registerJob('backfillRevenueAfter', backfillRevenueAfter, 6 * 60 * 60 * 1000);     // Every 6 hours
 
   // Start the scheduler
-  startScheduler();
+  if (process.env.NODE_ENV !== 'test') {
+    startScheduler();
+  } else {
+    console.log('[AI] Skipping scheduler in test mode');
+  }
 
   initialized = true;
   console.log('[AI] AI intelligence layer initialized successfully');

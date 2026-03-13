@@ -248,10 +248,14 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Fail fast if JWT_SECRET is not set in production
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is required in production.');
-  process.exit(1);
+// Fail fast if critical secrets are missing in production
+if (process.env.NODE_ENV === 'production') {
+  const required = ['JWT_SECRET', 'ADMIN_SECRET', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+  const missing = required.filter(k => !process.env[k]);
+  if (missing.length > 0) {
+    console.error(`FATAL: Missing required environment variables in production: ${missing.join(', ')}`);
+    process.exit(1);
+  }
 }
 
 // ==================== Graceful Shutdown ====================
@@ -311,14 +315,12 @@ process.on('SIGINT', () => shutdownWithTimeout('SIGINT'));
     await runMigrations('default');
     await initAI();
 
-    // Banking sync scheduler
-    startBankingSyncScheduler();
-
-    // Financing scoring scheduler
-    startFinancingScheduler();
-
-    // Settlement & MCA scheduler
-    startSettlementScheduler();
+    // Background schedulers (skip in test mode to avoid connection pressure)
+    if (process.env.NODE_ENV !== 'test') {
+      startBankingSyncScheduler();
+      startFinancingScheduler();
+      startSettlementScheduler();
+    }
 
     server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Desktop Kitchen POS server running on port ${PORT}`);

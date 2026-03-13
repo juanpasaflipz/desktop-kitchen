@@ -1,70 +1,50 @@
-import { all, get, run } from '../db/index.js';
+import { getConn } from '../db/index.js';
 
 /**
  * Deduct inventory for all items in an order.
- * Queries order_items -> menu_item_ingredients -> updates inventory_items.
+ * Single UPDATE+JOIN: aggregates all ingredient requirements across order items
+ * and deducts from inventory in one query.
  */
 export async function deductInventoryForOrder(orderId) {
-  const orderItems = await all(`
-    SELECT menu_item_id, quantity
-    FROM order_items
-    WHERE order_id = $1
+  const conn = getConn();
+  await conn.unsafe(`
+    UPDATE inventory_items ii
+    SET quantity = GREATEST(0, ii.quantity - deductions.total_needed)
+    FROM (
+      SELECT mii.inventory_item_id,
+             SUM(mii.quantity_used * oi.quantity) AS total_needed
+      FROM order_items oi
+      JOIN menu_item_ingredients mii ON mii.menu_item_id = oi.menu_item_id
+      WHERE oi.order_id = $1
+      GROUP BY mii.inventory_item_id
+    ) deductions
+    WHERE ii.id = deductions.inventory_item_id
   `, [orderId]);
-
-  for (const orderItem of orderItems) {
-    const ingredients = await all(`
-      SELECT inventory_item_id, quantity_used
-      FROM menu_item_ingredients
-      WHERE menu_item_id = $1
-    `, [orderItem.menu_item_id]);
-
-    for (const ingredient of ingredients) {
-      const totalNeeded = ingredient.quantity_used * orderItem.quantity;
-      const inventoryItem = await get(`
-        SELECT id, quantity
-        FROM inventory_items
-        WHERE id = $1
-      `, [ingredient.inventory_item_id]);
-
-      if (inventoryItem) {
-        const newQuantity = Math.max(0, inventoryItem.quantity - totalNeeded);
-        await run(`
-          UPDATE inventory_items
-          SET quantity = $1
-          WHERE id = $2
-        `, [newQuantity, ingredient.inventory_item_id]);
-      }
-    }
-  }
 }
 
 /**
  * Restore inventory for specific refunded items.
+ * Single UPDATE+JOIN with unnest: passes per-item refund quantities
+ * to handle partial refunds correctly.
  * @param {Array<{order_item_id: number, quantity: number}>} items
  */
 export async function restoreInventoryForItems(items) {
-  for (const refundItem of items) {
-    const orderItem = await get(`
-      SELECT menu_item_id, quantity
-      FROM order_items
-      WHERE id = $1
-    `, [refundItem.order_item_id]);
+  if (!items || items.length === 0) return;
+  const conn = getConn();
+  const orderItemIds = items.map(i => i.order_item_id);
+  const quantities = items.map(i => i.quantity);
 
-    if (!orderItem) continue;
-
-    const ingredients = await all(`
-      SELECT inventory_item_id, quantity_used
-      FROM menu_item_ingredients
-      WHERE menu_item_id = $1
-    `, [orderItem.menu_item_id]);
-
-    for (const ingredient of ingredients) {
-      const totalToRestore = ingredient.quantity_used * refundItem.quantity;
-      await run(`
-        UPDATE inventory_items
-        SET quantity = quantity + $1
-        WHERE id = $2
-      `, [totalToRestore, ingredient.inventory_item_id]);
-    }
-  }
+  await conn`
+    UPDATE inventory_items ii
+    SET quantity = ii.quantity + restorations.total_restore
+    FROM (
+      SELECT mii.inventory_item_id,
+             SUM(mii.quantity_used * refund.qty) AS total_restore
+      FROM unnest(${orderItemIds}::int[], ${quantities}::numeric[]) AS refund(order_item_id, qty)
+      JOIN order_items oi ON oi.id = refund.order_item_id
+      JOIN menu_item_ingredients mii ON mii.menu_item_id = oi.menu_item_id
+      GROUP BY mii.inventory_item_id
+    ) restorations
+    WHERE ii.id = restorations.inventory_item_id
+  `;
 }
