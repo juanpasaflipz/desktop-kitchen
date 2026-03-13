@@ -54,7 +54,7 @@ const DemoLoadingScreen: React.FC<DemoLoadingScreenProps> = ({ onReady, onSkip }
   return (
     <div className="fixed inset-0 z-50 bg-neutral-950 flex flex-col items-center justify-center">
       <img
-        src="/logo.svg"
+        src="/logo.png"
         alt="Desktop Kitchen"
         className="w-16 h-16 mb-8 animate-pulse"
       />

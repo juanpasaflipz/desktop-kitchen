@@ -341,7 +341,7 @@ export default function AccountScreen() {
               </div>
               {account.plan === 'free' ? (
                 <div className="space-y-3">
-                  <p className="text-neutral-400 text-sm">You're on the Free plan. Upgrade to Pro to unlock unlimited access.</p>
+                  <p className="text-neutral-400 text-sm">You're on the Free-for-life plan. Upgrade to Pro to unlock unlimited access.</p>
 
                   {/* Monthly/Annual toggle */}
                   <div className="inline-flex items-center bg-neutral-800 border border-neutral-700 rounded-lg p-0.5">
@@ -375,8 +375,8 @@ export default function AccountScreen() {
                       className="px-4 py-2 bg-teal-600 text-white text-sm font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
                     >
                       {billingLoading === 'pro' ? 'Redirecting...' : billingInterval === 'annual'
-                        ? 'Pro — $60/mo ($720/yr)'
-                        : 'Pro — $80/mo'}
+                        ? 'Pro — $45/mo ($540/yr)'
+                        : 'Pro — $60/mo'}
                     </button>
                   </div>
 
@@ -455,7 +455,7 @@ export default function AccountScreen() {
                     <p className="text-neutral-400 text-sm">Current plan</p>
                     <p className="text-white font-bold capitalize flex items-center gap-2">
                       <Crown size={16} className="text-teal-500" />
-                      Pro — $80/mo
+                      Pro — $60/mo
                     </p>
                   </div>
                   <div className="flex gap-3 ml-auto">

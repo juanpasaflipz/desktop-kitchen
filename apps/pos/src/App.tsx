@@ -640,7 +640,6 @@ const TenantRoutes: React.FC = () => {
         element={
           <ProtectedRoute
             element={<AccountScreen />}
-            requiredRole={['manager', 'admin']}
           />
         }
       />

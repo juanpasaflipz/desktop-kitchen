@@ -44,7 +44,7 @@ const UpgradeCard: React.FC<UpgradeCardProps> = ({ feature, title, description }
           className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
         >
           <ArrowUpCircle className="w-5 h-5" />
-          {loading ? 'Redirecting...' : 'Upgrade to Pro — $80/mo'}
+          {loading ? 'Redirecting...' : 'Upgrade to Pro — $60/mo'}
         </button>
         <p className="text-xs text-neutral-500">Cancel anytime. No commitment.</p>
       </div>

@@ -17,7 +17,7 @@ const FreePlanBanner: React.FC = () => {
       <div className="flex items-center gap-3">
         <Sparkles size={16} className="text-brand-400 flex-shrink-0" />
         <span className="text-brand-200 text-sm font-medium flex-1">
-          You're on the Free plan — Upgrade to Pro for unlimited access
+          You're on the Free-for-life plan — Upgrade to Pro for unlimited access
         </span>
         <button
           onClick={() => navigate('/admin/account')}

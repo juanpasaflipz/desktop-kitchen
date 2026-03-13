@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { usePlan } from '../context/PlanContext';
 
-const HIDDEN_ROUTES = ['/', '/onboarding', '/menu-board', '/super-admin'];
+const HIDDEN_ROUTES = ['/', '/onboarding', '/menu-board', '/super-admin', '/admin/account'];
 
 const UpgradeCTABar: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const UpgradeCTABar: React.FC = () => {
       <div className="flex items-center justify-center gap-4 px-6 py-3">
         <Sparkles size={16} className="text-brand-400 flex-shrink-0" />
         <span className="text-neutral-200 text-sm font-medium">
-          Upgrade to <strong className="text-white">Pro at $80/mo</strong> for unlimited access
+          Upgrade to <strong className="text-white">Pro at $60/mo</strong> for unlimited access
         </span>
         <button
           onClick={() => navigate('/admin/account')}

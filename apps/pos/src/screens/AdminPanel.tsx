@@ -354,7 +354,7 @@ export default function AdminPanel() {
               {/* Pro Card */}
               <div className="border border-brand-600 rounded-xl p-6 space-y-4">
                 <h3 className="text-lg font-bold text-white">Pro</h3>
-                <p className="text-3xl font-black text-white">$80<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <p className="text-3xl font-black text-white">$60<span className="text-base font-normal text-neutral-400">/mo</span></p>
                 <ul className="space-y-2 text-sm text-neutral-300">
                   <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited employees & menu items</li>
                   <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited AI insights & analytics</li>
@@ -376,7 +376,7 @@ export default function AdminPanel() {
             <div className="flex flex-wrap items-center gap-4">
               <div>
                 <p className="text-neutral-400 text-sm">Current plan</p>
-                <p className="text-xl font-bold text-white capitalize">Pro — $80/mo</p>
+                <p className="text-xl font-bold text-white capitalize">Pro — $60/mo</p>
               </div>
               <div className="flex gap-3 ml-auto">
                 <button

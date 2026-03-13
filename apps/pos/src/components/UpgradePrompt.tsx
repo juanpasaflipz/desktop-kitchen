@@ -53,7 +53,7 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
           >
             <ArrowUpCircle className="w-4 h-4" />
-            {loading ? 'Redirecting...' : 'Upgrade to Pro — $80/mo'}
+            {loading ? 'Redirecting...' : 'Upgrade to Pro — $60/mo'}
           </button>
         </div>
       </div>
