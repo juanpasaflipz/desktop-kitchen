@@ -104,8 +104,8 @@ const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ profile, offers, on
     }
   };
 
-  const trendValue = Math.abs(profile.revenue_trend);
-  const trendUp = profile.revenue_trend >= 0;
+  const trendValue = Math.abs(Number(profile.revenue_trend));
+  const trendUp = Number(profile.revenue_trend) >= 0;
 
   return (
     <div className="space-y-6">
@@ -135,17 +135,17 @@ const ProfileDashboard: React.FC<ProfileDashboardProps> = ({ profile, offers, on
 
             <div className="bg-neutral-800/50 rounded-lg p-4">
               <p className="text-neutral-400 text-xs font-medium mb-1">{t('profile.metrics.dailyOrders')}</p>
-              <p className="text-xl font-bold text-white">{profile.avg_daily_orders.toFixed(0)}</p>
+              <p className="text-xl font-bold text-white">{Number(profile.avg_daily_orders).toFixed(0)}</p>
             </div>
 
             <div className="bg-neutral-800/50 rounded-lg p-4">
               <p className="text-neutral-400 text-xs font-medium mb-1">{t('profile.metrics.cardPayment')}</p>
-              <p className="text-xl font-bold text-white">{profile.card_payment_percent.toFixed(0)}%</p>
+              <p className="text-xl font-bold text-white">{Number(profile.card_payment_percent).toFixed(0)}%</p>
             </div>
 
             <div className="bg-neutral-800/50 rounded-lg p-4">
               <p className="text-neutral-400 text-xs font-medium mb-1">{t('profile.metrics.refundRate')}</p>
-              <p className="text-xl font-bold text-white">{profile.refund_rate.toFixed(1)}%</p>
+              <p className="text-xl font-bold text-white">{Number(profile.refund_rate).toFixed(1)}%</p>
             </div>
           </div>
         </div>

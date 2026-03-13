@@ -356,7 +356,7 @@ export default function FinancingTab() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right text-white">{fmtAmt(p.monthly_avg_revenue)}</td>
-                      <td className="px-4 py-3 text-center text-neutral-300">{(p.card_payment_percent ?? (p as any).card_revenue_percent ?? 0).toFixed(0)}%</td>
+                      <td className="px-4 py-3 text-center text-neutral-300">{Number(p.card_payment_percent ?? (p as any).card_revenue_percent ?? 0).toFixed(0)}%</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${eb.color} ${eb.bg}`}>
                           {p.eligibility_status.replace('_', ' ')}
@@ -382,16 +382,16 @@ export default function FinancingTab() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <div>
                               <p className="text-neutral-500 text-xs">Avg Daily Orders</p>
-                              <p className="text-white font-medium">{p.avg_daily_orders.toFixed(0)}</p>
+                              <p className="text-white font-medium">{Number(p.avg_daily_orders).toFixed(0)}</p>
                             </div>
                             <div>
                               <p className="text-neutral-500 text-xs">Refund Rate</p>
-                              <p className="text-white font-medium">{p.refund_rate.toFixed(1)}%</p>
+                              <p className="text-white font-medium">{Number(p.refund_rate).toFixed(1)}%</p>
                             </div>
                             <div>
                               <p className="text-neutral-500 text-xs">Revenue Trend</p>
                               <p className={`font-medium ${p.revenue_trend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                {p.revenue_trend >= 0 ? '+' : ''}{p.revenue_trend.toFixed(1)}%
+                                {Number(p.revenue_trend) >= 0 ? '+' : ''}{Number(p.revenue_trend).toFixed(1)}%
                               </p>
                             </div>
                             <div>
