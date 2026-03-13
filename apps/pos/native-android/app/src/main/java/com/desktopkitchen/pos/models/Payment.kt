@@ -34,3 +34,24 @@ data class CashPaymentRequest(
     val tip: Double? = null,
     val amount_received: Double? = null
 )
+
+@JsonClass(generateAdapter = true)
+data class PaymentSplit(
+    val payment_method: String,
+    val amount: Double,
+    val tip: Double = 0.0
+)
+
+@JsonClass(generateAdapter = true)
+data class SplitPaymentRequest(
+    val order_id: Int,
+    val split_type: String = "mixed",
+    val splits: List<PaymentSplit>
+)
+
+@JsonClass(generateAdapter = true)
+data class SplitPaymentResponse(
+    val success: Boolean,
+    val message: String? = null,
+    val splits_count: Int? = null
+)

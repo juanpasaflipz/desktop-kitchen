@@ -14,19 +14,21 @@ import com.desktopkitchen.pos.models.MenuItem
 fun MenuGrid(
     items: List<MenuItem>,
     onItemClick: (MenuItem) -> Unit,
+    itemIdsWithModifiers: Set<Int> = emptySet(),
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 160.dp),
+        columns = GridCells.Fixed(4),
         modifier = modifier,
         contentPadding = PaddingValues(4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         items(items, key = { it.id }) { item ->
             MenuItemCard(
                 item = item,
-                onClick = { onItemClick(item) }
+                onClick = { onItemClick(item) },
+                hasModifiers = item.id in itemIdsWithModifiers
             )
         }
     }

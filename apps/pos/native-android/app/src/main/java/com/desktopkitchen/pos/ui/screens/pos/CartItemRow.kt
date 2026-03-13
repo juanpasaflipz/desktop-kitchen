@@ -48,14 +48,17 @@ fun CartItemRow(
                 color = AppColors.textPrimary,
                 maxLines = 1
             )
-            // Modifier names
+            // Modifier names with price
             item.selectedModifierNames?.let { mods ->
                 if (mods.isNotEmpty()) {
+                    val modPriceText = if (item.modifierTotal > 0.0)
+                        " (+${CurrencyFormatter.format(item.modifierTotal)})"
+                    else ""
                     Text(
-                        text = mods.joinToString(", "),
+                        text = mods.joinToString(", ") + modPriceText,
                         style = Typography.bodySmall,
                         color = AppColors.textTertiary,
-                        maxLines = 1
+                        maxLines = 2
                     )
                 }
             }

@@ -15,8 +15,21 @@ class OrderService @Inject constructor(
 
     suspend fun getOrder(id: Int): Order = orderApi.getOrder(id)
 
-    suspend fun createOrder(employeeId: Int, items: List<CreateOrderItem>): Order =
-        orderApi.createOrder(CreateOrderRequest(employee_id = employeeId, items = items))
+    suspend fun createOrder(
+        employeeId: Int,
+        items: List<CreateOrderItem>,
+        discountType: String? = null,
+        discountValue: Double? = null,
+        discountReason: String? = null
+    ): Order = orderApi.createOrder(
+        CreateOrderRequest(
+            employee_id = employeeId,
+            items = items,
+            discount_type = discountType,
+            discount_value = discountValue,
+            discount_reason = discountReason
+        )
+    )
 
     suspend fun updateStatus(id: Int, status: String) {
         orderApi.updateStatus(id, mapOf("status" to status))

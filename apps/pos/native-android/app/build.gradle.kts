@@ -14,8 +14,28 @@ android {
         applicationId = "com.desktopkitchen.pos"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 5
+        versionName = "1.0.2"
+
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DCMAKE_BUILD_TYPE=Release"
+                )
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     signingConfigs {
@@ -37,6 +57,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            ndk { debugSymbolLevel = "FULL" }
         }
     }
 
@@ -57,6 +78,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -76,8 +98,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.53.1")
-    ksp("com.google.dagger:hilt-compiler:2.53.1")
+    implementation("com.google.dagger:hilt-android:2.59.2")
+    ksp("com.google.dagger:hilt-compiler:2.59.2")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Networking
@@ -91,6 +113,12 @@ dependencies {
 
     // Image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // Room (offline support)
+    val roomVersion = "2.8.4"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
 
     // Core
     implementation("androidx.core:core-ktx:1.15.0")

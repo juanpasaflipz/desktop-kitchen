@@ -11,4 +11,11 @@ class ModifierService @Inject constructor(
 ) {
     suspend fun getGroupsForItem(menuItemId: Int): List<ModifierGroup> =
         modifierApi.getGroupsForItem(menuItemId)
+
+    suspend fun getItemsWithModifiers(): Set<Int> =
+        try {
+            modifierApi.getItemsWithModifiers().itemIds.toSet()
+        } catch (_: Exception) {
+            emptySet()
+        }
 }

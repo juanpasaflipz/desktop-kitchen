@@ -17,7 +17,8 @@ enum class Screen {
     Inventory,
     Employees,
     MenuManagement,
-    Kiosk
+    Kiosk,
+    OrderHistory
 }
 
 @Singleton

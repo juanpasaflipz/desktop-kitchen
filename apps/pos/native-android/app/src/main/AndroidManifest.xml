@@ -2,12 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".DesktopKitchenPOSApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="Desktop Kitchen POS"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.DesktopKitchenPOS">
 

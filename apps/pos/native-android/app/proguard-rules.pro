@@ -23,6 +23,9 @@
 # ---- Models (Moshi needs these) ----
 -keep class com.desktopkitchen.pos.models.** { *; }
 
+# ---- API request/response classes (Moshi needs field names) ----
+-keep class com.desktopkitchen.pos.networking.api.** { *; }
+
 # ---- Hilt ----
 -dontwarn dagger.hilt.**
 
@@ -35,6 +38,13 @@
 
 # ---- Kotlin Serialization (if used later) ----
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
+
+# ---- AI / llama.cpp JNI ----
+-keep class com.desktopkitchen.pos.ai.model.LlamaModel {
+    native <methods>;
+    *;
+}
+-keep class com.desktopkitchen.pos.ai.suggestions.AiSuggestion { *; }
 
 # ---- General ----
 -keepattributes SourceFile,LineNumberTable

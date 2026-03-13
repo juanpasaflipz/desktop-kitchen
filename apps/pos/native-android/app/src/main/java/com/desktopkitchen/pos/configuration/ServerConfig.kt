@@ -17,8 +17,8 @@ class ServerConfig @Inject constructor(
         private const val KEY_BASE_URL = "server_base_url"
         private const val KEY_TENANT_ID = "tenant_id"
         private const val KEY_ADMIN_SECRET = "admin_secret"
-        private const val DEFAULT_URL = "https://pos.desktop.kitchen"
-        private const val DEFAULT_TENANT = "juanbertos"
+        private const val DEFAULT_URL = ""
+        private const val DEFAULT_TENANT = ""
     }
 
     var baseURL: String
@@ -32,6 +32,9 @@ class ServerConfig @Inject constructor(
     var adminSecret: String
         get() = prefs.getString(KEY_ADMIN_SECRET, "") ?: ""
         set(value) = prefs.edit().putString(KEY_ADMIN_SECRET, value).apply()
+
+    /** True when the user has configured a server URL. */
+    val isConfigured: Boolean get() = baseURL.isNotEmpty()
 
     fun reset() {
         baseURL = DEFAULT_URL

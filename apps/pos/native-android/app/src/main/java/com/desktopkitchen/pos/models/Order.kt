@@ -41,9 +41,12 @@ data class OrderItemModifier(
     val id: Int? = null,
     val order_item_id: Int? = null,
     val modifier_id: Int? = null,
-    val modifier_name: String,
+    val modifier_name: String? = null,
+    val name: String? = null,
     val price_adjustment: Double = 0.0
-)
+) {
+    val displayName: String get() = modifier_name ?: name ?: "Modifier"
+}
 
 data class CartItem(
     val cartId: String = UUID.randomUUID().toString(),
@@ -55,15 +58,31 @@ data class CartItem(
     val comboInstanceId: String? = null,
     val menuItem: MenuItem? = null,
     val selectedModifierIds: List<Int>? = null,
-    val selectedModifierNames: List<String>? = null
+    val selectedModifierNames: List<String>? = null,
+    val selectedModifierPrices: List<Double>? = null
 ) {
-    val lineTotal: Double get() = unitPrice * quantity
+    val modifierTotal: Double get() = selectedModifierPrices?.sum() ?: 0.0
+    val lineTotal: Double get() = (unitPrice + modifierTotal) * quantity
+}
+
+data class CartDiscount(
+    val type: String, // "fixed" or "percent"
+    val value: Double,
+    val reason: String = ""
+) {
+    fun computeAmount(subtotal: Double): Double = when (type) {
+        "percent" -> subtotal * (value / 100.0)
+        else -> value
+    }
 }
 
 @JsonClass(generateAdapter = true)
 data class CreateOrderRequest(
     val employee_id: Int,
-    val items: List<CreateOrderItem>
+    val items: List<CreateOrderItem>,
+    val discount_type: String? = null,
+    val discount_value: Double? = null,
+    val discount_reason: String? = null
 )
 
 @JsonClass(generateAdapter = true)

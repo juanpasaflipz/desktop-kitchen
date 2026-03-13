@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.desktopkitchen.pos.app.AppState
+import com.desktopkitchen.pos.configuration.ServerConfig
 import com.desktopkitchen.pos.ui.components.shake
 import com.desktopkitchen.pos.ui.theme.AppColors
 import com.desktopkitchen.pos.ui.theme.Typography
@@ -37,29 +38,17 @@ import com.desktopkitchen.pos.viewmodels.LoginViewModel
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    appState: AppState
+    appState: AppState,
+    serverConfig: ServerConfig
 ) {
-    var showSettings by remember { mutableStateOf(false) }
+    // Auto-open settings on first launch when no server URL is configured
+    var showSettings by remember { mutableStateOf(!serverConfig.isConfigured) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.background)
     ) {
-        // Settings gear icon (top-right)
-        IconButton(
-            onClick = { showSettings = true },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Server Settings",
-                tint = AppColors.textTertiary
-            )
-        }
-
         // Center content
         Column(
             modifier = Modifier.align(Alignment.Center),
@@ -158,6 +147,20 @@ fun LoginScreen(
                     }
                 }
             }
+        }
+
+        // Settings gear icon (top-right, drawn last so it's on top)
+        IconButton(
+            onClick = { showSettings = true },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Server Settings",
+                tint = AppColors.textTertiary
+            )
         }
     }
 
