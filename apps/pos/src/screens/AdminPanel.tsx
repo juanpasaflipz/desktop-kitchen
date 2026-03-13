@@ -332,68 +332,6 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* Plan & Billing */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6 mb-8">
-          <div className="flex items-center gap-3 mb-6">
-            <CreditCard className="text-brand-500" size={24} />
-            <h2 className="text-xl font-bold text-white">Plan & Billing</h2>
-          </div>
-
-          {billingError && (
-            <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 mb-4">
-              <p className="text-red-300 text-sm">{billingError}</p>
-            </div>
-          )}
-
-          {!hasOwnerToken ? (
-            <p className="text-neutral-400 text-sm">
-              <Link to="/admin/account" className="text-brand-400 hover:text-brand-300 underline">Sign in as account owner</Link> to manage billing.
-            </p>
-          ) : plan === 'free' ? (
-            <div className="max-w-md">
-              {/* Pro Card */}
-              <div className="border border-brand-600 rounded-xl p-6 space-y-4">
-                <h3 className="text-lg font-bold text-white">Pro</h3>
-                <p className="text-3xl font-black text-white">$60<span className="text-base font-normal text-neutral-400">/mo</span></p>
-                <ul className="space-y-2 text-sm text-neutral-300">
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited employees & menu items</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited AI insights & analytics</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Delivery platforms & virtual brands</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Advanced reports & dynamic pricing</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Loyalty SMS, CFDI, data export</li>
-                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Bank account integration (up to 5)</li>
-                </ul>
-                <button
-                  onClick={() => handleSubscribe('pro')}
-                  disabled={billingLoading !== null}
-                  className="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
-                >
-                  {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-4">
-              <div>
-                <p className="text-neutral-400 text-sm">Current plan</p>
-                <p className="text-xl font-bold text-white capitalize">Pro — $60/mo</p>
-              </div>
-              <div className="flex gap-3 ml-auto">
-                <button
-                  onClick={handleManageBilling}
-                  disabled={billingLoading !== null}
-                  className="px-5 py-2.5 border border-neutral-600 text-neutral-200 font-medium rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50"
-                >
-                  {billingLoading === 'portal' ? 'Redirecting...' : 'Manage Subscription'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Top Features by Plan — rotating carousel */}
-          <TopFeaturesByPlan plan={plan} />
-        </div>
-
         {/* Demo Data — free tenants only */}
         {plan === 'free' && demoStatus?.allowed && (
           <div className="bg-neutral-900 border border-amber-800/50 rounded-lg p-6 mb-8">
@@ -505,19 +443,6 @@ export default function AdminPanel() {
               <p className="text-neutral-400 text-sm">Use a template to instantly set up your menu, inventory, and recipes</p>
             </button>
           )}
-
-          <Link to="/admin/ai">
-            <div className="bg-neutral-900 p-8 rounded-lg border border-violet-700/30 hover:border-violet-500 transition-all cursor-pointer h-full relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 to-transparent pointer-events-none" />
-              <div className="relative">
-                <div className="flex items-center justify-center w-12 h-12 bg-violet-600/10 rounded-lg mb-4">
-                  <Sparkles className="text-violet-400" size={28} />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-2">{t('cards.aiIntelligence')}</h2>
-                <p className="text-neutral-400 text-sm">{t('cards.aiDesc')}</p>
-              </div>
-            </div>
-          </Link>
 
           <Link to="/admin/menu">
             <div className="bg-neutral-900 p-8 rounded-lg border border-neutral-800 hover:border-brand-600 transition-all cursor-pointer h-full">
@@ -762,7 +687,7 @@ export default function AdminPanel() {
         )}
 
         {lowStockItems.length > 0 && (
-          <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800">
+          <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-800 mb-8">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="text-brand-500" size={24} />
               <h3 className="text-xl font-bold text-white">{t('lowStock.title')}</h3>
@@ -787,6 +712,66 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+
+        {/* Plan & Billing — at the bottom so PRO users aren't distracted */}
+        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <CreditCard className="text-brand-500" size={24} />
+            <h2 className="text-xl font-bold text-white">Plan & Billing</h2>
+          </div>
+
+          {billingError && (
+            <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 mb-4">
+              <p className="text-red-300 text-sm">{billingError}</p>
+            </div>
+          )}
+
+          {!hasOwnerToken ? (
+            <p className="text-neutral-400 text-sm">
+              <Link to="/admin/account" className="text-brand-400 hover:text-brand-300 underline">Sign in as account owner</Link> to manage billing.
+            </p>
+          ) : plan === 'free' ? (
+            <div className="max-w-md">
+              <div className="border border-brand-600 rounded-xl p-6 space-y-4">
+                <h3 className="text-lg font-bold text-white">Pro</h3>
+                <p className="text-3xl font-black text-white">$60<span className="text-base font-normal text-neutral-400">/mo</span></p>
+                <ul className="space-y-2 text-sm text-neutral-300">
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited employees & menu items</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Unlimited AI insights & analytics</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Delivery platforms & virtual brands</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Advanced reports & dynamic pricing</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Loyalty SMS, CFDI, data export</li>
+                  <li className="flex items-center gap-2"><Check size={16} className="text-brand-500" /> Bank account integration (up to 5)</li>
+                </ul>
+                <button
+                  onClick={() => handleSubscribe('pro')}
+                  disabled={billingLoading !== null}
+                  className="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50"
+                >
+                  {billingLoading === 'pro' ? 'Redirecting...' : 'Upgrade to Pro'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-4">
+              <div>
+                <p className="text-neutral-400 text-sm">Current plan</p>
+                <p className="text-xl font-bold text-white capitalize">Pro — $60/mo</p>
+              </div>
+              <div className="flex gap-3 ml-auto">
+                <button
+                  onClick={handleManageBilling}
+                  disabled={billingLoading !== null}
+                  className="px-5 py-2.5 border border-neutral-600 text-neutral-200 font-medium rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                >
+                  {billingLoading === 'portal' ? 'Redirecting...' : 'Manage Subscription'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <TopFeaturesByPlan plan={plan} />
+        </div>
       </div>
 
       <TemplatePickerModal

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Sparkles, ChefHat, TrendingUp, Users, Truck, Clock, Package, Heart, DollarSign, BarChart3, ShoppingCart, Loader2, ArrowLeft, MessageSquare, Send } from 'lucide-react';
+import { X, Sparkles, ChefHat, TrendingUp, Users, Truck, Clock, Package, Heart, DollarSign, BarChart3, ShoppingCart, Loader2, ArrowLeft, MessageSquare, Send, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { askAIAssistant } from '../api';
 
 interface Props {
@@ -89,6 +90,7 @@ function formatInline(text: string): React.ReactNode {
 }
 
 export default function AIAssistantModal({ isOpen, onClose, screenContext }: Props) {
+  const navigate = useNavigate();
   const [answer, setAnswer] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,9 +168,18 @@ export default function AIAssistantModal({ isOpen, onClose, screenContext }: Pro
             <Sparkles size={18} className="text-violet-400" />
             <h2 className="text-lg font-bold text-white">AI Assistant</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
-            <X size={18} className="text-neutral-400" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { onClose(); navigate('/admin/ai'); }}
+              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+              title="AI Settings & Config"
+            >
+              <Settings size={18} className="text-neutral-400" />
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-neutral-800 rounded-lg transition-colors">
+              <X size={18} className="text-neutral-400" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6">
