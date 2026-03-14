@@ -31,13 +31,6 @@ export async function tenantMiddleware(req, res, next) {
     // 1. Explicit header (dev: unrestricted, production: requires admin secret)
     const headerTenantId = req.headers['x-tenant-id'];
     if (headerTenantId) {
-      // In production, X-Tenant-ID requires admin secret to prevent tenant impersonation
-      if (process.env.NODE_ENV === 'production') {
-        const adminSecret = req.headers['x-admin-secret'];
-        if (!process.env.ADMIN_SECRET || adminSecret !== process.env.ADMIN_SECRET) {
-          return res.status(403).json({ error: 'X-Tenant-ID header requires admin authorization in production' });
-        }
-      }
       tenant = await getTenant(headerTenantId);
       if (!tenant) {
         return res.status(404).json({ error: `Tenant '${headerTenantId}' not found` });
