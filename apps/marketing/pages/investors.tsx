@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { useRouter } from "next/router";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
@@ -39,52 +38,14 @@ function SectionLabel({ number, label }: { number: string; label: string }) {
 }
 
 const Investors: NextPage = () => {
-  const { locale } = useRouter();
-  const isSpanish = locale === "es";
-
-  const t = {
-    title: isSpanish
-      ? "Invierte en Desktop Kitchen — El Primer POS para Delivery en México"
-      : "Invest in Desktop Kitchen — Mexico\u2019s First Delivery-Native POS",
-    description: isSpanish
-      ? "Construido en una cocina real, probado en el mundo real. Desktop Kitchen es el único POS delivery-first en México con reconciliación bancaria automática, facturación CFDI 4.0 y gestión multi-marca para ghost kitchens. Serie A — $2M."
-      : "Built in a real kitchen, proven in the real world. Desktop Kitchen is the only delivery-first POS in Mexico with automated bank reconciliation, CFDI 4.0 compliance, and multi-brand ghost kitchen management. Series A — $2M.",
-    eyebrow: isSpanish
-      ? "Serie A \u00b7 Ciudad de México \u00b7 2026"
-      : "Series A \u00b7 Mexico City \u00b7 2026",
-    heroSub: isSpanish
-      ? "La historia que ningún competidor puede contar"
-      : "The story no competitor can tell",
-    heroH1a: isSpanish ? "Construido en una" : "Built in a",
-    heroH1b: isSpanish ? "cocina real." : "real kitchen.",
-    heroH1c: isSpanish ? "Probado en el" : "Proven in the",
-    heroH1d: isSpanish ? "mundo real." : "real world.",
-    heroBody: isSpanish
-      ? "No investigamos el problema. Lo vivimos — y luego construimos el único POS delivery-first en México con la arquitectura, el cumplimiento fiscal y las cicatrices de batalla para demostrarlo."
-      : "We didn\u2019t research the problem. We lived it \u2014 and then we built the only delivery-first POS in Mexico with the architecture, the compliance, and the battle scars to prove it.",
-    bookCall: isSpanish ? "Agendar Llamada" : "Book a Call",
-    seeStory: isSpanish ? "Ver Nuestra Historia" : "See Our Story",
-    stat1v: "12+",
-    stat1l: isSpanish ? "Meses en producción" : "Months in production",
-    stat2v: "60K+",
-    stat2l: isSpanish ? "Líneas de código" : "Lines of codebase",
-    stat3v: "3",
-    stat3l: isSpanish ? "Plataformas reconciliadas" : "Platforms reconciled",
-    stat4v: "0",
-    stat4l: isSpanish
-      ? "Competidores con todo esto"
-      : "Competitors with all of this",
-  };
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: t.title,
-    description: t.description,
-    url: isSpanish
-      ? "https://es.desktop.kitchen/investors"
-      : "https://www.desktop.kitchen/investors",
-    inLanguage: isSpanish ? "es-MX" : "en",
+    name: "Invest in Desktop Kitchen — The Fintech Company Disguised as a POS",
+    description:
+      "Desktop Kitchen is building the Square of Latin America — a free POS that captures real-time transaction data from every restaurant it touches, then monetizes through merchant cash advances underwritten by proprietary sales data. Raising $5–8M.",
+    url: "https://www.desktop.kitchen/investors",
+    inLanguage: "en",
     isPartOf: {
       "@type": "WebSite",
       name: "Desktop Kitchen",
@@ -94,9 +55,8 @@ const Investors: NextPage = () => {
       "@type": "Organization",
       name: "Desktop Kitchen",
       url: "https://www.desktop.kitchen",
-      description: isSpanish
-        ? "El primer POS nativo para delivery en México. Reconciliación bancaria automatizada, facturación CFDI 4.0, gestión multi-marca para ghost kitchens."
-        : "Mexico\u2019s first delivery-native POS. Automated bank reconciliation, CFDI 4.0 invoicing, multi-brand ghost kitchen management.",
+      description:
+        "A fintech distribution network disguised as restaurant software. Free POS → transaction data → merchant cash advances.",
       foundingDate: "2024",
       foundingLocation: {
         "@type": "Place",
@@ -113,55 +73,49 @@ const Investors: NextPage = () => {
   return (
     <>
       <Head>
-        <title>{t.title}</title>
-        <meta name="description" content={t.description} />
+        <title>
+          Invest in Desktop Kitchen — The Fintech Company Disguised as a POS
+        </title>
+        <meta
+          name="description"
+          content="Desktop Kitchen is building the Square of Latin America — a free POS that captures real-time transaction data from every restaurant it touches, then monetizes through merchant cash advances. Raising $5–8M."
+        />
         <link
           rel="canonical"
-          href={
-            isSpanish
-              ? "https://es.desktop.kitchen/investors"
-              : "https://www.desktop.kitchen/investors"
-          }
-        />
-        <link
-          rel="alternate"
-          hrefLang="en"
-          href="https://www.desktop.kitchen/investors"
-        />
-        <link
-          rel="alternate"
-          hrefLang="es"
-          href="https://es.desktop.kitchen/investors"
-        />
-        <link
-          rel="alternate"
-          hrefLang="x-default"
           href="https://www.desktop.kitchen/investors"
         />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-        <meta property="og:title" content={t.title} />
-        <meta property="og:description" content={t.description} />
+        <meta
+          property="og:title"
+          content="Invest in Desktop Kitchen — The Fintech Company Disguised as a POS"
+        />
+        <meta
+          property="og:description"
+          content="Free POS → transaction data → merchant cash advances. The Square playbook for Latin America."
+        />
         <meta property="og:type" content="website" />
         <meta
           property="og:url"
-          content={
-            isSpanish
-              ? "https://es.desktop.kitchen/investors"
-              : "https://www.desktop.kitchen/investors"
-          }
+          content="https://www.desktop.kitchen/investors"
         />
         <meta
           property="og:image"
-          content={`https://www.desktop.kitchen/api/og?locale=${locale || "en"}`}
+          content="https://www.desktop.kitchen/api/og?locale=en"
         />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={t.title} />
-        <meta name="twitter:description" content={t.description} />
+        <meta
+          name="twitter:title"
+          content="Invest in Desktop Kitchen — The Fintech Company Disguised as a POS"
+        />
+        <meta
+          name="twitter:description"
+          content="Free POS → transaction data → merchant cash advances. The Square playbook for Latin America."
+        />
         <meta
           name="twitter:image"
-          content={`https://www.desktop.kitchen/api/og?locale=${locale || "en"}`}
+          content="https://www.desktop.kitchen/api/og?locale=en"
         />
         <script
           type="application/ld+json"
@@ -178,14 +132,10 @@ const Investors: NextPage = () => {
       {/* Navigation */}
       <nav
         className="fixed top-0 left-0 right-0 z-40 px-6 py-4 flex items-center justify-between bg-neutral-950/85 backdrop-blur-md border-b border-white/5"
-        aria-label={isSpanish ? "Navegación" : "Navigation"}
+        aria-label="Navigation"
       >
         <a
-          href={
-            isSpanish
-              ? "https://es.desktop.kitchen"
-              : "https://www.desktop.kitchen"
-          }
+          href="https://www.desktop.kitchen"
           className="flex items-center gap-2"
           aria-label="Desktop Kitchen"
         >
@@ -202,36 +152,27 @@ const Investors: NextPage = () => {
         </a>
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-5 text-[11px] uppercase tracking-[0.15em] text-white/30">
-            <a
-              href="#problem"
-              className="hover:text-white/60 transition-colors"
-            >
-              {isSpanish ? "Problema" : "Problem"}
+            <a href="#thesis" className="hover:text-white/60 transition-colors">
+              Thesis
             </a>
-            <a href="#lab" className="hover:text-white/60 transition-colors">
-              {isSpanish ? "Laboratorio" : "Lab"}
+            <a href="#trojan-horse" className="hover:text-white/60 transition-colors">
+              The Play
             </a>
-            <a
-              href="#technology"
-              className="hover:text-white/60 transition-colors"
-            >
-              {isSpanish ? "Tecnología" : "Technology"}
+            <a href="#flywheel" className="hover:text-white/60 transition-colors">
+              Flywheel
             </a>
             <a href="#market" className="hover:text-white/60 transition-colors">
-              {isSpanish ? "Mercado" : "Market"}
+              Market
             </a>
-            <a
-              href="#opportunity"
-              className="hover:text-white/60 transition-colors"
-            >
-              {isSpanish ? "Oportunidad" : "Opportunity"}
+            <a href="#invest" className="hover:text-white/60 transition-colors">
+              The Ask
             </a>
           </div>
           <a
             href="#invest"
             className="bg-teal-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors tracking-wider uppercase"
           >
-            {t.bookCall} &rarr;
+            Book a Call &rarr;
           </a>
         </div>
       </nav>
@@ -250,23 +191,25 @@ const Investors: NextPage = () => {
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-teal-500 border border-teal-500/30 px-4 py-1.5 rounded-full mb-4 font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-            {t.eyebrow}
+            Raising $5&ndash;8M &middot; Mexico City &middot; 2026
           </div>
 
           <p className="text-sm text-white/30 uppercase tracking-[0.2em] mb-8 font-mono">
-            {t.heroSub}
+            The investment a16z was built to make
           </p>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] tracking-tighter text-white max-w-4xl mx-auto">
-            {t.heroH1a}{" "}
-            <span className="text-teal-500">{t.heroH1b}</span>
+            A fintech company{" "}
+            <span className="text-teal-500">disguised</span>
             <br />
-            {t.heroH1c}{" "}
-            <span className="text-teal-500">{t.heroH1d}</span>
+            as restaurant{" "}
+            <span className="text-teal-500">software.</span>
           </h1>
 
           <p className="mt-8 text-base sm:text-lg text-white/40 max-w-2xl mx-auto leading-relaxed">
-            {t.heroBody}
+            We give restaurants the best free POS on the market. They give us
+            real-time transaction data. Six months later, we underwrite merchant
+            cash advances with better data than any bank in Latin America.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -274,23 +217,23 @@ const Investors: NextPage = () => {
               href="#invest"
               className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
             >
-              {t.bookCall} &rarr;
+              Book a Call &rarr;
             </a>
             <a
-              href="#problem"
+              href="#thesis"
               className="text-white/40 font-medium text-sm uppercase tracking-wider hover:text-white/60 transition-colors duration-200"
             >
-              {t.seeStory} &darr;
+              See the Thesis &darr;
             </a>
           </div>
 
           {/* Stats bar */}
           <div className="mt-16 md:mt-20 grid grid-cols-2 md:grid-cols-4 border border-white/10 rounded-2xl overflow-hidden bg-white/[0.03] backdrop-blur-sm">
             {[
-              { value: t.stat1v, label: t.stat1l },
-              { value: t.stat2v, label: t.stat2l },
-              { value: t.stat3v, label: t.stat3l },
-              { value: t.stat4v, label: t.stat4l },
+              { value: "$0", label: "Cost to onboard a restaurant" },
+              { value: "$65", label: "Hardware cost (Android tablet)" },
+              { value: "6 mo", label: "Time to underwriting-ready data" },
+              { value: "∞", label: "Restaurants that need financing" },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -320,40 +263,28 @@ const Investors: NextPage = () => {
       </header>
 
       <main>
-        {/* ─── 01 PROBLEM ─── */}
+        {/* ─── 01 THESIS ─── */}
         <section
-          id="problem"
+          id="thesis"
           className="py-24 md:py-40 px-6 bg-neutral-900"
-          aria-labelledby="problem-heading"
+          aria-labelledby="thesis-heading"
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="01"
-                label={isSpanish ? "El Problema" : "The Problem"}
-              />
+              <SectionLabel number="01" label="The Thesis" />
               <h2
-                id="problem-heading"
+                id="thesis-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Los restaurantes mexicanos están{" "}
-                    <span className="text-teal-500">volando a ciegas</span> con
-                    delivery.
-                  </>
-                ) : (
-                  <>
-                    Mexican restaurants are{" "}
-                    <span className="text-teal-500">flying blind</span> on
-                    delivery.
-                  </>
-                )}
+                Whoever owns the{" "}
+                <span className="text-teal-500">payment flow</span> owns the
+                restaurant.
               </h2>
               <p className="mt-6 text-lg text-white/40 max-w-xl">
-                {isSpanish
-                  ? "Rappi cobra 30%. Uber Eats cobra 28%. DiDi Food cobra 25%. Pero pregúntale a cualquier dueño de restaurante en CDMX cuánto ganó el martes pasado después de comisiones, impuestos y contracargos — y te quedará viendo."
-                  : "Rappi takes 30%. Uber Eats takes 28%. DiDi Food takes 25%. But try asking any restaurant owner in Mexico City exactly how much they made last Tuesday after platform fees, tax obligations, and chargebacks \u2014 and you\u2019ll get a blank stare."}
+                Square proved it in the US. Toast proved it in fine dining.
+                Nobody has done it in Latin America&apos;s 680,000+ restaurants
+                &mdash; a market where traditional banks won&apos;t lend, and
+                delivery platforms take 30% while giving operators zero data.
               </p>
             </FadeIn>
 
@@ -361,81 +292,33 @@ const Investors: NextPage = () => {
               {[
                 {
                   icon: (
-                    <svg
-                      className="w-7 h-7"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-                      />
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
                     </svg>
                   ),
-                  title: isSpanish
-                    ? "Sin reconciliación"
-                    : "No reconciliation",
-                  desc: isSpanish
-                    ? "Los pagos de las plataformas llegan días después, en lotes, sin coincidencia automática con los pedidos reales — así que los dueños cruzan hojas de cálculo manualmente durante horas cada semana."
-                    : "Platform payouts arrive days late, in batches, with no automatic matching to actual orders \u2014 so owners manually cross-reference spreadsheets for hours every week.",
-                  impact: isSpanish
-                    ? "\u2192 El operador promedio pierde o sobreestima un 12% de ingresos"
-                    : "\u2192 Average operator loses or overpays by 12% of revenue",
+                  title: "Banks won't lend",
+                  desc: "Mexican restaurants can't get capital. Traditional banks require collateral, 18+ months of tax filings, and credit history most operators don't have. The ones that do get loans pay 40%+ annual rates.",
+                  impact: "→ $12B+ unmet credit demand in Mexican SMB food service",
                 },
                 {
                   icon: (
-                    <svg
-                      className="w-7 h-7"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                      />
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605" />
                     </svg>
                   ),
-                  title: isSpanish
-                    ? "Pesadilla de CFDI"
-                    : "CFDI compliance nightmare",
-                  desc: isSpanish
-                    ? "El SAT requiere facturación electrónica para cada transacción. Los POS tradicionales agregan la facturación como un parche — o la ignoran por completo."
-                    : "The SAT requires electronic invoicing for every transaction. Legacy POS systems bolt on invoicing as an afterthought \u2014 or ignore it entirely.",
-                  impact: isSpanish
-                    ? "\u2192 Multas del SAT y horas de trabajo manual por mes"
-                    : "\u2192 SAT fines and hours of manual work per month",
+                  title: "POS systems are blind",
+                  desc: "Every POS in Mexico shows what you sold. None of them show what you actually kept after Rappi's 30%, Uber's 28%, and DiDi's 25%. Operators are flying blind on their real margins.",
+                  impact: "→ Average operator misjudges profitability by 12%",
                 },
                 {
                   icon: (
-                    <svg
-                      className="w-7 h-7"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
-                      />
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
                     </svg>
                   ),
-                  title: isSpanish
-                    ? "Ghost kitchens sin herramientas"
-                    : "Ghost kitchens have no tools",
-                  desc: isSpanish
-                    ? "¿Operando tres marcas virtuales desde una cocina? Todos los POS existentes asumen una marca, un comedor, un mundo simple."
-                    : "Operating three virtual brands from one kitchen? Every existing POS assumes one brand, one dining room, one simple world.",
-                  impact: isSpanish
-                    ? "\u2192 2\u20134 horas/semana en reportes manuales por operador"
-                    : "\u2192 2\u20134 hours/week in manual reporting per operator",
+                  title: "The data gap is the opportunity",
+                  desc: "If you process a restaurant's payments, you have real-time revenue data that's better than anything a bank can get. You can underwrite an MCA in minutes — not weeks — with fundamentally lower default risk.",
+                  impact: "→ This is exactly how Square Capital built a $9B lending book",
                 },
               ].map((card, i) => (
                 <FadeIn key={i} delay={i * 0.1}>
@@ -459,57 +342,44 @@ const Investors: NextPage = () => {
 
             <FadeIn delay={0.2}>
               <p className="mt-10 text-sm text-white/30 text-center italic max-w-xl mx-auto">
-                {isSpanish
-                  ? "Los fundadores no estudiaron este mercado. Cocinaron en él — todos los días — y construyeron software para resolver el dolor que sentían personalmente."
-                  : "The founders didn\u2019t study this market. They cooked in it \u2014 every single day \u2014 and built software to solve the pain they felt personally."}
+                &ldquo;The biggest fintech opportunities hide inside
+                non-fintech products.&rdquo; &mdash; The a16z fintech playbook
               </p>
             </FadeIn>
           </div>
         </section>
 
-        {/* ─── 02 THE LAB ─── */}
+        {/* ─── 02 THE TROJAN HORSE ─── */}
         <section
-          id="lab"
+          id="trojan-horse"
           className="py-24 md:py-40 px-6 bg-neutral-950"
-          aria-labelledby="lab-heading"
+          aria-labelledby="trojan-heading"
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="02"
-                label={isSpanish ? "El Laboratorio" : "The Lab"}
-              />
+              <SectionLabel number="02" label="The Trojan Horse" />
               <h2
-                id="lab-heading"
+                id="trojan-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Juanberto&apos;s no es un demo.
-                    <br />
-                    <span className="text-teal-500">
-                      Es nuestro proof of concept.
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Juanberto&apos;s isn&apos;t a demo.
-                    <br />
-                    <span className="text-teal-500">
-                      It&apos;s our proof of concept.
-                    </span>
-                  </>
-                )}
+                The POS is the bait.
+                <br />
+                <span className="text-teal-500">
+                  The data is the business.
+                </span>
               </h2>
               <p className="mt-6 text-lg text-white/40 max-w-2xl">
-                {isSpanish
-                  ? "La mayoría de las empresas de software construyen y luego prueban. Nosotros lo hicimos al revés. Por más de un año, Desktop Kitchen corrió en vivo — procesando pedidos reales, reconciliando pagos reales de plataformas, y generando facturas CFDI reales — dentro de nuestro propio restaurante antes de que un solo cliente externo lo tocara."
-                  : "Most software companies build, then test. We reversed that. For over a year, Desktop Kitchen ran live \u2014 processing real orders, reconciling real platform payouts, and generating real CFDI invoices \u2014 inside our own restaurant before a single external customer touched it."}
+                We built the most feature-rich POS on the Mexican market and
+                gave it away for free. Loyalty programs, menu boards, delivery
+                analytics, AI-powered upselling, CFDI invoicing, kitchen
+                displays &mdash; every bell and whistle a restaurant operator
+                could want. Not because we need the SaaS revenue. Because every
+                restaurant that adopts our POS is a future financing customer.
               </p>
             </FadeIn>
 
             <div className="mt-16 md:mt-20 grid lg:grid-cols-2 gap-8 items-start">
-              {/* Code-like visual */}
+              {/* The play - visual */}
               <FadeIn delay={0.1}>
                 <div className="bg-neutral-900 border border-white/10 rounded-2xl overflow-hidden">
                   <div className="flex items-center gap-1.5 px-4 py-3 border-b border-white/5">
@@ -517,88 +387,81 @@ const Investors: NextPage = () => {
                     <span className="w-3 h-3 rounded-full bg-yellow-500/60" />
                     <span className="w-3 h-3 rounded-full bg-green-500/60" />
                     <span className="text-[10px] text-white/20 ml-2 font-mono">
-                      production-data.yml
+                      the-trojan-horse.yml
                     </span>
                   </div>
                   <div className="p-6 font-mono text-sm leading-relaxed">
-                    <p className="text-white/20">
-                      # 12+ {isSpanish ? "meses de datos de producción" : "months of production data"}{" "}
-                      {isSpanish ? "de" : "from"} Juanberto&apos;s
-                    </p>
+                    <p className="text-white/20"># The play</p>
                     <p className="text-white/50 mt-3">
-                      orders_processed:{" "}
-                      <span className="text-teal-400">real</span>
+                      step_1: <span className="text-teal-400">&quot;Give away the best free POS in Mexico&quot;</span>
                     </p>
                     <p className="text-white/50">
-                      platform_payouts_reconciled:{" "}
-                      <span className="text-teal-400">
-                        Rappi + UberEats + DiDi
-                      </span>
+                      step_2: <span className="text-teal-400">&quot;Restaurant processes every transaction through us&quot;</span>
                     </p>
                     <p className="text-white/50">
-                      cfdi_invoices_generated:{" "}
-                      <span className="text-teal-400">SAT-compliant</span>
+                      step_3: <span className="text-teal-400">&quot;We see daily revenue, ticket sizes, seasonality&quot;</span>
                     </p>
                     <p className="text-white/50">
-                      data_source:{" "}
-                      <span className="text-teal-400">
-                        &quot;{isSpanish ? "nuestro propio restaurante" : "our own restaurant"}&quot;
-                      </span>
+                      step_4: <span className="text-teal-400">&quot;Month 5: offer MCA based on real data&quot;</span>
+                    </p>
+                    <p className="text-white/50">
+                      step_5: <span className="text-teal-400">&quot;Repayment auto-deducted from daily sales&quot;</span>
                     </p>
                     <p className="text-white/20 mt-3">
-                      //{" "}
-                      {isSpanish
-                        ? "Esto no es un sandbox. Esto es producción."
-                        : "This is not a sandbox. This is production."}
+                      # The restaurant owner never felt sold a financial product.
+                    </p>
+                    <p className="text-white/20">
+                      # Their POS just offered them capital they couldn&apos;t
+                    </p>
+                    <p className="text-white/20">
+                      # get anywhere else, at terms no bank can match.
+                    </p>
+                    <p className="text-white/50 mt-3">
+                      default_risk: <span className="text-teal-400">fundamentally_lower</span>
+                    </p>
+                    <p className="text-white/50">
+                      reason: <span className="text-teal-400">&quot;we collect repayment at the point of sale&quot;</span>
                     </p>
                   </div>
                 </div>
               </FadeIn>
 
-              {/* Stats sidebar */}
+              {/* Why it works */}
               <FadeIn delay={0.2}>
                 <div className="space-y-4">
                   <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
                     <h3 className="text-sm font-bold text-white/60 uppercase tracking-wider mb-1">
-                      Juanberto&apos;s California Burritos
+                      Why the Trojan Horse Works
                     </h3>
                     <p className="text-xs text-white/20 mb-6">
-                      Roma Sur &middot;{" "}
-                      {isSpanish ? "Ciudad de México" : "Mexico City"} &middot;{" "}
-                      {isSpanish ? "Ambiente de Producción" : "Production Environment"}
+                      Every layer reinforces the next
                     </p>
 
                     <div className="space-y-4">
                       {[
                         {
-                          label: isSpanish
-                            ? "% de ingresos por delivery"
-                            : "Delivery % of revenue",
-                          value: ">50%",
+                          label: "Acquisition cost per restaurant",
+                          value: "$0",
                         },
                         {
-                          label: isSpanish
-                            ? "Plataformas activas"
-                            : "Active platforms",
-                          value: "Rappi \u00b7 UberEats \u00b7 DiDi",
+                          label: "Hardware (any Android tablet)",
+                          value: "~$65 USD",
                         },
                         {
-                          label: isSpanish ? "En producción desde" : "Live since",
-                          value: isSpanish ? "12+ meses" : "12+ months",
+                          label: "Bells & whistles (loyalty, AI, delivery)",
+                          value: "Retention hooks",
                         },
                         {
-                          label: isSpanish
-                            ? "Marcas virtuales planeadas"
-                            : "Planned virtual brands",
-                          value: isSpanish
-                            ? "3\u20134 en 6 meses"
-                            : "3\u20134 within 6 mo.",
+                          label: "Optional AI tier",
+                          value: "$60/mo revenue",
                         },
                         {
-                          label: isSpanish
-                            ? "Cumplimiento fiscal"
-                            : "Tax compliance",
-                          value: "CFDI 4.0 \u2713",
+                          label: "Time to underwriting-ready data",
+                          value: "4–6 months",
+                        },
+                        {
+                          label: "MCA repayment method",
+                          value: "Auto % of daily sales",
                         },
                       ].map((item, i) => (
                         <div
@@ -617,9 +480,7 @@ const Investors: NextPage = () => {
                   </div>
 
                   <p className="text-xs text-white/20 text-center italic">
-                    {isSpanish
-                      ? "Eso no es un programa beta. Eso es skin in the game."
-                      : "That\u2019s not a beta program. That\u2019s skin in the game."}
+                    The restaurant sees a great POS. We see an underwriting pipeline.
                   </p>
                 </div>
               </FadeIn>
@@ -627,109 +488,56 @@ const Investors: NextPage = () => {
           </div>
         </section>
 
-        {/* ─── 03 TECHNOLOGY ─── */}
+        {/* ─── 03 THE FLYWHEEL ─── */}
         <section
-          id="technology"
+          id="flywheel"
           className="py-24 md:py-40 px-6 bg-neutral-900"
-          aria-labelledby="tech-heading"
+          aria-labelledby="flywheel-heading"
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="03"
-                label={isSpanish ? "La Tecnología" : "The Technology"}
-              />
+              <SectionLabel number="03" label="The Flywheel" />
               <h2
-                id="tech-heading"
+                id="flywheel-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Tres capacidades.{" "}
-                    <span className="text-teal-500">Cero competidores</span>{" "}
-                    tienen las tres.
-                  </>
-                ) : (
-                  <>
-                    Three capabilities.{" "}
-                    <span className="text-teal-500">Zero competitors</span>{" "}
-                    have all three.
-                  </>
-                )}
+                Three revenue layers.{" "}
+                <span className="text-teal-500">Each one funds the next.</span>
               </h2>
             </FadeIn>
 
             <div className="mt-16 md:mt-20 grid md:grid-cols-3 gap-6">
               {[
                 {
-                  tag: isSpanish ? "Primero en México" : "First in Mexico",
-                  title: isSpanish
-                    ? "Reconciliación Bancaria Automatizada"
-                    : "Automated Bank Reconciliation",
-                  desc: isSpanish
-                    ? "Algoritmos de fuzzy-matching emparejan automáticamente los pagos de plataformas de delivery con los depósitos bancarios — a través de Rappi, Uber Eats y DiDi Food simultáneamente. Lo que antes tomaba horas cada semana ahora toma cero minutos."
-                    : "Fuzzy-matching algorithms automatically pair delivery platform payouts with bank deposits \u2014 across Rappi, Uber Eats, and DiDi Food simultaneously. What used to take owners hours every week now takes zero minutes.",
+                  tag: "Layer 1 — Adoption",
+                  title: "Free POS",
+                  desc: "A full-featured POS with loyalty, menu boards, delivery analytics, AI suggestions, kitchen displays, CFDI invoicing, and offline mode. Free forever. The most irresistible offer in the Mexican restaurant market. Every feature is a reason to switch — and a reason to stay.",
+                  metric: "Cost: $0 per restaurant",
                   icon: (
-                    <svg
-                      className="w-8 h-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"
-                      />
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.15c0 .415.336.75.75.75z" />
                     </svg>
                   ),
                 },
                 {
-                  tag: isSpanish ? "Nativo del SAT" : "SAT-native",
-                  title: isSpanish
-                    ? "Cumplimiento CFDI 4.0 Nativo"
-                    : "Native CFDI 4.0 Compliance",
-                  desc: isSpanish
-                    ? "La facturación CFDI no es un add-on. Está integrada en el flujo de pedidos desde el día uno vía FacturAPI, generando facturas electrónicas cumpliendo con el SAT automáticamente. Sin plugins, sin exportaciones manuales, sin ansiedad de cumplimiento."
-                    : "CFDI invoicing is not an add-on. It\u2019s woven into the order flow from day one via FacturAPI, generating SAT-compliant electronic invoices automatically. No third-party plugins, no manual exports, no compliance anxiety.",
+                  tag: "Layer 2 — SaaS",
+                  title: "$60/mo AI Tier",
+                  desc: "AI-powered dynamic pricing, upsell suggestions, prep forecasting, waste detection, and delivery margin optimization. The features that pay for themselves. Recurring revenue that subsidizes growth while the real monetization engine spins up.",
+                  metric: "Target: 30% conversion to paid",
                   icon: (
-                    <svg
-                      className="w-8 h-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                      />
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
                     </svg>
                   ),
                 },
                 {
-                  tag: isSpanish ? "Grado empresarial" : "Enterprise-grade",
-                  title: isSpanish
-                    ? "Arquitectura Multi-Marca Ghost Kitchen"
-                    : "Multi-Brand Ghost Kitchen Architecture",
-                  desc: isSpanish
-                    ? "POS verdaderamente multi-tenant y multi-marca con seguridad a nivel de fila en PostgreSQL. Una cocina, múltiples marcas virtuales, cada una con su propio menú, analítica y presencia en delivery. Construido para cómo operan los restaurantes de delivery hoy."
-                    : "True multi-tenant, multi-brand POS with row-level security in PostgreSQL. One kitchen, multiple virtual brands, each with its own menu, analytics, and delivery presence. Built for the way delivery restaurants actually operate today.",
+                  tag: "Layer 3 — Fintech",
+                  title: "Merchant Cash Advances",
+                  desc: "After 4–6 months of transaction data, we know a restaurant's business better than their accountant. Daily sales velocity, seasonal patterns, platform mix, growth trends. We offer MCAs with automatic repayment deducted as a percentage of daily sales. Lower risk. Higher conversion. Better terms than any bank.",
+                  metric: "This is where the real margin lives",
                   icon: (
-                    <svg
-                      className="w-8 h-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.15c0 .415.336.75.75.75z"
-                      />
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
                     </svg>
                   ),
                 },
@@ -748,133 +556,84 @@ const Investors: NextPage = () => {
                     <span className="inline-block mt-4 text-[10px] font-mono tracking-wider text-teal-500/70 border border-teal-500/20 px-2.5 py-0.5 rounded-full self-start">
                       {cap.tag}
                     </span>
+                    <p className="mt-3 text-xs text-teal-500/80 font-mono tracking-wide">
+                      {cap.metric}
+                    </p>
                   </article>
                 </FadeIn>
               ))}
             </div>
 
-            {/* Competitive table */}
+            {/* Precedent table */}
             <FadeIn delay={0.2}>
               <div className="mt-16 md:mt-20 rounded-2xl overflow-hidden border border-white/10">
                 <div className="hidden md:grid grid-cols-4 bg-white/[0.06]">
                   <div className="px-6 py-4 text-white/30 font-semibold text-xs uppercase tracking-wider">
-                    {isSpanish ? "Capacidad" : "Capability"}
-                  </div>
-                  <div className="px-6 py-4 text-teal-500 font-semibold text-xs uppercase tracking-wider text-center">
-                    Desktop Kitchen
+                    Company
                   </div>
                   <div className="px-6 py-4 text-white/30 font-semibold text-xs uppercase tracking-wider text-center">
-                    Square / Toast
+                    Trojan Horse
                   </div>
                   <div className="px-6 py-4 text-white/30 font-semibold text-xs uppercase tracking-wider text-center">
-                    Local POS (Parrot)
+                    Real Business
+                  </div>
+                  <div className="px-6 py-4 text-white/30 font-semibold text-xs uppercase tracking-wider text-center">
+                    Lending Book
                   </div>
                 </div>
 
                 {[
                   {
-                    feat: isSpanish
-                      ? "Margen real después de comisiones"
-                      : "Real margin after delivery fees",
-                    dk: true,
-                    sq: false,
-                    lp: false,
+                    company: "Square",
+                    horse: "Card reader",
+                    real: "Square Capital",
+                    book: "$9.4B cumulative",
                   },
                   {
-                    feat: isSpanish
-                      ? "Gestión multi-marca ghost kitchen"
-                      : "Multi-brand ghost kitchen management",
-                    dk: true,
-                    sq: false,
-                    lp: "partial",
+                    company: "Toast",
+                    horse: "Restaurant POS",
+                    real: "Toast Capital",
+                    book: "$1.6B+ originated",
                   },
                   {
-                    feat: isSpanish
-                      ? "Integración plataformas delivery México"
-                      : "Mexico delivery platform integration",
-                    dk: true,
-                    sq: false,
-                    lp: false,
+                    company: "Shopify",
+                    horse: "E-commerce platform",
+                    real: "Shopify Capital",
+                    book: "$5B+ cumulative",
                   },
                   {
-                    feat: isSpanish
-                      ? "IA para pricing y márgenes"
-                      : "AI pricing & margin intelligence",
-                    dk: true,
-                    sq: false,
-                    lp: false,
-                  },
-                  {
-                    feat: isSpanish
-                      ? "Recaptura de clientes por WhatsApp"
-                      : "WhatsApp customer recapture",
-                    dk: true,
-                    sq: false,
-                    lp: false,
-                  },
-                  {
-                    feat: isSpanish
-                      ? "Facturación CFDI (cumplimiento fiscal México)"
-                      : "CFDI invoicing (Mexico tax compliance)",
-                    dk: true,
-                    sq: false,
-                    lp: "partial",
-                  },
-                  {
-                    feat: isSpanish
-                      ? "App nativa con modo offline"
-                      : "Native offline app",
-                    dk: true,
-                    sq: "partial",
-                    lp: false,
-                  },
-                  {
-                    feat: isSpanish
-                      ? "Reconciliación bancaria (fuzzy matching)"
-                      : "Bank reconciliation (fuzzy matching)",
-                    dk: true,
-                    sq: false,
-                    lp: false,
+                    company: "Desktop Kitchen",
+                    horse: "Free POS + AI",
+                    real: "MCA platform",
+                    book: "Building the pipeline",
+                    highlight: true,
                   },
                 ].map((row, i) => (
                   <div
                     key={i}
                     className={`grid grid-cols-1 md:grid-cols-4 border-t border-white/5 ${
-                      i % 2 === 0 ? "bg-white/[0.02]" : "bg-white/[0.01]"
+                      row.highlight
+                        ? "bg-teal-600/10 border-l-2 border-l-teal-500"
+                        : i % 2 === 0
+                        ? "bg-white/[0.02]"
+                        : "bg-white/[0.01]"
                     }`}
                   >
-                    <div className="px-6 py-4 text-sm text-white/60 flex items-center">
-                      {row.feat}
+                    <div className={`px-6 py-4 text-sm flex items-center font-semibold ${row.highlight ? "text-teal-400" : "text-white/60"}`}>
+                      {row.company}
                     </div>
-                    {(
-                      [
-                        { val: row.dk, highlight: true },
-                        { val: row.sq, highlight: false },
-                        { val: row.lp, highlight: false },
-                      ] as const
-                    ).map((cell, ci) => (
-                      <div
-                        key={ci}
-                        className="px-6 py-4 text-center hidden md:flex items-center justify-center"
-                      >
-                        {cell.val === true ? (
-                          <span className="text-teal-400 text-lg">
-                            &#10003;
-                          </span>
-                        ) : cell.val === false ? (
-                          <span className="text-white/10 text-lg">
-                            &#10007;
-                          </span>
-                        ) : (
-                          <span className="text-white/30 text-xs">
-                            {isSpanish ? "Parcial" : "Partial"}
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                    <div className="px-6 py-4 text-center hidden md:flex items-center justify-center text-sm text-white/40">
+                      {row.horse}
+                    </div>
+                    <div className="px-6 py-4 text-center hidden md:flex items-center justify-center text-sm text-white/40">
+                      {row.real}
+                    </div>
+                    <div className={`px-6 py-4 text-center hidden md:flex items-center justify-center text-sm font-semibold ${row.highlight ? "text-teal-400" : "text-white/40"}`}>
+                      {row.book}
+                    </div>
                     <div className="px-6 pb-4 md:hidden">
-                      <span className="text-teal-400 text-sm font-mono">
-                        &#10003; Desktop Kitchen
+                      <span className="text-sm text-white/40">
+                        {row.horse} → {row.real} → {row.book}
                       </span>
                     </div>
                   </div>
@@ -892,69 +651,39 @@ const Investors: NextPage = () => {
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="04"
-                label={isSpanish ? "La Prueba" : "The Proof"}
-              />
+              <SectionLabel number="04" label="The Proof" />
               <h2
                 id="proof-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Tenemos un test suite que{" "}
-                    <span className="text-teal-500">
-                      prueba que la arquitectura funciona.
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    We have a test suite that{" "}
-                    <span className="text-teal-500">
-                      proves the architecture is sound.
-                    </span>
-                  </>
-                )}
+                This isn&apos;t a deck.{" "}
+                <span className="text-teal-500">
+                  It&apos;s running in production.
+                </span>
               </h2>
             </FadeIn>
 
             <div className="mt-16 md:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
+                  value: "Live",
+                  label: "Production system",
+                  sub: "Desktop Kitchen runs live at Juanberto's California Burritos in Roma Sur, CDMX — processing real orders, real payments, real CFDI invoices. Not a sandbox. Not a demo.",
+                },
+                {
                   value: "60K+",
-                  label: isSpanish
-                    ? "Líneas de código en producción"
-                    : "Lines of production code",
-                  sub: isSpanish
-                    ? "Codebase grado empresarial con aislamiento multi-tenant, políticas RLS, y soporte offline — no es un prototipo."
-                    : "Enterprise-grade codebase with multi-tenant isolation, RLS policies, and offline support \u2014 not a prototype.",
+                  label: "Lines of production code",
+                  sub: "Multi-tenant architecture with row-level security, offline support, AI intelligence layer, Stripe billing, delivery reconciliation, and native mobile apps. Enterprise-grade from day one.",
                 },
                 {
-                  value: "12+",
-                  label: isSpanish
-                    ? "Meses en producción real"
-                    : "Months in real production",
-                  sub: isSpanish
-                    ? "Corriendo en vivo en Juanberto's — no en staging, no en un sandbox — contra pedidos y dinero real."
-                    : "Running live at Juanberto\u2019s \u2014 not in staging, not in a sandbox \u2014 against real orders and real money.",
+                  value: "2",
+                  label: "App stores in review",
+                  sub: "Google Play Store (in testing track — 9 days to production review) and Apple App Connect. Any $65 Android tablet becomes a full POS terminal with NFC tap-to-pay.",
                 },
                 {
-                  value: "3",
-                  label: isSpanish
-                    ? "Plataformas de delivery reconciliadas"
-                    : "Delivery platforms reconciled",
-                  sub: isSpanish
-                    ? "Rappi, Uber Eats y DiDi Food completamente integrados con matching automático pago-banco en producción."
-                    : "Rappi, Uber Eats, and DiDi Food fully integrated with automated payout-to-bank matching in production.",
-                },
-                {
-                  value: "\u221e",
-                  label: isSpanish
-                    ? "Skin in the game del fundador"
-                    : "Founder skin in the game",
-                  sub: isSpanish
-                    ? "Cada bug golpea nuestro propio P&L primero. Ningún fundador tiene más incentivo para hacer bien la reconciliación."
-                    : "Every bug hits our own P&L first. No founder has more incentive to get reconciliation right than one who eats what they cook.",
+                  value: "42+",
+                  label: "API routes in production",
+                  sub: "Orders, payments, inventory, AI, delivery intelligence, CFDI invoicing, loyalty, settlement, financing, banking integrations. This is a complete platform, not an MVP.",
                 },
               ].map((stat, i) => (
                 <FadeIn key={i} delay={i * 0.08}>
@@ -977,24 +706,32 @@ const Investors: NextPage = () => {
             <FadeIn delay={0.2}>
               <div className="mt-12 bg-white/[0.03] border border-white/10 rounded-2xl p-8">
                 <h3 className="text-xl font-bold text-white mb-4">
-                  {isSpanish
-                    ? "La Historia de Founder-Market Fit"
-                    : "The Founder-Market Fit Story"}
+                  Founder-Market Fit
                 </h3>
                 <p className="text-sm text-white/40 leading-relaxed mb-4">
-                  {isSpanish
-                    ? "Juan construyó Desktop Kitchen por frustración personal. Operando Juanberto's California Burritos, no podía entender por qué meses que parecían rentables se sentían pobres en efectivo. La respuesta: las comisiones de las plataformas eran invisibles en todos los POS que probó."
-                    : "Juan built Desktop Kitchen out of personal frustration. Running Juanberto\u2019s California Burritos, he couldn\u2019t figure out why profitable-looking months felt cash-poor. The answer: platform commissions were invisible in every POS he tried."}
+                  Juan didn&apos;t pivot into fintech from a tech job. He ran a
+                  restaurant — Juanberto&apos;s California Burritos — and
+                  couldn&apos;t figure out why profitable-looking months felt
+                  cash-poor. The answer: delivery platform commissions were
+                  invisible in every POS he tried. So he built his own.
+                </p>
+                <p className="text-sm text-white/40 leading-relaxed mb-4">
+                  But here&apos;s what makes this different: Juan&apos;s professional
+                  background is in finance. Not restaurant tech. Not software.
+                  Finance. He didn&apos;t stumble into the MCA opportunity — he
+                  recognized it from day one. The POS was always the distribution
+                  strategy for a financing business. Every feature, every bell and
+                  whistle, was designed to make the bait irresistible.
                 </p>
                 <p className="text-sm text-white/40 leading-relaxed mb-6">
-                  {isSpanish
-                    ? "Primero construyó el motor de reconciliación — para él mismo. Luego la gestión multi-marca. Luego la facturación CFDI. Todo lo que ves en el producto hoy fue validado con pedidos reales en un restaurante real antes de que un solo cliente externo lo viera."
-                    : "He built the reconciliation engine first \u2014 for himself. Then the multi-brand management. Then the CFDI invoicing. Everything you see in the product today was validated on real orders at a real restaurant before a single external customer saw it."}
+                  A restaurant operator who understands underwriting, building
+                  the data pipeline he wishes he had as a lender. That&apos;s not
+                  founder-market fit. That&apos;s founder-market destiny.
                 </p>
                 <blockquote className="text-base text-teal-400 italic border-l-2 border-teal-500/50 pl-4 leading-relaxed">
-                  {isSpanish
-                    ? "\u201cLa mayoría de los POS te muestran lo que vendiste. No te muestran lo que realmente te quedó después de que la plataforma tomó su 30%. Nosotros sí.\u201d"
-                    : "\u201cMost POS systems show you what you sold. They don\u2019t show you what you actually kept after the platform took their 30%. We do.\u201d"}
+                  &ldquo;I didn&apos;t build a POS company that might do
+                  lending someday. I built a lending company that uses a POS as
+                  its distribution channel.&rdquo;
                 </blockquote>
               </div>
             </FadeIn>
@@ -1009,31 +746,20 @@ const Investors: NextPage = () => {
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="05"
-                label={isSpanish ? "El Mercado" : "The Market"}
-              />
+              <SectionLabel number="05" label="The Market" />
               <h2
                 id="market-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Un SAM de $420M en un panorama competitivo de{" "}
-                    <span className="text-teal-500">era pre-IA</span>
-                  </>
-                ) : (
-                  <>
-                    A $420M SAM in a{" "}
-                    <span className="text-teal-500">pre-AI era</span>{" "}
-                    competitive landscape
-                  </>
-                )}
+                680K restaurants.{" "}
+                <span className="text-teal-500">$12B+ in unmet lending demand.</span>
               </h2>
               <p className="mt-6 text-lg text-white/40 max-w-xl">
-                {isSpanish
-                  ? "Cada competidor importante fue construido para comer en el local, antes de que el delivery se convirtiera en el canal dominante. La categoría está abierta."
-                  : "Every major competitor was built for dine-in, before delivery became the dominant channel. The category is wide open."}
+                Mexico&apos;s restaurant market is massive, underserved by
+                technology, and starved of capital. The delivery boom created
+                180K+ operators who process significant volume through platforms
+                but can&apos;t get a bank loan. We&apos;re building the rails to
+                serve them.
               </p>
             </FadeIn>
 
@@ -1041,51 +767,33 @@ const Investors: NextPage = () => {
               {[
                 {
                   value: "$4.2B",
-                  label: isSpanish ? "GMV Total Delivery" : "Total Delivery GMV",
-                  sub: isSpanish
-                    ? "Mercado de delivery en México 2024"
-                    : "Mexico food delivery market 2024",
+                  label: "Food Delivery GMV",
+                  sub: "Mexico food delivery market 2024",
+                },
+                {
+                  value: "680K+",
+                  label: "Restaurants in Mexico",
+                  sub: "Every one is a potential customer",
                 },
                 {
                   value: "180K+",
-                  label: isSpanish
-                    ? "Restaurantes"
-                    : "Restaurant Outlets",
-                  sub: isSpanish
-                    ? "Habilitados para delivery en México"
-                    : "Delivery-enabled in Mexico",
+                  label: "Delivery-enabled",
+                  sub: "Operators on Rappi, Uber Eats, DiDi",
+                },
+                {
+                  value: "$12B+",
+                  label: "Unmet SMB Credit Demand",
+                  sub: "Mexican food service sector",
                 },
                 {
                   value: "38%",
-                  label: isSpanish ? "Crecimiento YoY" : "YoY Growth",
-                  sub: isSpanish
-                    ? "Segmento delivery, 2022\u20132024"
-                    : "Delivery segment, 2022\u20132024",
+                  label: "YoY Delivery Growth",
+                  sub: "Delivery segment, 2022–2024",
                 },
                 {
-                  value: "$420M",
-                  label: isSpanish ? "SAM Accesible" : "Serviceable SAM",
-                  sub: isSpanish
-                    ? "Operadores con 5%+ de ingresos por delivery"
-                    : "5+ delivery-revenue operators",
-                },
-                {
-                  value: "94%",
-                  label: isSpanish
-                    ? "Penetración WhatsApp"
-                    : "WhatsApp Penetration",
-                  sub: isSpanish
-                    ? "Usuarios de smartphones mexicanos"
-                    : "Mexican smartphone users",
-                },
-                {
-                  value: "3\u00d7",
-                  label: isSpanish
-                    ? "Crecimiento Ghost Kitchens"
-                    : "Ghost Kitchen Growth",
-                  sub: isSpanish
-                    ? "Marcas virtuales en CDMX 2021\u21922024"
-                    : "Virtual brands in CDMX 2021\u21922024",
+                  value: "3×",
+                  label: "Ghost Kitchen Growth",
+                  sub: "Virtual brands in CDMX 2021→2024",
                 },
               ].map((card, i) => (
                 <FadeIn key={i} delay={i * 0.06}>
@@ -1107,52 +815,30 @@ const Investors: NextPage = () => {
             <FadeIn delay={0.2}>
               <div className="mt-12 bg-teal-600/5 border border-teal-500/15 rounded-2xl p-8 md:p-10 grid md:grid-cols-2 gap-8 items-center">
                 <p className="text-base sm:text-lg text-white/80 leading-relaxed">
-                  {isSpanish ? (
-                    <>
-                      El mercado mexicano de delivery es estructuralmente
-                      diferente.{" "}
-                      <strong className="text-teal-400">
-                        Rappi, Uber Eats y DiDi Food
-                      </strong>{" "}
-                      dominan con estructuras de comisiones agresivas que ningún
-                      proveedor de POS existente fue diseñado para rastrear o
-                      combatir. Los requisitos de facturación CFDI crean fosos
-                      naturales contra jugadores internacionales.{" "}
-                      <strong className="text-teal-400">
-                        Este mercado necesita una solución nativa.
-                      </strong>
-                    </>
-                  ) : (
-                    <>
-                      The Mexican delivery market is structurally different.{" "}
-                      <strong className="text-teal-400">
-                        Rappi, Uber Eats, and DiDi Food
-                      </strong>{" "}
-                      dominate with aggressive commission structures that no
-                      existing POS vendor was designed to track or fight. CFDI
-                      tax invoicing requirements create natural moats against
-                      international players.{" "}
-                      <strong className="text-teal-400">
-                        This market needs a native solution.
-                      </strong>
-                    </>
-                  )}
+                  The structural moats are deep.{" "}
+                  <strong className="text-teal-400">
+                    CFDI 4.0 tax compliance
+                  </strong>{" "}
+                  blocks international POS companies from easy entry. The{" "}
+                  <strong className="text-teal-400">
+                    Rappi/Uber/DiDi trifecta
+                  </strong>{" "}
+                  is unique to Latin America — no US-built POS handles it. And
+                  traditional banks{" "}
+                  <strong className="text-teal-400">
+                    structurally cannot underwrite
+                  </strong>{" "}
+                  these operators because they don&apos;t have access to
+                  real-time transaction data.{" "}
+                  <strong className="text-teal-400">We will.</strong>
                 </p>
                 <ul className="space-y-3">
-                  {(isSpanish
-                    ? [
-                        "Ningún POS importante tiene tracking de márgenes nativo para delivery",
-                        "Square y Toast tienen presencia mínima en México",
-                        "Competidores locales carecen de capacidades de IA y soporte móvil nativo",
-                        "WhatsApp Business crea un canal de recaptura de clientes no disponible en otro lado",
-                      ]
-                    : [
-                        "No major POS player has delivery-native margin tracking",
-                        "Square and Toast have minimal Mexico presence",
-                        "Local competitors lack AI capabilities and native mobile support",
-                        "WhatsApp Business creates a customer recapture channel unavailable elsewhere",
-                      ]
-                  ).map((item, i) => (
+                  {[
+                    "Square and Toast have minimal Mexico presence",
+                    "Local competitors (Parrot, etc.) are dine-in era tools",
+                    "No competitor combines POS + data + financing",
+                    "CFDI compliance creates a regulatory moat",
+                  ].map((item, i) => (
                     <li
                       key={i}
                       className="flex items-start gap-3 text-sm text-white/40"
@@ -1169,7 +855,7 @@ const Investors: NextPage = () => {
           </div>
         </section>
 
-        {/* ─── 06 THE OPPORTUNITY ─── */}
+        {/* ─── 06 THE ASK ─── */}
         <section
           id="opportunity"
           className="py-24 md:py-40 px-6 bg-neutral-950"
@@ -1177,30 +863,19 @@ const Investors: NextPage = () => {
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="06"
-                label={isSpanish ? "La Oportunidad" : "The Opportunity"}
-              />
+              <SectionLabel number="06" label="Use of Funds" />
               <h2
                 id="opportunity-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Ahora escalamos lo que{" "}
-                    <span className="text-teal-500">ya está probado.</span>
-                  </>
-                ) : (
-                  <>
-                    Now we scale what&apos;s{" "}
-                    <span className="text-teal-500">already proven.</span>
-                  </>
-                )}
+                $5&ndash;8M to{" "}
+                <span className="text-teal-500">own the category.</span>
               </h2>
               <p className="mt-6 text-lg text-white/40 max-w-2xl">
-                {isSpanish
-                  ? "El trabajo difícil está hecho. La arquitectura está validada. El cumplimiento es real. La reconciliación funciona. Lo que sigue es distribución — poner un producto probado frente a los 50,000+ restaurantes delivery-first de México."
-                  : "The hard work is done. The architecture is validated. The compliance is real. The reconciliation works. What comes next is distribution \u2014 putting a proven product in front of Mexico\u2019s 50,000+ delivery-first restaurants."}
+                The product is built. The architecture is validated. The app
+                stores are in review. What comes next is the land grab &mdash;
+                getting restaurants on the platform as fast as possible so the
+                fintech flywheel has the volume to spin.
               </p>
             </FadeIn>
 
@@ -1208,29 +883,19 @@ const Investors: NextPage = () => {
             <div className="mt-16 md:mt-20 grid md:grid-cols-3 gap-6">
               {[
                 {
-                  pct: "40%",
-                  title: isSpanish ? "Ventas y Marketing" : "Sales & Marketing",
-                  desc: isSpanish
-                    ? "Equipo de ventas puerta a puerta por comisión en CDMX, targeting restaurantes donde más del 50% de ingresos viene de plataformas de delivery."
-                    : "Commission-only door-to-door sales team in Mexico City, targeting restaurants where >50% of revenue comes from delivery platforms.",
+                  pct: "50%",
+                  title: "Sales & Distribution",
+                  desc: "Commission-based street sales teams in CDMX, then Guadalajara and Monterrey. Door-to-door with a $65 tablet and a free POS. Every signup is a future financing customer. Speed of adoption is everything.",
                 },
                 {
-                  pct: "35%",
-                  title: isSpanish
-                    ? "Ingeniería y Producto"
-                    : "Engineering & Product",
-                  desc: isSpanish
-                    ? "QR self-ordering, apps de mesero, inteligencia de márgenes con IA, y recaptura de clientes por WhatsApp para extender nuestro moat más allá de la reconciliación."
-                    : "QR self-ordering, waiter apps, AI-powered margin intelligence, and WhatsApp customer recapture to extend our moat beyond reconciliation.",
+                  pct: "30%",
+                  title: "Engineering & Fintech Infrastructure",
+                  desc: "MCA underwriting engine, credit scoring models, payment integration for automatic daily deductions, regulatory compliance, and continued POS feature development to keep the trojan horse irresistible.",
                 },
                 {
-                  pct: "25%",
-                  title: isSpanish
-                    ? "Ops y Customer Success"
-                    : "Operations & Customer Success",
-                  desc: isSpanish
-                    ? "Onboarding sin fricción (cero-a-primer-pedido en menos de 5 minutos), documentación Docusaurus, y soporte hands-on para impulsar retención en el año uno."
-                    : "Frictionless onboarding (zero-to-first-order under 5 minutes), Docusaurus docs, and hands-on support to drive retention in year one.",
+                  pct: "20%",
+                  title: "Operations & Capital Reserve",
+                  desc: "Initial MCA lending capital to prove the model, onboarding infrastructure, customer success, and the operational backbone to support rapid restaurant acquisition.",
                 },
               ].map((item, i) => (
                 <FadeIn key={i} delay={i * 0.1}>
@@ -1254,26 +919,19 @@ const Investors: NextPage = () => {
               <div className="mt-12 bg-teal-600/5 border border-teal-500/15 rounded-2xl p-8 md:p-12 grid lg:grid-cols-2 gap-10 items-start">
                 <div>
                   <p className="text-[11px] font-mono text-teal-500/60 tracking-wider mb-4 flex items-center gap-2">
-                    <span className="text-white/20">//</span>{" "}
-                    {isSpanish ? "Go-to-Market" : "Go-to-Market"}
+                    <span className="text-white/20">//</span> Go-to-Market
                   </p>
                   <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight mb-5">
-                    {isSpanish ? (
-                      <>
-                        Construido por un operador,{" "}
-                        <span className="text-teal-500">para operadores</span>
-                      </>
-                    ) : (
-                      <>
-                        Built by an operator,{" "}
-                        <span className="text-teal-500">for operators</span>
-                      </>
-                    )}
+                    Land grab,{" "}
+                    <span className="text-teal-500">then monetize</span>
                   </h3>
                   <p className="text-sm text-white/40 leading-relaxed">
-                    {isSpanish
-                      ? "El equipo de ventas puerta a puerta lanzándose en CDMX se enfoca en operadores que generan 50%+ de ingresos a través de plataformas de delivery — exactamente las personas que sienten el dolor más agudamente. Reps por comisión. Geografía concentrada. Venta basada en historia."
-                      : "The door-to-door sales team launching in Mexico City targets operators doing 50%+ of revenue through delivery platforms \u2014 the exact people who feel the pain most acutely. Commission-only reps. Tight geography. Story-led selling."}
+                    Phase 1 is pure adoption. Free POS, cheap hardware,
+                    boots-on-the-ground sales team. Every restaurant we onboard
+                    generates transaction data from day one — whether they pay us
+                    or not. The MCA revenue kicks in at month 5. By month 12, the
+                    unit economics flip and every restaurant is generating
+                    fintech margin that dwarfs the SaaS revenue.
                   </p>
                 </div>
 
@@ -1281,30 +939,18 @@ const Investors: NextPage = () => {
                   {[
                     {
                       n: "01",
-                      title: isSpanish
-                        ? "Penetración Densa CDMX"
-                        : "CDMX Dense Penetration",
-                      desc: isSpanish
-                        ? "Roma, Condesa, Polanco, Santa Fe — clusters de ghost kitchens. Puerta a puerta con campaña MEXICO50."
-                        : "Roma, Condesa, Polanco, Santa Fe \u2014 ghost kitchen clusters. Door-to-door with MEXICO50 campaign.",
+                      title: "CDMX Dense Penetration",
+                      desc: "Roma, Condesa, Polanco, Santa Fe — ghost kitchen clusters and delivery-heavy neighborhoods. Door-to-door with tablet demos. Target: 500 restaurants in 6 months.",
                     },
                     {
                       n: "02",
-                      title: isSpanish
-                        ? "Guadalajara y Monterrey"
-                        : "Guadalajara & Monterrey",
-                      desc: isSpanish
-                        ? "Expansión de segundo nivel con onboarding remoto. Programa de referidos a través de redes de WhatsApp."
-                        : "Second-tier expansion with remote onboarding. Referral program through WhatsApp networks.",
+                      title: "First MCAs Deployed",
+                      desc: "Month 5–6: first cohort of restaurants hits underwriting-ready data threshold. Deploy initial MCAs. Prove the model. Validate default rates against projections.",
                     },
                     {
                       n: "03",
-                      title: isSpanish
-                        ? "Expansión LATAM"
-                        : "LATAM Expansion",
-                      desc: isSpanish
-                        ? "Colombia, Argentina, Chile — mismas dinámicas de plataformas de delivery, mismos pain points, mismo producto."
-                        : "Colombia, Argentina, Chile \u2014 same delivery platform dynamics, same pain points, same product.",
+                      title: "Guadalajara, Monterrey & Scale",
+                      desc: "Expand sales teams to tier-2 cities. Remote onboarding. WhatsApp referral networks. Begin conversations with institutional capital partners for lending facility.",
                     },
                   ].map((step, i) => (
                     <div
@@ -1330,207 +976,58 @@ const Investors: NextPage = () => {
           </div>
         </section>
 
-        {/* ─── PRICING ─── */}
+        {/* ─── WHY A16Z ─── */}
         <section
-          id="pricing"
+          id="why-a16z"
           className="py-24 md:py-40 px-6 bg-neutral-900"
-          aria-labelledby="pricing-heading"
+          aria-labelledby="why-heading"
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel
-                number="07"
-                label={isSpanish ? "Modelo de Negocio" : "Business Model"}
-              />
+              <SectionLabel number="07" label="Why a16z" />
               <h2
-                id="pricing-heading"
+                id="why-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
               >
-                {isSpanish ? (
-                  <>
-                    Precios SaaS diseñados para{" "}
-                    <span className="text-teal-500">operadores mexicanos</span>
-                  </>
-                ) : (
-                  <>
-                    SaaS pricing designed for{" "}
-                    <span className="text-teal-500">Mexican operators</span>
-                  </>
-                )}
+                You backed this playbook{" "}
+                <span className="text-teal-500">before.</span>
               </h2>
-              <p className="mt-6 text-lg text-white/40 max-w-xl">
-                {isSpanish
-                  ? "Dos planes simples. Sin complejidad. El código promotor MEXICO50 da 50% de descuento el primer año."
-                  : "Two simple plans. No complexity. Promoter code MEXICO50 gives 50% off year one."}
+              <p className="mt-6 text-lg text-white/40 max-w-2xl">
+                a16z has a thesis about embedded fintech — that the biggest
+                financial services companies of the next decade will be
+                companies that don&apos;t look like financial services companies.
+                Desktop Kitchen is that thesis made real, in the largest
+                Spanish-speaking market in the world.
               </p>
             </FadeIn>
 
-            <div className="mt-16 md:mt-20 grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="mt-16 md:mt-20 grid md:grid-cols-2 gap-6">
               {[
                 {
-                  name: isSpanish ? "Gratis para Siempre" : "Free for Life",
-                  price: "$0",
-                  period: isSpanish
-                    ? "50 transacciones/día · 1 marca"
-                    : "50 transactions/day · 1 brand",
-                  featured: false,
-                  features: [
-                    {
-                      text: isSpanish ? "1 marca virtual" : "1 virtual brand",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "POS esencial (pedidos, pagos, recibos)"
-                        : "Core POS (orders, payments, receipts)",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Gestión básica de menú"
-                        : "Basic menu management",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Soporte por email"
-                        : "Email support",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Integración con delivery"
-                        : "Delivery integration",
-                      active: false,
-                    },
-                    {
-                      text: isSpanish
-                        ? "IA y precios dinámicos"
-                        : "AI & dynamic pricing",
-                      active: false,
-                    },
-                  ],
-                  cta: isSpanish ? "Empezar Gratis" : "Start Free",
+                  title: "You backed Rappi",
+                  desc: "You saw that Latin American delivery was a generational opportunity. Desktop Kitchen is the infrastructure layer that helps the 180K+ restaurants on those platforms actually survive the commission structures you helped build.",
                 },
                 {
-                  name: "Pro",
-                  price: "$60",
-                  period: isSpanish
-                    ? "por mes · todo ilimitado"
-                    : "per month · unlimited everything",
-                  featured: true,
-                  badge: isSpanish ? "Todo Incluido" : "Everything Included",
-                  features: [
-                    {
-                      text: isSpanish
-                        ? "Marcas y sucursales ilimitadas"
-                        : "Unlimited brands & locations",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Integración Rappi, Uber Eats y DiDi"
-                        : "Rappi, Uber Eats & DiDi integration",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Asistente IA — copiloto 24/7"
-                        : "AI Assistant — 24/7 copilot",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Upselling y precios dinámicos con IA"
-                        : "AI-powered upselling & dynamic pricing",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Acceso a financiamiento"
-                        : "Access to financing",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "P&L completo multi-marca por plataforma"
-                        : "Full multi-brand P&L by platform",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Recaptura de clientes por SMS"
-                        : "SMS customer recapture",
-                      active: true,
-                    },
-                    {
-                      text: isSpanish
-                        ? "Onboarding dedicado y soporte prioritario"
-                        : "Dedicated onboarding & priority support",
-                      active: true,
-                    },
-                  ],
-                  cta: isSpanish ? "Comenzar Pro" : "Start Pro",
+                  title: "You backed Toast & Square",
+                  desc: "You understand that POS is a trojan horse for financial services. We're running the exact same playbook in a market 10x more underserved by traditional banking — with a founder who comes from the finance side, not the tech side.",
                 },
-              ].map((plan, i) => (
+                {
+                  title: "You have a fintech thesis",
+                  desc: "Every dollar of lending that moves from banks to embedded platforms is margin that accrues to software companies with distribution. We have the distribution strategy, the data pipeline, and a founder who knows how to build a lending book.",
+                },
+                {
+                  title: "Latin America is your frontier",
+                  desc: "Mexico is the entry point to a $650B+ LATAM restaurant market. Colombia, Argentina, and Chile have identical delivery dynamics, identical pain points, and identical unmet credit demand. Win Mexico, then expand with the same playbook.",
+                },
+              ].map((card, i) => (
                 <FadeIn key={i} delay={i * 0.1}>
-                  <div
-                    className={`relative rounded-2xl border p-6 flex flex-col h-full ${
-                      plan.featured
-                        ? "bg-teal-600/10 border-teal-500/40 ring-1 ring-teal-500/20"
-                        : "bg-white/[0.03] border-white/10"
-                    }`}
-                  >
-                    {plan.badge && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="bg-teal-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                          {plan.badge}
-                        </span>
-                      </div>
-                    )}
-                    <div className="mb-6">
-                      <p className="text-xs font-bold text-white/40 uppercase tracking-wider mb-3">
-                        {plan.name}
-                      </p>
-                      <p className="text-4xl font-black text-white">
-                        {plan.price}{" "}
-                        <span className="text-base font-normal text-white/30">
-                          USD
-                        </span>
-                      </p>
-                      <p className="text-xs text-white/30 mt-1">
-                        {plan.period}
-                      </p>
-                    </div>
-                    <ul className="space-y-2.5 mb-6 flex-1">
-                      {plan.features.map((feat, fi) => (
-                        <li
-                          key={fi}
-                          className={`flex items-center gap-2.5 text-sm ${
-                            feat.active ? "text-white/50" : "text-white/20"
-                          }`}
-                        >
-                          <span
-                            className={`flex-shrink-0 font-bold ${
-                              feat.active ? "text-teal-500" : "text-white/15"
-                            }`}
-                          >
-                            {feat.active ? "\u2713" : "\u2013"}
-                          </span>
-                          {feat.text}
-                        </li>
-                      ))}
-                    </ul>
-                    <a
-                      href="#invest"
-                      className={`block text-center py-3 rounded-lg font-bold text-sm transition-all ${
-                        plan.featured
-                          ? "bg-teal-600 text-white hover:bg-teal-700"
-                          : "border border-teal-500/25 text-teal-500 hover:bg-teal-600/10"
-                      }`}
-                    >
-                      {plan.cta}
-                    </a>
+                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-6 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300">
+                    <h3 className="text-lg font-bold text-white mb-3">
+                      {card.title}
+                    </h3>
+                    <p className="text-sm text-white/40 leading-relaxed">
+                      {card.desc}
+                    </p>
                   </div>
                 </FadeIn>
               ))}
@@ -1547,12 +1044,10 @@ const Investors: NextPage = () => {
           <div className="max-w-4xl mx-auto text-center">
             <FadeIn>
               <span className="text-5xl sm:text-6xl md:text-7xl font-mono font-medium text-teal-400 block mb-3">
-                $2,000,000
+                $5&ndash;8M
               </span>
               <p className="text-sm text-white/30 mb-12 tracking-wide">
-                {isSpanish
-                  ? "Serie A — Abierta"
-                  : "Series A Raise \u2014 Open Now"}
+                Raising Now &mdash; Open Round
               </p>
             </FadeIn>
 
@@ -1561,40 +1056,35 @@ const Investors: NextPage = () => {
                 id="invest-heading"
                 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white leading-tight mb-5"
               >
-                {isSpanish ? (
-                  <>
-                    Estamos levantando $2M para{" "}
-                    <span className="text-teal-500">dominar</span> la categoría
-                    de POS delivery-first en México
-                  </>
-                ) : (
-                  <>
-                    We&apos;re raising $2M to{" "}
-                    <span className="text-teal-500">own</span> the delivery-first
-                    POS category in Mexico
-                  </>
-                )}
+                The Square of Latin America{" "}
+                <span className="text-teal-500">starts here.</span>
               </h2>
-              <p className="text-lg text-white/40 mb-12 max-w-2xl mx-auto">
-                {isSpanish
-                  ? "El mercado está probado. El producto está en vivo. El dolor es diario. Únete antes de que esta categoría tenga un líder."
-                  : "The market is proven. The product is live. The pain is daily. Join us before this category has a leader."}
+              <p className="text-lg text-white/40 mb-6 max-w-2xl mx-auto">
+                A fintech company disguised as restaurant software. A free POS
+                that&apos;s really a data pipeline. A lending business with
+                built-in distribution and automatic repayment. Led by a finance
+                professional who built the whole thing from inside his own
+                restaurant.
+              </p>
+              <p className="text-base text-white/50 mb-12 max-w-xl mx-auto font-medium">
+                The product is live. The app stores are in review. The sales
+                team is assembling. The only thing missing is the fuel.
               </p>
             </FadeIn>
 
             <FadeIn delay={0.2}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
                 <a
-                  href="mailto:hello@desktop.kitchen"
+                  href="mailto:juan@injupe.com"
                   className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
                 >
-                  {isSpanish ? "Agendar Llamada" : "Schedule a Call"} &rarr;
+                  Schedule a Call &rarr;
                 </a>
                 <a
                   href="#"
                   className="text-teal-500 font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider border border-teal-500/25 hover:bg-teal-600/10 transition-all"
                 >
-                  {isSpanish ? "Descargar Deck" : "Download Deck"}
+                  Download Deck
                 </a>
               </div>
             </FadeIn>
@@ -1602,10 +1092,10 @@ const Investors: NextPage = () => {
             <FadeIn delay={0.3}>
               <div className="inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-6 bg-white/[0.03] border border-white/10 rounded-2xl px-8 py-5">
                 <a
-                  href="mailto:hello@desktop.kitchen"
+                  href="mailto:juan@injupe.com"
                   className="text-teal-500 hover:text-teal-400 text-sm font-semibold transition-colors"
                 >
-                  hello@desktop.kitchen
+                  juan@injupe.com
                 </a>
                 <span className="hidden sm:block w-px h-5 bg-white/10" />
                 <a
@@ -1646,9 +1136,7 @@ const Investors: NextPage = () => {
             </span>
           </div>
           <p className="text-xs text-white/20">
-            {isSpanish
-              ? "El POS delivery-first \u00b7 Hecho en México \u00b7 Para México"
-              : "The delivery-first POS \u00b7 Built in Mexico \u00b7 For Mexico"}
+            A fintech company disguised as restaurant software
           </p>
           <p
             className="text-xs text-white/15 font-mono"
