@@ -1194,7 +1194,9 @@ const Investors: NextPage = () => {
                 </a>
                 <span className="hidden sm:block w-px h-5 bg-white/10" />
                 <a
-                  href="#"
+                  href="https://www.linkedin.com/in/juanpasalagua"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-teal-500 hover:text-teal-400 text-sm font-semibold transition-colors"
                 >
                   LinkedIn
