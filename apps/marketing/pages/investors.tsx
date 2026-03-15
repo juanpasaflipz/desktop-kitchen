@@ -164,6 +164,9 @@ const Investors: NextPage = () => {
             <a href="#market" className="hover:text-white/60 transition-colors">
               Market
             </a>
+            <a href="#defensibility" className="hover:text-white/60 transition-colors">
+              Moat
+            </a>
             <a href="#invest" className="hover:text-white/60 transition-colors">
               The Ask
             </a>
@@ -611,13 +614,12 @@ const Investors: NextPage = () => {
                 ].map((row, i) => (
                   <div
                     key={i}
-                    className={`grid grid-cols-1 md:grid-cols-4 border-t border-white/5 ${
-                      row.highlight
+                    className={`grid grid-cols-1 md:grid-cols-4 border-t border-white/5 ${row.highlight
                         ? "bg-teal-600/10 border-l-2 border-l-teal-500"
                         : i % 2 === 0
-                        ? "bg-white/[0.02]"
-                        : "bg-white/[0.01]"
-                    }`}
+                          ? "bg-white/[0.02]"
+                          : "bg-white/[0.01]"
+                      }`}
                   >
                     <div className={`px-6 py-4 text-sm flex items-center font-semibold ${row.highlight ? "text-teal-400" : "text-white/60"}`}>
                       {row.company}
@@ -855,15 +857,100 @@ const Investors: NextPage = () => {
           </div>
         </section>
 
-        {/* ─── 06 THE ASK ─── */}
+        {/* ─── 06 DEFENSIBILITY ─── */}
+        <section
+          id="defensibility"
+          className="py-24 md:py-40 px-6 bg-neutral-950"
+          aria-labelledby="defensibility-heading"
+        >
+          <div className="max-w-5xl mx-auto">
+            <FadeIn>
+              <SectionLabel number="06" label="Defensibility" />
+              <h2
+                id="defensibility-heading"
+                className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
+              >
+                The moat{" "}
+                <span className="text-teal-500">compounds daily.</span>
+              </h2>
+              <p className="mt-6 text-lg text-white/40 max-w-2xl">
+                Any team can build a POS. No team can replicate a live data
+                network. Every restaurant we onboard makes our underwriting
+                smarter, which funds better features, which attracts more
+                restaurants. By the time a competitor realizes this is a fintech
+                company, we&apos;ll have thousands of restaurants generating
+                proprietary transaction data that no new entrant can match.
+              </p>
+            </FadeIn>
+
+            <div className="mt-16 md:mt-20 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  title: "Regulatory Moat",
+                  desc: "CFDI 4.0 electronic invoicing is deeply woven into every transaction. Square, Toast, and every international player would need to rebuild their core order flow for Mexico. We built it native from day one.",
+                  tag: "Active now",
+                },
+                {
+                  title: "Integration Moat",
+                  desc: "Simultaneous reconciliation across Rappi, Uber Eats, and DiDi Food — the Latin American trifecta that no US-built POS handles. Each integration took months of reverse-engineering platform payout structures.",
+                  tag: "Active now",
+                },
+                {
+                  title: "Data Network Moat",
+                  desc: "Every restaurant on the platform generates daily transaction data that trains our underwriting models. 500 restaurants give us a dataset no bank and no competitor has. 5,000 makes it unreachable. This is the moat that compounds.",
+                  tag: "Compounds with scale",
+                },
+                {
+                  title: "Collection Moat",
+                  desc: "We process the payments, so MCA repayment is automatic — a percentage of daily sales, deducted at the point of sale. No bank can replicate this without building the same POS distribution. The collection advantage is structural.",
+                  tag: "Compounds with scale",
+                },
+              ].map((card, i) => (
+                <FadeIn key={i} delay={i * 0.1}>
+                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-6 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300 h-full flex flex-col">
+                    <h3 className="text-base font-bold text-white mb-3">
+                      {card.title}
+                    </h3>
+                    <p className="text-sm text-white/40 leading-relaxed flex-1">
+                      {card.desc}
+                    </p>
+                    <span className={`inline-block mt-4 text-[10px] font-mono tracking-wider px-2.5 py-0.5 rounded-full self-start ${card.tag === "Active now"
+                        ? "text-teal-500/70 border border-teal-500/20"
+                        : "text-amber-400/70 border border-amber-400/20"
+                      }`}>
+                      {card.tag}
+                    </span>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+
+            <FadeIn delay={0.2}>
+              <div className="mt-12 bg-white/[0.03] border border-white/10 rounded-2xl p-8 text-center">
+                <p className="text-base sm:text-lg text-white/60 leading-relaxed max-w-3xl mx-auto">
+                  <span className="text-white font-bold">The POS is easy to copy.</span>{" "}
+                  The bells and whistles are easy to copy. But the flywheel &mdash;
+                  free POS → adoption → transaction data → smarter underwriting →
+                  MCA revenue → reinvest in better POS → more adoption &mdash;{" "}
+                  <span className="text-teal-400 font-bold">
+                    that takes years and thousands of restaurants to replicate.
+                  </span>{" "}
+                  We&apos;re already spinning it.
+                </p>
+              </div>
+            </FadeIn>
+          </div>
+        </section>
+
+        {/* ─── 07 THE ASK ─── */}
         <section
           id="opportunity"
-          className="py-24 md:py-40 px-6 bg-neutral-950"
+          className="py-24 md:py-40 px-6 bg-neutral-900"
           aria-labelledby="opportunity-heading"
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel number="06" label="Use of Funds" />
+              <SectionLabel number="07" label="Use of Funds" />
               <h2
                 id="opportunity-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
@@ -984,7 +1071,7 @@ const Investors: NextPage = () => {
         >
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <SectionLabel number="07" label="Why a16z" />
+              <SectionLabel number="08" label="Why a16z" />
               <h2
                 id="why-heading"
                 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]"
@@ -1075,7 +1162,7 @@ const Investors: NextPage = () => {
             <FadeIn delay={0.2}>
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
                 <a
-                  href="mailto:juan@injupe.com"
+                  href="mailto:hello@desktop.kitchen"
                   className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
                 >
                   Schedule a Call &rarr;
@@ -1092,10 +1179,10 @@ const Investors: NextPage = () => {
             <FadeIn delay={0.3}>
               <div className="inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-6 bg-white/[0.03] border border-white/10 rounded-2xl px-8 py-5">
                 <a
-                  href="mailto:juan@injupe.com"
+                  href="mailto:juan@desktop.kitchen"
                   className="text-teal-500 hover:text-teal-400 text-sm font-semibold transition-colors"
                 >
-                  juan@injupe.com
+                  juan@desktop.kitchen
                 </a>
                 <span className="hidden sm:block w-px h-5 bg-white/10" />
                 <a
