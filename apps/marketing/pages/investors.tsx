@@ -1168,7 +1168,8 @@ const Investors: NextPage = () => {
                   Schedule a Call &rarr;
                 </a>
                 <a
-                  href="#"
+                  href="/Desktop-Kitchen-Investor-Deck.pptx"
+                  download
                   className="text-teal-500 font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider border border-teal-500/25 hover:bg-teal-600/10 transition-all"
                 >
                   Download Deck
