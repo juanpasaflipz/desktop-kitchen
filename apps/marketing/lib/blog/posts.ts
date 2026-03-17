@@ -10,6 +10,11 @@ import { post as fidelizarClientesDelivery } from "./posts/fidelizar-clientes-de
 import { post as pantallaCocinaEficiente } from "./posts/pantalla-cocina-eficiente";
 import { post as posTradicionalVsModerno } from "./posts/pos-tradicional-vs-moderno";
 import { post as automatizarInventarioIa } from "./posts/automatizar-inventario-ia";
+import { post as ingenieriaDeMenu } from "./posts/ingenieria-de-menu";
+import { post as abrirRestauranteMexico } from "./posts/abrir-restaurante-mexico";
+import { post as seguridadPosRestaurante } from "./posts/seguridad-pos-restaurante";
+import { post as programasLealtadRestaurantes } from "./posts/programas-lealtad-restaurantes";
+import { post as gestionarMultiplesSucursales } from "./posts/gestionar-multiples-sucursales";
 
 import { post as queEsGhostKitchenEn } from "./posts-en/que-es-ghost-kitchen";
 import { post as guiaCompletaDesktopKitchenEn } from "./posts-en/guia-completa-desktop-kitchen";
@@ -21,6 +26,11 @@ import { post as fidelizarClientesDeliveryEn } from "./posts-en/fidelizar-client
 import { post as pantallaCocinaEficienteEn } from "./posts-en/pantalla-cocina-eficiente";
 import { post as posTradicionalVsModernoEn } from "./posts-en/pos-tradicional-vs-moderno";
 import { post as automatizarInventarioIaEn } from "./posts-en/automatizar-inventario-ia";
+import { post as ingenieriaDeMenuEn } from "./posts-en/ingenieria-de-menu";
+import { post as abrirRestauranteMexicoEn } from "./posts-en/abrir-restaurante-mexico";
+import { post as seguridadPosRestauranteEn } from "./posts-en/seguridad-pos-restaurante";
+import { post as programasLealtadRestaurantesEn } from "./posts-en/programas-lealtad-restaurantes";
+import { post as gestionarMultiplesSucursalesEn } from "./posts-en/gestionar-multiples-sucursales";
 
 export const postsEs: BlogPost[] = [
   queEsGhostKitchen,
@@ -33,6 +43,11 @@ export const postsEs: BlogPost[] = [
   pantallaCocinaEficiente,
   posTradicionalVsModerno,
   automatizarInventarioIa,
+  ingenieriaDeMenu,
+  abrirRestauranteMexico,
+  seguridadPosRestaurante,
+  programasLealtadRestaurantes,
+  gestionarMultiplesSucursales,
 ];
 
 export const postsEn: BlogPost[] = [
@@ -46,6 +61,11 @@ export const postsEn: BlogPost[] = [
   pantallaCocinaEficienteEn,
   posTradicionalVsModernoEn,
   automatizarInventarioIaEn,
+  ingenieriaDeMenuEn,
+  abrirRestauranteMexicoEn,
+  seguridadPosRestauranteEn,
+  programasLealtadRestaurantesEn,
+  gestionarMultiplesSucursalesEn,
 ];
 
 export function getPostsForLocale(locale: string): BlogPost[] {
