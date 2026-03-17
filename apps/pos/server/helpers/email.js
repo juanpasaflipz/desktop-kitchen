@@ -142,7 +142,7 @@ export async function sendSalesRepWelcomeEmail(email, fullName, password) {
               <p style="margin:0 0 4px;font-size:14px"><strong>URL:</strong> <a href="https://pos.desktop.kitchen" style="color:#0d9488">pos.desktop.kitchen</a></p>
               <p style="margin:0 0 4px;font-size:14px"><strong>Correo:</strong> admin@bobbys.com</p>
               <p style="margin:0 0 4px;font-size:14px"><strong>Contrase\u00f1a:</strong> demo54321</p>
-              <p style="margin:0;font-size:14px"><strong>PIN:</strong> 1234</p>
+              <p style="margin:0;font-size:14px"><strong>PIN:</strong> 599158</p>
             </div>
 
             <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:20px 0">
