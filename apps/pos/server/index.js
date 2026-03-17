@@ -100,6 +100,7 @@ app.use('/webhooks/plaid', express.raw({ type: 'application/json' }), plaidWebho
 
 // Capture raw body for delivery webhook signature verification
 app.use(express.json({
+  limit: '2mb',
   verify: (req, _res, buf) => {
     if (req.url?.startsWith('/api/delivery/webhook')) {
       req.rawBody = buf;
