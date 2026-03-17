@@ -15,7 +15,7 @@ const QrCodeOverlay: React.FC<QrCodeOverlayProps> = ({
 }) => {
   if (!settings.showQrCode) return null;
 
-  const url = settings.qrCodeUrl || window.location.origin;
+  const url = settings.qrCodeUrl || `${window.location.origin}/#/order`;
   const label = settings.qrCodeLabel || 'Scan to Order';
 
   return (

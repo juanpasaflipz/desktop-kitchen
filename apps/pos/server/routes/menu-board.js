@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { all } from '../db/index.js';
 import { computePromotionBadges } from '../ai/menu-board-promotions.js';
+import { cleanBoardSettings } from '../lib/boardSettings.js';
 
 const router = Router();
 
@@ -131,7 +132,7 @@ router.get('/data', async (req, res) => {
         description: brand.description,
         logoUrl: brand.logo_url,
         templateSlug: brand.template_slug || null,
-        boardSettings: brand.board_settings || {},
+        boardSettings: cleanBoardSettings(brand.board_settings),
         theme: {
           primaryColor: brand.primary_color,
           secondaryColor: brand.secondary_color,

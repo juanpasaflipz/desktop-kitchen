@@ -2,6 +2,7 @@ import React from 'react';
 import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { MenuItemData, CategoryData } from '../../../types/menu-board';
 import MenuBoardClock from '../MenuBoardClock';
+import QrCodeOverlay from '../QrCodeOverlay';
 
 /* ------------------------------------------------------------------ */
 /*  Item Card                                                         */
@@ -151,6 +152,7 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
     footerText: boardSettings?.footerText || 'Precios en MXN',
     announcementText: boardSettings?.announcementText || '',
     showDescription: boardSettings?.showDescription !== false,
+    qrRequirePayment: boardSettings?.qrRequirePayment === true,
   };
 
   return (
@@ -231,6 +233,8 @@ const ModernMinimalistView: React.FC<TemplateViewProps> = ({
           {s.footerText}
         </p>
       </footer>
+
+      <QrCodeOverlay settings={s} primaryColor={theme.primaryColor} />
     </div>
   );
 };

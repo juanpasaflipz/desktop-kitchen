@@ -4,42 +4,9 @@ import { requireAuth } from '../middleware/auth.js';
 import { requirePlanFeature } from '../planLimits.js';
 import { sendSMS } from '../helpers/twilio.js';
 
+import { cleanBoardSettings, toJsonbString, VALID_BOARD_KEYS } from '../lib/boardSettings.js';
+
 const router = Router();
-
-/** Valid board_settings keys (non-numeric settings fields) */
-const VALID_BOARD_KEYS = new Set([
-  'showCombos', 'showLogo', 'showClock', 'showPrices', 'showQrCode',
-  'qrCodeUrl', 'qrCodeLabel', 'slideDuration', 'footerText',
-  'announcementText', 'showDescription',
-]);
-
-/**
- * Normalize board_settings to a clean object, stripping corruption artifacts.
- * Handles: double-stringified strings, numeric character-index keys from
- * spreading a string in JS ({..."hello"} → {0:"h",1:"e",...}).
- */
-function cleanBoardSettings(value) {
-  if (value === undefined || value === null) return {};
-  // Unwrap string layers
-  let data = value;
-  while (typeof data === 'string') {
-    try { data = JSON.parse(data); } catch { return {}; }
-  }
-  if (typeof data !== 'object' || data === null) return {};
-  // Strip numeric junk keys — only keep known settings keys
-  const cleaned = {};
-  for (const k of Object.keys(data)) {
-    if (VALID_BOARD_KEYS.has(k)) cleaned[k] = data[k];
-  }
-  return cleaned;
-}
-
-/**
- * Convert board_settings to a clean JSON string for JSONB storage.
- */
-function toJsonbString(value) {
-  return JSON.stringify(cleanBoardSettings(value));
-}
 
 // Gate all delivery intelligence endpoints behind the delivery plan feature
 router.use(requirePlanFeature('delivery'));

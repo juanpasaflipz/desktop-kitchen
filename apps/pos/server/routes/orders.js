@@ -601,4 +601,5 @@ router.patch('/:id/payment', requireAuth('pos_access'), async (req, res) => {
   }
 });
 
+export { insertOrderWithNumber, estimatePrepTime };
 export default router;

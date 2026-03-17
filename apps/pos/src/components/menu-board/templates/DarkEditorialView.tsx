@@ -3,6 +3,7 @@ import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board
 import type { MenuItemData } from '../../../types/menu-board';
 import MenuBoardClock from '../MenuBoardClock';
 import ItemBadge from '../ItemBadge';
+import QrCodeOverlay from '../QrCodeOverlay';
 
 /* ------------------------------------------------------------------ */
 /*  Inline SVG brush-stroke accents                                    */
@@ -247,6 +248,7 @@ const DarkEditorialView: React.FC<TemplateViewProps> = (props) => {
     footerText: props.boardSettings?.footerText || 'Precios en MXN',
     announcementText: props.boardSettings?.announcementText || '',
     showDescription: props.boardSettings?.showDescription !== false,
+    qrRequirePayment: props.boardSettings?.qrRequirePayment === true,
   };
 
   const headingFont = 'Playfair Display';
@@ -351,6 +353,8 @@ const DarkEditorialView: React.FC<TemplateViewProps> = (props) => {
           {s.footerText}
         </p>
       </footer>
+
+      <QrCodeOverlay settings={s} primaryColor={theme.primaryColor} />
     </div>
   );
 };

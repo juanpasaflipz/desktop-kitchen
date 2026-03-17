@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import MenuBoardClock from '../MenuBoardClock';
+import QrCodeOverlay from '../QrCodeOverlay';
 import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { CategoryData, MenuItemData } from '../../../types/menu-board';
 
@@ -215,6 +216,7 @@ const BoldNeonView: React.FC<TemplateViewProps> = (props) => {
     footerText: props.boardSettings?.footerText || 'Precios en MXN',
     announcementText: props.boardSettings?.announcementText || '',
     showDescription: props.boardSettings?.showDescription !== false,
+    qrRequirePayment: props.boardSettings?.qrRequirePayment === true,
   };
 
   const styleInjected = useRef(false);
@@ -337,6 +339,8 @@ const BoldNeonView: React.FC<TemplateViewProps> = (props) => {
           {s.footerText}
         </span>
       </div>
+
+      <QrCodeOverlay settings={s} primaryColor={primaryColor} />
     </div>
   );
 };

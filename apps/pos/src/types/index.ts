@@ -90,7 +90,7 @@ export interface Order {
   payment_intent_id?: string;
   payment_status: 'unpaid' | 'processing' | 'paid' | 'completed' | 'failed' | 'refunded' | 'pending_oxxo' | 'pending_spei' | 'expired';
   payment_method?: 'card' | 'cash' | 'split' | 'transfer' | 'oxxo' | 'spei' | 'getnet_card' | 'getnet_tap' | null;
-  source?: 'pos' | 'uber_eats' | 'rappi' | 'didi_food';
+  source?: 'pos' | 'uber_eats' | 'rappi' | 'didi_food' | 'qr_order';
   invoice_token?: string;
   cfdi_invoice_id?: number;
   paid_at?: string;

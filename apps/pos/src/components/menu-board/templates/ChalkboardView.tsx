@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import MenuBoardClock from '../MenuBoardClock';
+import QrCodeOverlay from '../QrCodeOverlay';
 import type { TemplateViewProps, BoardSettings } from '../../../types/menu-board';
 import type { CategoryData, MenuItemData } from '../../../types/menu-board';
 
@@ -249,6 +250,7 @@ const ChalkboardView: React.FC<TemplateViewProps> = (props) => {
     footerText: props.boardSettings?.footerText || 'Precios en MXN',
     announcementText: props.boardSettings?.announcementText || '',
     showDescription: props.boardSettings?.showDescription !== false,
+    qrRequirePayment: props.boardSettings?.qrRequirePayment === true,
   };
 
   const cssVars = {
@@ -374,6 +376,8 @@ const ChalkboardView: React.FC<TemplateViewProps> = (props) => {
           {s.footerText}
         </span>
       </footer>
+
+      <QrCodeOverlay settings={s} primaryColor={theme.primaryColor} />
     </div>
   );
 };

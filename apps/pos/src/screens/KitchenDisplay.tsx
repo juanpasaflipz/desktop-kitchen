@@ -396,11 +396,18 @@ function OrderCard({
           <h2 className="text-5xl font-black tracking-tighter text-white mb-1">#{order.order_number}</h2>
           <p className="text-sm text-neutral-500">{t('orders.orderId', { id: String(order.id).slice(0, 8) })}</p>
         </div>
-        <span
-          className={`${getStatusBadgeColor(order.status)} px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap`}
-        >
-          {statusLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          {order.source === 'qr_order' && (
+            <span className="bg-violet-600 text-white px-2.5 py-1.5 rounded-full font-bold text-xs whitespace-nowrap">
+              QR
+            </span>
+          )}
+          <span
+            className={`${getStatusBadgeColor(order.status)} px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap`}
+          >
+            {statusLabel}
+          </span>
+        </div>
       </div>
 
       {/* Time Elapsed */}

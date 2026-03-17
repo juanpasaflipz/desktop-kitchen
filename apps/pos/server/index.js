@@ -33,6 +33,7 @@ import deliveryIntelRoutes from './routes/delivery-intelligence.js';
 import pricingRoutes from './routes/pricing.js';
 import leadsRoutes, { adminLeadsHandler } from './routes/leads.js';
 import menuBoardRoutes from './routes/menu-board.js';
+import customerOrderRoutes from './routes/customer-order.js';
 import cfdiPublicRoutes from './routes/cfdi-public.js';
 import accountRoutes from './routes/account.js';
 import wasteRoutes from './routes/waste.js';
@@ -204,6 +205,9 @@ app.use('/api', tenantMiddleware);
 
 // Menu board (public display, no auth — tenant resolved by subdomain for RLS)
 app.use('/api/menu-board', menuBoardRoutes);
+
+// Customer ordering (public, QR code — tenant resolved by subdomain for RLS)
+app.use('/api/customer-order', customerOrderRoutes);
 
 // API Routes
 app.use('/api/menu', menuRoutes);

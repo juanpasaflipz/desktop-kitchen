@@ -81,6 +81,7 @@ interface BoardSettingsForm {
   footerText: string;
   announcementText: string;
   showDescription: boolean;
+  qrRequirePayment: boolean;
 }
 
 interface FormData {
@@ -133,6 +134,7 @@ const DEFAULT_BOARD_SETTINGS: BoardSettingsForm = {
   footerText: 'Precios en MXN',
   announcementText: '',
   showDescription: true,
+  qrRequirePayment: false,
 };
 
 const DEFAULT_FORM: FormData = {
@@ -907,7 +909,7 @@ export default function MenuBoardManagement() {
                           type="text"
                           value={formData.board_settings.qrCodeUrl}
                           onChange={(e) => updateSetting('qrCodeUrl', e.target.value)}
-                          placeholder="https://your-ordering-page.com"
+                          placeholder="Leave blank to auto-link to /#/order"
                           className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
                         />
                       </div>
@@ -920,6 +922,20 @@ export default function MenuBoardManagement() {
                           placeholder="Scan to Order"
                           className="w-full px-2 py-1.5 bg-neutral-800 border border-neutral-700 rounded text-white text-xs focus:outline-none focus:border-brand-500"
                         />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer transition-colors border border-neutral-700 bg-neutral-800 hover:border-neutral-600">
+                          <input
+                            type="checkbox"
+                            checked={formData.board_settings.qrRequirePayment}
+                            onChange={(e) => updateSetting('qrRequirePayment', e.target.checked)}
+                            className="accent-brand-600"
+                          />
+                          <div>
+                            <span className="text-xs text-neutral-300">Require payment on phone</span>
+                            <p className="text-[10px] text-neutral-600">When off, customers pay at counter (default)</p>
+                          </div>
+                        </label>
                       </div>
                     </div>
                   )}

@@ -148,6 +148,12 @@ const MenuBoardScreen = React.lazy(() =>
   }))
 );
 
+const CustomerOrderScreen = React.lazy(() =>
+  import('./screens/CustomerOrderScreen').then((module) => ({
+    default: module.default || (() => <div>Customer Order</div>),
+  }))
+);
+
 const MenuBoardManagement = React.lazy(() =>
   import('./screens/MenuBoardManagement').then((module) => ({
     default: module.default || (() => <div>Menu Board Management</div>),
@@ -715,6 +721,9 @@ const TenantRoutes: React.FC = () => {
 
       {/* Menu Board — public, no auth */}
       <Route path="/menu-board" element={<MenuBoardScreen />} />
+
+      {/* Customer QR Ordering — public, no auth */}
+      <Route path="/order" element={<CustomerOrderScreen />} />
 
       {/* Public invoice self-service — no auth */}
       <Route path="/invoice/:token" element={<PublicInvoiceScreen />} />

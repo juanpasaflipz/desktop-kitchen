@@ -37,6 +37,7 @@ export interface BoardSettings {
   footerText?: string;         // custom footer text (default "Precios en MXN")
   announcementText?: string;   // promo/announcement banner text
   showDescription?: boolean;   // show brand description (default true)
+  qrRequirePayment?: boolean;  // require phone payment on QR orders (default false)
 }
 
 export interface BrandData {

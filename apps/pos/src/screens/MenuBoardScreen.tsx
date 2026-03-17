@@ -36,6 +36,7 @@ function resolveSettings(s?: BoardSettings): Required<BoardSettings> {
     footerText: s?.footerText || 'Precios en MXN',
     announcementText: s?.announcementText || '',
     showDescription: s?.showDescription !== false,
+    qrRequirePayment: s?.qrRequirePayment === true,
   };
 }
 
