@@ -46,6 +46,132 @@ router.get('/settings', async (_req, res) => {
   }
 });
 
+// GET /api/customer-order/menu — public, returns menu for QR ordering
+// Falls back to regular menu if no virtual brands are configured
+router.get('/menu', async (_req, res) => {
+  try {
+    // Try virtual brands first
+    const brands = await all(`
+      SELECT id, name, slug, logo_url, primary_color
+      FROM virtual_brands
+      WHERE display_type IN ('menu_board', 'both')
+        AND active = true
+      ORDER BY id
+    `);
+
+    if (brands.length > 0) {
+      // Use virtual brand menu (same as menu-board/data but simplified)
+      const brandIds = brands.map(b => b.id);
+      const placeholders = brandIds.map((_, i) => `$${i + 1}`).join(',');
+
+      const rows = await all(`
+        SELECT
+          vbi.virtual_brand_id,
+          mi.id as item_id,
+          COALESCE(vbi.custom_name, mi.name) as name,
+          COALESCE(vbi.custom_price, mi.price) as price,
+          mi.description,
+          mi.image_url,
+          COALESCE(vbi.show_image, true) as show_image,
+          mi.category_id,
+          mc.name as category_name,
+          mc.sort_order as category_sort
+        FROM virtual_brand_items vbi
+        JOIN menu_items mi ON mi.id = vbi.menu_item_id
+        JOIN menu_categories mc ON mc.id = mi.category_id
+        WHERE vbi.virtual_brand_id IN (${placeholders})
+          AND vbi.active = true
+          AND mi.active = true
+          AND mc.active = true
+        ORDER BY mc.sort_order, mi.id
+      `, brandIds);
+
+      const brandMap = new Map();
+      for (const brand of brands) {
+        brandMap.set(brand.id, {
+          id: brand.id,
+          name: brand.name,
+          categories: [],
+          theme: { primaryColor: brand.primary_color },
+          _catMap: new Map(),
+        });
+      }
+
+      for (const row of rows) {
+        const brand = brandMap.get(row.virtual_brand_id);
+        if (!brand) continue;
+        let cat = brand._catMap.get(row.category_id);
+        if (!cat) {
+          cat = { id: row.category_id, name: row.category_name, items: [] };
+          brand._catMap.set(row.category_id, cat);
+          brand.categories.push(cat);
+        }
+        cat.items.push({
+          id: row.item_id,
+          name: row.name,
+          price: row.price,
+          description: row.description,
+          imageUrl: row.show_image ? row.image_url : null,
+        });
+      }
+
+      const result = [...brandMap.values()].map(b => { delete b._catMap; return b; });
+      return res.json({ brands: result });
+    }
+
+    // Fallback: regular menu (menu_categories + menu_items)
+    const categories = await all(`
+      SELECT id, name, sort_order
+      FROM menu_categories
+      WHERE active = true
+      ORDER BY sort_order, id
+    `);
+
+    if (categories.length === 0) {
+      return res.json({ brands: [] });
+    }
+
+    const items = await all(`
+      SELECT id, category_id, name, price, description, image_url
+      FROM menu_items
+      WHERE active = true
+      ORDER BY name
+    `);
+
+    const catMap = new Map();
+    for (const cat of categories) {
+      catMap.set(cat.id, { id: cat.id, name: cat.name, items: [] });
+    }
+    for (const item of items) {
+      const cat = catMap.get(item.category_id);
+      if (cat) {
+        cat.items.push({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          description: item.description,
+          imageUrl: item.image_url,
+        });
+      }
+    }
+
+    // Filter out empty categories
+    const filledCategories = [...catMap.values()].filter(c => c.items.length > 0);
+
+    res.json({
+      brands: [{
+        id: 0,
+        name: 'Menu',
+        categories: filledCategories,
+        theme: { primaryColor: null },
+      }],
+    });
+  } catch (error) {
+    console.error('Error fetching customer order menu:', error);
+    res.status(500).json({ error: 'Failed to load menu' });
+  }
+});
+
 // POST /api/customer-order — public, rate-limited, creates an order
 router.post('/', customerOrderLimiter, async (req, res) => {
   try {

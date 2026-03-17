@@ -112,7 +112,7 @@ export default function CustomerOrderScreen() {
   // Load menu data + settings
   useEffect(() => {
     Promise.all([
-      fetch('/api/menu-board/data').then(r => r.json()),
+      fetch('/api/customer-order/menu').then(r => r.json()),
       getCustomerOrderSettings().catch(() => ({ requirePayment: false })),
     ]).then(([menuData, settings]) => {
       const brandList: BrandData[] = menuData.brands || menuData || [];
