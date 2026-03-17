@@ -228,10 +228,10 @@ router.get('/virtual-brands', requireAuth('manage_delivery'), async (req, res) =
   try {
     const brands = await all(`
       SELECT vb.*,
-        dp.display_name as platform_name,
+        COALESCE(dp.display_name, 'Menu Board') as platform_name,
         (SELECT COUNT(*) FROM virtual_brand_items WHERE virtual_brand_id = vb.id AND active = true) as item_count
       FROM virtual_brands vb
-      JOIN delivery_platforms dp ON dp.id = vb.platform_id
+      LEFT JOIN delivery_platforms dp ON dp.id = vb.platform_id
       ORDER BY vb.name
     `);
     res.json(brands);
@@ -248,15 +248,21 @@ router.get('/virtual-brands', requireAuth('manage_delivery'), async (req, res) =
 router.post('/virtual-brands', requireAuth('manage_delivery'), async (req, res) => {
   try {
     const { name, platform_id, description, logo_url, display_type, primary_color, secondary_color, font_family, dark_bg, slug, show_in_pos, template_slug, board_settings } = req.body;
-    if (!name || !platform_id) {
-      return res.status(400).json({ error: 'name and platform_id required' });
+    if (!name) {
+      return res.status(400).json({ error: 'name required' });
+    }
+
+    // Menu board brands don't require a delivery platform
+    const isMenuBoard = display_type === 'menu_board' || display_type === 'both';
+    if (!platform_id && !isMenuBoard) {
+      return res.status(400).json({ error: 'platform_id required for delivery brands' });
     }
 
     const tid = getTenantId();
     const result = await run(
       `INSERT INTO virtual_brands (tenant_id, name, platform_id, description, logo_url, display_type, primary_color, secondary_color, font_family, dark_bg, slug, show_in_pos, template_slug, board_settings)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-      [tid, name, platform_id, description || null, logo_url || null, display_type || 'delivery', primary_color || null, secondary_color || null, font_family || null, dark_bg || null, slug || null, show_in_pos !== undefined ? show_in_pos : true, template_slug || null, board_settings ? JSON.stringify(board_settings) : '{}']
+      [tid, name, platform_id || null, description || null, logo_url || null, display_type || 'delivery', primary_color || null, secondary_color || null, font_family || null, dark_bg || null, slug || null, show_in_pos !== undefined ? show_in_pos : true, template_slug || null, board_settings ? JSON.stringify(board_settings) : '{}']
     );
 
     res.status(201).json({ id: result.lastInsertRowid });

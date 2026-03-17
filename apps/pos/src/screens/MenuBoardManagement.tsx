@@ -163,6 +163,7 @@ export default function MenuBoardManagement() {
   const [platforms, setPlatforms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Editor state
   const [editorOpen, setEditorOpen] = useState(false);
@@ -198,9 +199,9 @@ export default function MenuBoardManagement() {
     fetchBrands();
   }, [fetchBrands]);
 
-  const getMenuBoardPlatformId = (): number => {
+  const getMenuBoardPlatformId = (): number | null => {
     const mbPlatform = platforms.find((p: any) => p.name === 'menu_board');
-    return mbPlatform?.id || platforms[0]?.id || 1;
+    return mbPlatform?.id || platforms[0]?.id || null;
   };
 
   const openEditor = async (brand?: BrandRow) => {
@@ -246,9 +247,10 @@ export default function MenuBoardManagement() {
       }
     } else {
       setEditingBrandId(null);
-      setFormData({ ...DEFAULT_FORM, platform_id: getMenuBoardPlatformId() });
+      setFormData({ ...DEFAULT_FORM, platform_id: getMenuBoardPlatformId() || 0 });
       initEmptyAssignments();
     }
+    setSaveError(null);
     setEditorOpen(true);
   };
 
@@ -330,6 +332,7 @@ export default function MenuBoardManagement() {
   const handleSave = async () => {
     if (!formData.name.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       let brandId = editingBrandId;
 
@@ -352,9 +355,11 @@ export default function MenuBoardManagement() {
       if (brandId) {
         await updateVirtualBrand(brandId, brandPayload);
       } else {
+        // Menu board brands don't strictly need a platform_id
+        const platformId = formData.platform_id || getMenuBoardPlatformId();
         const result = await createVirtualBrand({
           ...brandPayload,
-          platform_id: formData.platform_id || getMenuBoardPlatformId(),
+          platform_id: platformId as number,
         });
         brandId = result.id;
       }
@@ -384,8 +389,9 @@ export default function MenuBoardManagement() {
 
       closeEditor();
       await fetchBrands();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save brand:', err);
+      setSaveError(err?.message || 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -1042,21 +1048,28 @@ export default function MenuBoardManagement() {
             </div>
 
             {/* Modal footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-neutral-800">
-              <button
-                onClick={closeEditor}
-                className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || !formData.name.trim()}
-                className="flex items-center gap-2 px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Save size={16} />
-                {saving ? 'Saving...' : 'Save'}
-              </button>
+            <div className="p-6 border-t border-neutral-800">
+              {saveError && (
+                <div className="mb-3 px-4 py-2 bg-red-600/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                  {saveError}
+                </div>
+              )}
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={closeEditor}
+                  className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !formData.name.trim()}
+                  className="flex items-center gap-2 px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save size={16} />
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

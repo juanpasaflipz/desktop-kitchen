@@ -1512,7 +1512,7 @@ export async function getVirtualBrands(): Promise<any[]> {
 
 export async function createVirtualBrand(data: {
   name: string;
-  platform_id: number;
+  platform_id?: number | null;
   description?: string;
   logo_url?: string;
   display_type?: string;

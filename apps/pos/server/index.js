@@ -157,9 +157,6 @@ if (chaosRoutes) app.use('/api/chaos', chaosRoutes);
 // Auth routes (uses admin pool for registration/login, not tenant-scoped)
 app.use('/api/auth', authRoutes);
 
-// Menu board (public, no auth required)
-app.use('/api/menu-board', menuBoardRoutes);
-
 // CFDI public self-service (token-based, no auth)
 app.use('/api/cfdi-public', cfdiPublicRoutes);
 
@@ -203,6 +200,9 @@ app.get('/admin/leads', (req, res, next) => {
 
 // Tenant resolution middleware — all /api routes below use the resolved tenant DB
 app.use('/api', tenantMiddleware);
+
+// Menu board (public display, no auth — tenant resolved by subdomain for RLS)
+app.use('/api/menu-board', menuBoardRoutes);
 
 // API Routes
 app.use('/api/menu', menuRoutes);
