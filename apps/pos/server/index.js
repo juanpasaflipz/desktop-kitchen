@@ -246,7 +246,9 @@ app.get('*', (req, res) => {
 // Error handler
 app.use((err, req, res, _next) => {
   console.error(`[${req.id}] ${req.method} ${req.path} tenant=${req.tenant?.id || 'none'}:`, err.message || err);
-  res.status(500).json({ error: 'Internal server error' });
+  if (err.stack) console.error(`[${req.id}] Stack:`, err.stack);
+  if (err.type) console.error(`[${req.id}] Type: ${err.type}, Status: ${err.status || err.statusCode}`);
+  res.status(err.status || err.statusCode || 500).json({ error: err.expose ? err.message : 'Internal server error' });
 });
 
 // Fail fast if critical secrets are missing in production
