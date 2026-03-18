@@ -1,3 +1,4 @@
+// Customer QR ordering API — public endpoints
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { all, get, run, getConn, getTenantId } from '../db/index.js';
