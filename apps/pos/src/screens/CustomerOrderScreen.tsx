@@ -384,7 +384,14 @@ export default function CustomerOrderScreen() {
       fetch('/api/customer-order/menu').then(r => r.json()),
       getCustomerOrderSettings().catch(() => ({ requirePayment: false })),
     ]).then(([menuData, settings]) => {
-      const brandList: BrandData[] = menuData.brands || menuData || [];
+      // Parse prices to numbers (Postgres returns NUMERIC as strings)
+      const brandList: BrandData[] = (menuData.brands || menuData || []).map((b: BrandData) => ({
+        ...b,
+        categories: b.categories.map(c => ({
+          ...c,
+          items: c.items.map(item => ({ ...item, price: Number(item.price) })),
+        })),
+      }));
       setBrands(brandList);
       setRequirePayment(settings.requirePayment);
 
@@ -450,7 +457,10 @@ export default function CustomerOrderScreen() {
     try {
       const res = await fetch(`/api/modifiers/groups/item/${item.id}`);
       if (res.ok) {
-        const groups: ModifierGroupData[] = await res.json();
+        const groups: ModifierGroupData[] = (await res.json()).map((g: ModifierGroupData) => ({
+          ...g,
+          modifiers: g.modifiers?.map(m => ({ ...m, price_adjustment: Number(m.price_adjustment) })),
+        }));
         setModifierGroups(groups);
         // Pre-select required single-select defaults
         const defaults: Record<number, number[]> = {};
