@@ -446,6 +446,7 @@ const ExpensesScreen: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-white truncate">
                             {expense.vendor || getCategoryLabel(expense.category)}
+                            {expense.payee && <span className="text-neutral-400 font-normal"> — {expense.payee}</span>}
                           </span>
                           {expense.receipt_image_url && (
                             <Image size={12} className="text-brand-400 shrink-0" />

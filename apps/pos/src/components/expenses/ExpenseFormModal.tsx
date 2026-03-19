@@ -18,6 +18,7 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
   const { t } = useTranslation('admin');
   const [category, setCategory] = useState(expense?.category || initialData?.category || 'food_cost');
   const [vendor, setVendor] = useState(expense?.vendor || initialData?.vendor || '');
+  const [payee, setPayee] = useState(expense?.payee || initialData?.payee || '');
   const [description, setDescription] = useState(expense?.description || initialData?.description || '');
   const [amount, setAmount] = useState(expense?.amount?.toString() || initialData?.amount?.toString() || '');
   const [taxAmount, setTaxAmount] = useState(expense?.tax_amount?.toString() || initialData?.tax_amount?.toString() || '0');
@@ -65,6 +66,7 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
     onSave({
       category,
       vendor: vendor || undefined,
+      payee: payee || undefined,
       description: description || undefined,
       amount: Number(amount),
       tax_amount: Number(taxAmount) || 0,
@@ -170,6 +172,17 @@ const ExpenseFormModal: React.FC<Props> = ({ expense, initialData, onSave, onClo
               value={vendor}
               onChange={e => setVendor(e.target.value)}
               placeholder={t('expenses.vendorPlaceholder')}
+              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-white placeholder-neutral-500 focus:border-brand-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-400 mb-1">{t('expenses.payee')}</label>
+            <input
+              type="text"
+              value={payee}
+              onChange={e => setPayee(e.target.value)}
+              placeholder={t('expenses.payeePlaceholder')}
               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-white placeholder-neutral-500 focus:border-brand-500 focus:outline-none"
             />
           </div>

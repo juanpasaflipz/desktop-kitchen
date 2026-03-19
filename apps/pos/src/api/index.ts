@@ -2701,6 +2701,7 @@ export interface Expense {
   receipt_data: Record<string, unknown> | null;
   expense_date: string;
   payment_method: string | null;
+  payee: string | null;
   notes: string | null;
   created_by: number | null;
   created_by_name?: string | null;

@@ -236,6 +236,8 @@
     "amount": "Amount",
     "tax": "Tax",
     "date": "Date",
+    "payee": "Payee",
+    "payeePlaceholder": "e.g. Mario, Juan",
     "paymentMethod": "Payment Method",
     "paymentMethods": {
       "none": "Not specified",

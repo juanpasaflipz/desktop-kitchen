@@ -78,7 +78,7 @@ router.get('/', requireAuth('view_reports'), async (req, res) => {
 // POST /api/expenses — create expense
 router.post('/', requireAuth('manage_inventory'), async (req, res) => {
   try {
-    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, receipt_data, inventory_matches } = req.body;
+    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, receipt_data, inventory_matches, payee } = req.body;
 
     if (!category || !VALID_CATEGORIES.includes(category)) {
       return res.status(400).json({ error: `category must be one of: ${VALID_CATEGORIES.join(', ')}` });
@@ -103,10 +103,10 @@ router.post('/', requireAuth('manage_inventory'), async (req, res) => {
     }
 
     const result = await get(
-      `INSERT INTO expenses (tenant_id, category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, receipt_data, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `INSERT INTO expenses (tenant_id, category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, receipt_data, created_by, payee)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
-      [tenantId, category, vendor || null, description || null, amount, tax_amount || 0, expense_date, payment_method || null, notes || null, receipt_image_url || null, finalReceiptData ? JSON.stringify(finalReceiptData) : null, employeeId]
+      [tenantId, category, vendor || null, description || null, amount, tax_amount || 0, expense_date, payment_method || null, notes || null, receipt_image_url || null, finalReceiptData ? JSON.stringify(finalReceiptData) : null, employeeId, payee || null]
     );
 
     // Process inventory restocks from matches
@@ -148,7 +148,7 @@ router.post('/', requireAuth('manage_inventory'), async (req, res) => {
 router.put('/:id', requireAuth('manage_inventory'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url } = req.body;
+    const { category, vendor, description, amount, tax_amount, expense_date, payment_method, notes, receipt_image_url, payee } = req.body;
 
     const existing = await get('SELECT id FROM expenses WHERE id = $1', [id]);
     if (!existing) {
@@ -173,10 +173,11 @@ router.put('/:id', requireAuth('manage_inventory'), async (req, res) => {
         payment_method = $7,
         notes = $8,
         receipt_image_url = COALESCE($9, receipt_image_url),
+        payee = $10,
         updated_at = NOW()
-      WHERE id = $10
+      WHERE id = $11
       RETURNING *`,
-      [category || null, vendor ?? null, description ?? null, amount || null, tax_amount ?? null, expense_date || null, payment_method ?? null, notes ?? null, receipt_image_url ?? null, id]
+      [category || null, vendor ?? null, description ?? null, amount || null, tax_amount ?? null, expense_date || null, payment_method ?? null, notes ?? null, receipt_image_url ?? null, payee ?? null, id]
     );
 
     res.json(result);
@@ -345,7 +346,7 @@ router.get('/export', requireAuth('view_reports'), async (req, res) => {
     const expenses = await all(query, params);
 
     // Build CSV
-    const headers = ['Date', 'Category', 'Vendor', 'Description', 'Amount', 'Tax', 'Total', 'Payment Method', 'Notes'];
+    const headers = ['Date', 'Category', 'Vendor', 'Description', 'Amount', 'Tax', 'Total', 'Payment Method', 'Payee', 'Notes'];
     const rows = expenses.map(e => [
       e.expense_date?.toISOString?.().slice(0, 10) || e.expense_date,
       e.category,
@@ -355,6 +356,7 @@ router.get('/export', requireAuth('view_reports'), async (req, res) => {
       e.tax_amount || 0,
       (Number(e.amount) + Number(e.tax_amount || 0)).toFixed(2),
       e.payment_method || '',
+      csvEscape(e.payee || ''),
       csvEscape(e.notes || ''),
     ]);
 

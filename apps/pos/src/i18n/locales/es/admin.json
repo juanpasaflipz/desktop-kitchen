@@ -236,6 +236,8 @@
     "amount": "Monto",
     "tax": "Impuesto",
     "date": "Fecha",
+    "payee": "Pagador",
+    "payeePlaceholder": "ej. Mario, Juan",
     "paymentMethod": "Método de Pago",
     "paymentMethods": {
       "none": "No especificado",
