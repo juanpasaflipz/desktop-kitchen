@@ -20,7 +20,6 @@ export const adminSql = postgres(DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
-  max_lifetime: 60 * 10, // Recycle connections every 10 min to avoid stale TCP sockets
 });
 
 /**
@@ -65,7 +64,6 @@ export const tenantSql = postgres(buildTenantUrl(), {
   max: 30,
   idle_timeout: 20,
   connect_timeout: 10,
-  max_lifetime: 60 * 10, // Recycle connections every 10 min to avoid stale TCP sockets
 });
 
 // ==================== Connection Resolution ====================
