@@ -94,7 +94,7 @@ export async function analyzeWastePatterns() {
       });
     }
 
-    console.log(`[AI Waste] Analyzed ${wasteByItem.length} items, generated ${suggestions.length} waste alerts`);
+    if (suggestions.length > 0) console.log(`[AI Waste] Analyzed ${wasteByItem.length} items, generated ${suggestions.length} waste alerts`);
     return suggestions;
   } catch (error) {
     // Don't fail if waste_log table doesn't exist yet

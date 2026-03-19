@@ -53,15 +53,15 @@ export async function initAI() {
   }
 
   // Register scheduled jobs (all are now async — scheduler handles await)
-  registerJob('refreshSuggestionCache', refreshAllHeuristics, 5 * 60 * 1000);       // Every 5 min
-  registerJob('captureHourlySnapshot', captureHourlySnapshot, 60 * 60 * 1000);       // Every hour
-  registerJob('updateItemPairs', updateItemPairs, 60 * 60 * 1000);                   // Every hour
-  registerJob('updateInventoryVelocity', updateInventoryVelocity, 24 * 60 * 60 * 1000); // Daily
-  registerJob('cleanExpiredCache', cleanExpiredCache, 60 * 60 * 1000);                // Every hour
-  registerJob('detectShrinkagePatterns', detectShrinkagePatterns, 24 * 60 * 60 * 1000); // Daily
-  registerJob('analyzeWastePatterns', analyzeWastePatterns, 24 * 60 * 60 * 1000);     // Daily
-  registerJob('evaluatePricingRules', evaluateActiveRules, 15 * 60 * 1000);          // Every 15 min
-  registerJob('backfillRevenueAfter', backfillRevenueAfter, 6 * 60 * 60 * 1000);     // Every 6 hours
+  registerJob('refreshSuggestionCache', refreshAllHeuristics, 5 * 60 * 1000, { activeOnly: true });
+  registerJob('captureHourlySnapshot', captureHourlySnapshot, 60 * 60 * 1000, { activeOnly: true });
+  registerJob('updateItemPairs', updateItemPairs, 60 * 60 * 1000, { activeOnly: true });
+  registerJob('updateInventoryVelocity', updateInventoryVelocity, 24 * 60 * 60 * 1000, { activeOnly: true });
+  registerJob('cleanExpiredCache', cleanExpiredCache, 60 * 60 * 1000);                // Runs for all tenants
+  registerJob('detectShrinkagePatterns', detectShrinkagePatterns, 24 * 60 * 60 * 1000, { activeOnly: true });
+  registerJob('analyzeWastePatterns', analyzeWastePatterns, 24 * 60 * 60 * 1000, { activeOnly: true });
+  registerJob('evaluatePricingRules', evaluateActiveRules, 15 * 60 * 1000, { activeOnly: true });
+  registerJob('backfillRevenueAfter', backfillRevenueAfter, 6 * 60 * 60 * 1000, { activeOnly: true });
 
   // Start the scheduler
   if (process.env.NODE_ENV !== 'test') {

@@ -12,13 +12,18 @@ let loopTimer = null;
 let jobRunning = false;
 
 /**
- * Register a scheduled job
+ * Register a scheduled job.
+ * @param {string} name
+ * @param {Function} fn
+ * @param {number} intervalMs
+ * @param {{ activeOnly?: boolean }} opts  — if activeOnly, only run for tenants with recent orders (24h)
  */
-export function registerJob(name, fn, intervalMs) {
+export function registerJob(name, fn, intervalMs, opts = {}) {
   jobs.push({
     name,
     fn,
     intervalMs,
+    activeOnly: opts.activeOnly || false,
     lastRun: null,
     nextRunAt: Date.now(), // run immediately on first tick
     lastError: null,
@@ -110,7 +115,19 @@ export function getSchedulerStatus() {
  */
 async function runJob(job) {
   try {
-    const tenants = await adminSql`SELECT id FROM tenants WHERE active = true`;
+    let tenants;
+    if (job.activeOnly) {
+      // Only run for tenants with orders in the last 24 hours
+      tenants = await adminSql`
+        SELECT DISTINCT t.id FROM tenants t
+        JOIN orders o ON o.tenant_id = t.id
+        WHERE t.active = true
+          AND o.created_at >= NOW() - INTERVAL '24 hours'
+      `;
+      if (tenants.length === 0) return; // nothing to do — skip silently
+    } else {
+      tenants = await adminSql`SELECT id FROM tenants WHERE active = true`;
+    }
 
     for (const tenant of tenants) {
       // Bail out early if scheduler was stopped during iteration

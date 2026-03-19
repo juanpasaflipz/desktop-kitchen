@@ -91,7 +91,7 @@ export async function updateItemPairs() {
       }
     }
 
-    console.log(`[AI Pipeline] Item pairs updated from ${recentOrders.length} orders`);
+    if (recentOrders.length > 0) console.log(`[AI Pipeline] Item pairs updated from ${recentOrders.length} orders`);
   } catch (error) {
     console.error('[AI Pipeline] Error updating item pairs:', error.message);
   }
@@ -137,7 +137,7 @@ export async function updateInventoryVelocity() {
       }
     }
 
-    console.log(`[AI Pipeline] Inventory velocity updated for ${consumption.length} items`);
+    if (consumption.length > 0) console.log(`[AI Pipeline] Inventory velocity updated for ${consumption.length} items`);
   } catch (error) {
     console.error('[AI Pipeline] Error updating inventory velocity:', error.message);
   }
@@ -243,7 +243,7 @@ export async function detectShrinkagePatterns() {
       ]);
     }
 
-    console.log(`[AI Pipeline] Shrinkage pattern detection: ${patterns.length} items flagged`);
+    if (patterns.length > 0) console.log(`[AI Pipeline] Shrinkage pattern detection: ${patterns.length} items flagged`);
   } catch (error) {
     console.error('[AI Pipeline] Error detecting shrinkage patterns:', error.message);
   }
