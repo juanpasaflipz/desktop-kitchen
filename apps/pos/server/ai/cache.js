@@ -87,18 +87,26 @@ export async function refreshSuggestions(type, suggestions, ttlMinutes = 5) {
 
   const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
 
+  // Deduplicate by (type, context) — last one wins
+  const deduped = new Map();
+  for (const s of suggestions) {
+    const context = s.context ? (typeof s.context === 'string' ? s.context : JSON.stringify(s.context)) : null;
+    const key = `${type}::${context}`;
+    deduped.set(key, { ...s, _context: context });
+  }
+  const uniqueSuggestions = Array.from(deduped.values());
+
   // Batch insert all suggestions in chunks of 100
-  for (let i = 0; i < suggestions.length; i += 100) {
-    const chunk = suggestions.slice(i, i + 100);
+  for (let i = 0; i < uniqueSuggestions.length; i += 100) {
+    const chunk = uniqueSuggestions.slice(i, i + 100);
     const values = [];
     const params = [];
     for (let k = 0; k < chunk.length; k++) {
       const s = chunk[k];
       const data = typeof s.data === 'string' ? s.data : JSON.stringify(s.data);
-      const context = s.context ? (typeof s.context === 'string' ? s.context : JSON.stringify(s.context)) : null;
       const offset = k * 5;
       values.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
-      params.push(type, context, data, s.priority || 50, expiresAt);
+      params.push(type, s._context, data, s.priority || 50, expiresAt);
     }
     await run(`
       INSERT INTO ai_suggestion_cache (suggestion_type, trigger_context, suggestion_data, priority, expires_at)
