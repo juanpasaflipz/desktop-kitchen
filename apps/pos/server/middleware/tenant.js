@@ -93,15 +93,8 @@ export async function tenantMiddleware(req, res, next) {
       return res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
     }
 
-    // Start an explicit transaction and set tenant_id as transaction-scoped.
-    // This is PgBouncer-safe: even in transaction mode, set_config(..., true)
-    // is guaranteed to persist for all queries within the same transaction.
-    // Without BEGIN, autocommit queries may be routed to different backends
-    // by PgBouncer, losing the session-scoped setting.
-    await conn`BEGIN`;
-    await conn`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
-
-    // Double-release guard
+    // Double-release guard — defined BEFORE any query so the connection is
+    // always released even if BEGIN or set_config fail (e.g., dead TCP socket).
     let released = false;
     const releaseConn = (shouldCommit) => {
       if (!released) {
@@ -118,6 +111,20 @@ export async function tenantMiddleware(req, res, next) {
     res.on('close', () => {
       if (!res.writableFinished) releaseConn(false);
     });
+
+    // Start an explicit transaction and set tenant_id as transaction-scoped.
+    // This is PgBouncer-safe: even in transaction mode, set_config(..., true)
+    // is guaranteed to persist for all queries within the same transaction.
+    // Without BEGIN, autocommit queries may be routed to different backends
+    // by PgBouncer, losing the session-scoped setting.
+    try {
+      await conn`BEGIN`;
+      await conn`SELECT set_config('app.tenant_id', ${tenantId}, true)`;
+    } catch (txErr) {
+      console.error('[Tenant] Failed to initialize connection:', txErr.message);
+      releaseConn(false);
+      return res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
+    }
 
     // Normalize unknown plans to 'free'
     const plan = (tenant.plan === 'free' || tenant.plan === 'pro') ? tenant.plan : 'free';
