@@ -212,7 +212,11 @@
     "addressPlaceholder": "123 Main St, City, State 12345",
     "hexPlaceholder": "#0d9488",
     "namePreview": "Restaurant Name",
-    "taglinePreview": "Your tagline here"
+    "taglinePreview": "Your tagline here",
+    "theme": "Appearance",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "System"
   },
   "expenses": {
     "addExpense": "Add Expense",

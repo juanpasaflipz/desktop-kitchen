@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SyncProvider } from './context/SyncContext';
 import { BrandingProvider } from './context/BrandingContext';
 import { PlanProvider } from './context/PlanContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { resolveTenant, type TenantInfo } from './lib/tenantResolver';
 import { useDeviceType } from './hooks/useDeviceType';
@@ -850,16 +851,18 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <BrandingProvider>
-      <PlanProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <SyncProvider>
-              <AppContent />
-            </SyncProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </PlanProvider>
-    </BrandingProvider>
+    <ThemeProvider>
+      <BrandingProvider>
+        <PlanProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <SyncProvider>
+                <AppContent />
+              </SyncProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </PlanProvider>
+      </BrandingProvider>
+    </ThemeProvider>
   );
 }

@@ -212,7 +212,11 @@
     "addressPlaceholder": "Calle 123, Ciudad, Estado 12345",
     "hexPlaceholder": "#0d9488",
     "namePreview": "Nombre del Restaurante",
-    "taglinePreview": "Tu eslogan aquí"
+    "taglinePreview": "Tu eslogan aquí",
+    "theme": "Apariencia",
+    "themeDark": "Oscuro",
+    "themeLight": "Claro",
+    "themeSystem": "Sistema"
   },
   "expenses": {
     "addExpense": "Agregar Gasto",

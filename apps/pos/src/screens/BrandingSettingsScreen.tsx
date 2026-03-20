@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Upload, Check } from 'lucide-react';
+import { ArrowLeft, Upload, Check, Sun, Moon, Monitor } from 'lucide-react';
 import { useBranding } from '../context/BrandingContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { getCurrentEmployeeToken } from '../api';
 import BrandLogo from '../components/BrandLogo';
 import { generatePalette, type BrandPalette } from '../lib/colorUtils';
@@ -27,6 +28,7 @@ export default function BrandingSettingsScreen() {
   const { branding, refresh } = useBranding();
   const { currentEmployee } = useAuth();
   const { limits } = usePlan();
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
 
   const [restaurantName, setRestaurantName] = useState('');
   const [tagline, setTagline] = useState('');
@@ -239,6 +241,33 @@ export default function BrandingSettingsScreen() {
                 className="hidden"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Theme Mode */}
+        <div className="bg-neutral-900 rounded-lg border border-neutral-800 p-6">
+          <label className="block text-sm font-medium text-neutral-400 mb-4">
+            {t('branding.theme')}
+          </label>
+          <div className="flex gap-3">
+            {([
+              { value: 'dark' as const, icon: Moon, label: t('branding.themeDark') },
+              { value: 'light' as const, icon: Sun, label: t('branding.themeLight') },
+              { value: 'system' as const, icon: Monitor, label: t('branding.themeSystem') },
+            ]).map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                onClick={() => setThemeMode(value)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  themeMode === value
+                    ? 'border-brand-500 bg-brand-600/15 text-brand-500'
+                    : 'border-neutral-700 text-neutral-400 hover:border-neutral-600'
+                }`}
+              >
+                <Icon size={18} />
+                <span className="text-sm font-medium">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
