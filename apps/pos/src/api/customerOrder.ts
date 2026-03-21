@@ -3,7 +3,18 @@
  * Public endpoints — no auth required. Used by the QR code ordering screen.
  */
 
-const API_BASE = '/api/customer-order';
+const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
+
+function getApiBase(): string {
+  if (isCapacitor) {
+    const tenantSlug = localStorage.getItem('tenant_id');
+    if (tenantSlug) return `https://${tenantSlug}.desktop.kitchen/api/customer-order`;
+    return 'https://pos.desktop.kitchen/api/customer-order';
+  }
+  return '/api/customer-order';
+}
+
+const API_BASE = getApiBase();
 
 export interface CustomerOrderSettings {
   requirePayment: boolean;

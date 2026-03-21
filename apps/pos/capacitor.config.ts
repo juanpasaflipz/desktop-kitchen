@@ -12,6 +12,10 @@ const config: CapacitorConfig = {
     scrollEnabled: false,
     preferredContentMode: 'mobile',
   },
+  android: {
+    overScrollMode: 'never',
+    backgroundColor: '#ffffff',
+  },
 };
 
 export default config;

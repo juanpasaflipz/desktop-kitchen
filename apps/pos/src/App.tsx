@@ -282,6 +282,12 @@ const MobileCartScreen = React.lazy(() =>
   }))
 );
 
+const KioskScreen = React.lazy(() =>
+  import('./screens/KioskScreen').then((module) => ({
+    default: module.default || (() => <div>Kiosk</div>),
+  }))
+);
+
 /* ==================== Tenant Context ==================== */
 
 const TenantContext = React.createContext<TenantInfo>({
@@ -365,6 +371,7 @@ const PlatformRoutes: React.FC = () => (
     <Route path="/onboarding" element={<OnboardingScreen />} />
     <Route path="/reset-password" element={<ResetPasswordScreen />} />
     <Route path="/super-admin" element={<SuperAdminDashboard />} />
+    <Route path="/kiosk" element={<KioskScreen />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 );
@@ -372,7 +379,7 @@ const PlatformRoutes: React.FC = () => (
 /* ==================== Tenant Routes ({slug}.desktop.kitchen / localhost) ==================== */
 
 // Public routes that should never be intercepted by the mobile POS shell
-const PUBLIC_PATHS = ['/order', '/menu-board', '/invoice/'];
+const PUBLIC_PATHS = ['/order', '/menu-board', '/invoice/', '/kiosk'];
 
 const TenantRoutes: React.FC = () => {
   const { currentEmployee } = useAuth();
@@ -734,6 +741,9 @@ const TenantRoutes: React.FC = () => {
       {/* Customer QR Ordering — public, no auth, error boundary */}
       <Route path="/order" element={<CustomerOrderErrorBoundary><CustomerOrderScreen /></CustomerOrderErrorBoundary>} />
 
+      {/* Kiosk — public, no auth, tablet self-service */}
+      <Route path="/kiosk" element={<KioskScreen />} />
+
       {/* Public invoice self-service — no auth */}
       <Route path="/invoice/:token" element={<PublicInvoiceScreen />} />
 
@@ -828,6 +838,14 @@ const AppContent: React.FC = () => {
   const tenantInfo = useMemo(() => resolveTenant(), []);
   const isPlatformMode = tenantInfo.mode === 'platform' || tenantInfo.mode === 'local';
   const { showDemoScreen, demoReady, dismissDemoScreen } = useDemoToken();
+
+  // Capacitor native → auto-redirect to kiosk
+  useEffect(() => {
+    const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
+    if (isCapacitor && (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#')) {
+      window.location.hash = '#/kiosk';
+    }
+  }, []);
 
   if (showDemoScreen) {
     return (

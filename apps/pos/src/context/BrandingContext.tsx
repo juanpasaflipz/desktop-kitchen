@@ -40,8 +40,8 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
     try {
       const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.();
       const tenantSlug = localStorage.getItem('tenant_id');
-      const baseUrl = isCapacitor && tenantSlug
-        ? `https://${tenantSlug}.desktop.kitchen/api`
+      const baseUrl = isCapacitor
+        ? (tenantSlug ? `https://${tenantSlug}.desktop.kitchen/api` : 'https://pos.desktop.kitchen/api')
         : '/api';
       const headers: Record<string, string> = {};
       if (!isCapacitor && tenantSlug) headers['X-Tenant-ID'] = tenantSlug;
@@ -73,7 +73,8 @@ export const BrandingProvider: React.FC<{ children: ReactNode }> = ({ children }
     resetBrandPalette();
 
     const { mode } = resolveTenant();
-    if (mode === 'platform' || mode === 'local') {
+    const isCapacitorNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    if ((mode === 'platform' || mode === 'local') && !isCapacitorNative) {
       setIsLoaded(true);
       return;
     }
