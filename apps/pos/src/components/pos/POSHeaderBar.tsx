@@ -142,8 +142,8 @@ export default function POSHeaderBar({
         </div>
       )}
 
-      {/* Brand Toggle Pills */}
-      {posBrands.length > 0 && (
+      {/* Brand Toggle Pills — hide when all brands share the same name (single-restaurant) */}
+      {posBrands.length > 0 && new Set(posBrands.map(b => b.name)).size > 1 && (
         <div className="flex gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
           <button
             onClick={() => { onSelectBrand('all'); onSetSelectedCategory('all'); }}
