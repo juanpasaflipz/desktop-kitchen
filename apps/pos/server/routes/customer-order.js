@@ -59,10 +59,12 @@ router.get('/settings', async (_req, res) => {
 
 // GET /api/customer-order/menu — public, returns menu for QR ordering
 // Falls back to regular menu if no virtual brands are configured
-router.get('/menu', async (_req, res) => {
+router.get('/menu', async (req, res) => {
   try {
-    // Try virtual brands first
-    const brands = await all(`
+    const useRegularMenu = req.query.source === 'kiosk';
+
+    // Try virtual brands first (skip for kiosk — kiosk uses the full regular menu)
+    const brands = useRegularMenu ? [] : await all(`
       SELECT id, name, slug, logo_url, primary_color
       FROM virtual_brands
       WHERE display_type IN ('menu_board', 'both')
