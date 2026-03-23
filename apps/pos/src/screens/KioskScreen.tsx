@@ -165,7 +165,9 @@ function getGroupIcon(name: string): string | null {
 /* ==================== Category Icon Map ==================== */
 
 const CATEGORY_ICON_MAP: Record<string, string> = {
-  bebida: '☕', bebidas: '☕', drinks: '☕', coffee: '☕', café: '☕', cafe: '☕',
+  burrito: '🌯', burritos: '🌯',
+  bebida: '🥤', bebidas: '🥤', drinks: '🥤', refresco: '🥤', refrescos: '🥤',
+  coffee: '☕', café: '☕', cafe: '☕',
   comida: '🍽️', food: '🍽️', comer: '🍽️', platos: '🍽️', platillos: '🍽️',
   combo: '📦', combos: '📦', paquete: '📦', paquetes: '📦',
   postre: '🍰', postres: '🍰', dessert: '🍰', desserts: '🍰',
@@ -490,14 +492,13 @@ export default function KioskScreen() {
     const raw = branding?.logoUrl;
     if (!raw) return null;
     if (raw.startsWith('http')) return raw;
-    // Relative path like /uploads/... — prepend tenant base
-    if (isCapacitor) {
-      const tenantSlug = localStorage.getItem('tenant_id');
-      return tenantSlug
-        ? `https://${tenantSlug}.desktop.kitchen${raw}`
-        : `https://pos.desktop.kitchen${raw}`;
-    }
-    return raw;
+    // Relative path like /uploads/... — prepend tenant base on Capacitor
+    const tenantSlug = localStorage.getItem('tenant_id');
+    const base = tenantSlug
+      ? `https://${tenantSlug}.desktop.kitchen`
+      : 'https://pos.desktop.kitchen';
+    // Always resolve to absolute URL (works on both Capacitor and web)
+    return isCapacitor ? `${base}${raw}` : raw;
   }, [branding?.logoUrl]);
 
   // Build top-level category groups (group categories by icon)
@@ -705,9 +706,19 @@ export default function KioskScreen() {
   const Header = (
     <header className="bg-white border-b border-neutral-100 px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        {logoUrl && (
-          <img src={logoUrl} alt="" className="h-12 w-12 rounded-xl object-cover shadow-sm" />
-        )}
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt=""
+            className="h-12 w-12 rounded-xl object-cover shadow-sm"
+            crossOrigin="anonymous"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : branding?.restaurantName ? (
+          <div className="h-12 w-12 rounded-xl bg-brand-600 flex items-center justify-center shadow-sm">
+            <span className="text-white font-bold text-lg">{branding.restaurantName.charAt(0)}</span>
+          </div>
+        ) : null}
         <div>
           <h1 className="text-xl font-bold text-neutral-900 truncate">{brandName}</h1>
           {branding?.tagline && (
@@ -834,8 +845,8 @@ export default function KioskScreen() {
             <p className="text-xl font-bold text-brand-600 mt-2">{fmt(selectedItem.price)}</p>
           </div>
 
-          {/* Right — modifier groups in columns */}
-          <div className="flex-1 min-w-0 overflow-y-auto scrollbar-hide">
+          {/* Right — modifier groups flowing into columns */}
+          <div className="flex-1 min-w-0 overflow-hidden">
             {loadingModifiers && (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
@@ -843,12 +854,12 @@ export default function KioskScreen() {
             )}
 
             {modifierGroups.length > 0 && (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 auto-rows-min">
+              <div className="h-full modifier-columns px-1">
                 {modifierGroups.map(group => {
                   const icon = getGroupIcon(group.name);
                   return (
-                    <div key={group.id} className="bg-white rounded-2xl p-4 border border-neutral-100">
-                      <div className="flex items-center gap-1.5 mb-2">
+                    <div key={group.id} className="break-inside-avoid mb-3">
+                      <div className="flex items-center gap-1.5 mb-1.5 px-1">
                         {icon && <span className="text-base">{icon}</span>}
                         <h3 className="font-bold text-neutral-900 text-sm truncate">{group.name}</h3>
                         {group.required && (
@@ -858,32 +869,30 @@ export default function KioskScreen() {
                         )}
                       </div>
 
-                      <div className="space-y-1">
-                        {group.modifiers?.map(mod => {
-                          const isSelected = (selectedModifiers[group.id] || []).includes(mod.id);
-                          return (
-                            <button
-                              key={mod.id}
-                              onClick={() => toggleModifier(group.id, mod.id, group.selection_type, group.max_selections)}
-                              className="w-full flex items-center gap-2 px-2 py-2 rounded-lg transition-colors active:scale-[0.97]"
-                            >
-                              <div className={`w-4 h-4 rounded-${group.selection_type === 'single' ? 'full' : 'md'} border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                isSelected
-                                  ? 'border-brand-500 bg-brand-500'
-                                  : 'border-neutral-300'
-                              }`}>
-                                {isSelected && <Check size={10} className="text-white" />}
-                              </div>
-                              <span className={`text-xs flex-1 text-left ${isSelected ? 'font-semibold text-neutral-900' : 'text-neutral-700'}`}>
-                                {mod.name}
-                              </span>
-                              {mod.price_adjustment > 0 && (
-                                <span className="text-[10px] text-neutral-400 flex-shrink-0">+{fmt(mod.price_adjustment)}</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      {group.modifiers?.map(mod => {
+                        const isSelected = (selectedModifiers[group.id] || []).includes(mod.id);
+                        return (
+                          <button
+                            key={mod.id}
+                            onClick={() => toggleModifier(group.id, mod.id, group.selection_type, group.max_selections)}
+                            className="w-full flex items-center gap-2 px-2 py-2 rounded-lg transition-colors active:scale-[0.97]"
+                          >
+                            <div className={`w-4 h-4 rounded-${group.selection_type === 'single' ? 'full' : 'md'} border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                              isSelected
+                                ? 'border-brand-500 bg-brand-500'
+                                : 'border-neutral-300'
+                            }`}>
+                              {isSelected && <Check size={10} className="text-white" />}
+                            </div>
+                            <span className={`text-xs flex-1 text-left ${isSelected ? 'font-semibold text-neutral-900' : 'text-neutral-700'}`}>
+                              {mod.name}
+                            </span>
+                            {mod.price_adjustment > 0 && (
+                              <span className="text-[10px] text-neutral-400 flex-shrink-0">+{fmt(mod.price_adjustment)}</span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -1194,6 +1203,14 @@ export default function KioskScreen() {
 const kioskStyles = `
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .modifier-columns {
+    columns: 2;
+    column-gap: 16px;
+    column-fill: balance;
+  }
+  @media (min-width: 900px) {
+    .modifier-columns { columns: 3; }
+  }
   .kiosk-root {
     height: 100dvh;
     height: 100vh; /* fallback */
