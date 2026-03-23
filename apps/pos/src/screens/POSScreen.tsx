@@ -172,10 +172,10 @@ const POSScreen: React.FC = () => {
     const fetchUnpaid = async () => {
       try {
         const orders = await getOrders({ payment_status: 'unpaid' });
-        const ready = orders.filter(
-          (o) => o.status === 'ready' || o.status === 'completed'
+        const relevant = orders.filter(
+          (o) => o.status === 'ready' || o.status === 'completed' || o.source === 'qr_order'
         );
-        setUnpaidOrders(ready);
+        setUnpaidOrders(relevant);
       } catch {
         // non-blocking
       }

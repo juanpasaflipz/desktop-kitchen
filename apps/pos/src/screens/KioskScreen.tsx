@@ -2,16 +2,11 @@ import React, { useState, useEffect, useReducer, useCallback, useRef } from 'rea
 import { useSearchParams } from 'react-router-dom';
 import { useBranding } from '../context/BrandingContext';
 import {
-  getCustomerOrderSettings,
   placeCustomerOrder,
   getCustomerOrderStatus,
-  createCustomerPaymentIntent,
-  confirmCustomerPayment,
   type CustomerOrderItem,
   type CustomerOrderStatus,
 } from '../api/customerOrder';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { ShoppingBag, Plus, Minus, ArrowLeft, Loader2, Check, ChefHat, Bell, X } from 'lucide-react';
 
 /* ==================== Capacitor API base ==================== */
@@ -26,11 +21,6 @@ function apiBase(): string {
   }
   return '/api';
 }
-
-/* ==================== Stripe setup ==================== */
-
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 /* ==================== Types ==================== */
 
@@ -195,63 +185,6 @@ function getCategoryIcon(name: string): string {
   return '🍽️';
 }
 
-/* ==================== Payment Form (Stripe Elements) ==================== */
-
-function KioskPaymentForm({ orderId, onSuccess, onError }: {
-  orderId: number;
-  onSuccess: () => void;
-  onError: (msg: string) => void;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [processing, setProcessing] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-
-    setProcessing(true);
-    try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        redirect: 'if_required',
-      });
-
-      if (error) {
-        onError(error.message || 'Error en el pago');
-        setProcessing(false);
-        return;
-      }
-
-      await confirmCustomerPayment(orderId);
-      onSuccess();
-    } catch (err) {
-      onError(err instanceof Error ? err.message : 'Error en el pago');
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      <button
-        type="submit"
-        disabled={!stripe || processing}
-        className="w-full bg-black hover:bg-neutral-800 disabled:bg-neutral-300 disabled:text-neutral-500 text-white font-bold py-4 rounded-full transition-colors flex items-center justify-center gap-2 text-lg"
-      >
-        {processing ? (
-          <>
-            <Loader2 size={20} className="animate-spin" />
-            Procesando...
-          </>
-        ) : (
-          'Pagar ahora'
-        )}
-      </button>
-    </form>
-  );
-}
-
 /* ==================== Order Status Tracker ==================== */
 
 const KIOSK_STATUS_STEPS = [
@@ -372,10 +305,10 @@ function KioskOrderTracker({ orderId, onNewOrder }: {
 
 /* ==================== Main Component ==================== */
 
-type KioskView = 'menu' | 'detail' | 'cart' | 'payment' | 'tracking';
+type KioskView = 'menu' | 'detail' | 'cart' | 'tracking';
 
 export default function KioskScreen() {
-  const { branding, palette } = useBranding();
+  const { branding } = useBranding();
   const [searchParams] = useSearchParams();
   const tableNumber = searchParams.get('table') || undefined;
 
@@ -383,12 +316,9 @@ export default function KioskScreen() {
   const [brands, setBrands] = useState<BrandData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [requirePayment, setRequirePayment] = useState(false);
-
   // View + order state
   const [view, setView] = useState<KioskView>('menu');
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   // UI state
   const [activeTopCategory, setActiveTopCategory] = useState<number>(0);
@@ -407,15 +337,25 @@ export default function KioskScreen() {
   // Inactivity timer
   const inactivityRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
   const resetInactivityTimer = useCallback(() => {
     if (inactivityRef.current) clearTimeout(inactivityRef.current);
     inactivityRef.current = setTimeout(() => {
-      if (cart.length === 0 && view === 'menu') {
-        setActiveTopCategory(0);
-        setActiveSubCategory(null);
-      }
+      if (view === 'tracking') return;
+      dispatch({ type: 'CLEAR' });
+      setSelectedItem(null);
+      setView('menu');
+      setActiveTopCategory(0);
+      setActiveSubCategory(null);
+      setItemQty(1);
+      setItemNotes('');
+      setSelectedModifiers({});
+      setModifierGroups([]);
+      setShowConfirmation(false);
+      setError(null);
     }, 2 * 60 * 1000);
-  }, [cart.length, view, brands]);
+  }, [view]);
 
   useEffect(() => {
     const events = ['touchstart', 'click', 'scroll'];
@@ -443,26 +383,24 @@ export default function KioskScreen() {
     if (brands.length > 0) return;
 
     setError(null);
-    Promise.all([
-      fetch(`${apiBase()}/customer-order/menu?source=kiosk`).then(r => r.json()),
-      getCustomerOrderSettings().catch(() => ({ requirePayment: false })),
-    ]).then(([menuData, settings]) => {
-      const brandList: BrandData[] = (menuData.brands || menuData || []).map((b: BrandData) => ({
-        ...b,
-        categories: b.categories.map(c => ({
-          ...c,
-          items: c.items.map(item => ({ ...item, price: Number(item.price) })),
-        })),
-      }));
-      setBrands(brandList);
-      setRequirePayment(settings.requirePayment);
+    fetch(`${apiBase()}/customer-order/menu?source=kiosk`)
+      .then(r => r.json())
+      .then((menuData) => {
+        const brandList: BrandData[] = (menuData.brands || menuData || []).map((b: BrandData) => ({
+          ...b,
+          categories: b.categories.map(c => ({
+            ...c,
+            items: c.items.map(item => ({ ...item, price: Number(item.price) })),
+          })),
+        }));
+        setBrands(brandList);
 
-      const firstCat = brandList[0]?.categories?.[0];
-      if (firstCat) setActiveSubCategory(firstCat.id);
-    }).catch(err => {
-      setError('No se pudo cargar el menú');
-      console.error(err);
-    }).finally(() => setLoading(false));
+        const firstCat = brandList[0]?.categories?.[0];
+        if (firstCat) setActiveSubCategory(firstCat.id);
+      }).catch(err => {
+        setError('No se pudo cargar el menú');
+        console.error(err);
+      }).finally(() => setLoading(false));
   }, [view, brands.length]);
 
   // Deduplicate categories across brands — merge items from same-named categories
@@ -622,6 +560,53 @@ export default function KioskScreen() {
     });
   }, []);
 
+  // Edit cart item — remove from cart, re-open detail with pre-populated state
+  const editCartItem = useCallback(async (ci: CartItem) => {
+    // Find the MenuItemData from loaded categories
+    const menuItem = allCategories.flatMap(c => c.items).find(i => i.id === ci.menu_item_id);
+    if (!menuItem) return;
+
+    // Remove from cart first
+    dispatch({ type: 'REMOVE_ITEM', cartId: ci.cartId });
+
+    // Pre-populate detail state
+    setSelectedItem(menuItem);
+    setItemQty(ci.quantity);
+    setItemNotes(ci.notes);
+    setSelectedModifiers({});
+    setModifierGroups([]);
+    setLoadingModifiers(true);
+    setView('detail');
+
+    try {
+      const res = await fetch(`${apiBase()}/modifiers/groups/item/${menuItem.id}`);
+      if (res.ok) {
+        const groups: ModifierGroupData[] = (await res.json()).map((g: ModifierGroupData) => ({
+          ...g,
+          modifiers: g.modifiers?.map(m => ({ ...m, price_adjustment: Number(m.price_adjustment) })),
+        }));
+        setModifierGroups(groups);
+
+        // Re-select the modifiers that were on the cart item
+        const cartModIds = new Set(ci.modifiers.map(m => m.id));
+        const restored: Record<number, number[]> = {};
+        for (const g of groups) {
+          const matched = g.modifiers?.filter(m => cartModIds.has(m.id)).map(m => m.id) || [];
+          if (matched.length > 0) {
+            restored[g.id] = matched;
+          } else if (g.required && g.selection_type === 'single' && g.modifiers?.[0]) {
+            restored[g.id] = [g.modifiers[0].id];
+          }
+        }
+        setSelectedModifiers(restored);
+      }
+    } catch {
+      // modifiers optional
+    } finally {
+      setLoadingModifiers(false);
+    }
+  }, [allCategories]);
+
   // Add to cart
   const addToCart = useCallback(() => {
     if (!selectedItem) return;
@@ -672,23 +657,15 @@ export default function KioskScreen() {
       saveActiveOrder(result.order_id);
       dispatch({ type: 'CLEAR' });
 
-      if (requirePayment && stripePromise) {
-        try {
-          const { clientSecret: secret } = await createCustomerPaymentIntent(result.order_id);
-          setClientSecret(secret);
-          setView('payment');
-        } catch {
-          setView('tracking');
-        }
-      } else {
-        setView('tracking');
-      }
+      // Kiosk orders always go straight to tracking — payment is handled at the register.
+      // (The requirePayment / Stripe Elements flow is only used by CustomerOrderScreen for QR orders.)
+      setView('tracking');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al hacer el pedido');
     } finally {
       setSubmitting(false);
     }
-  }, [cart, tableNumber, requirePayment]);
+  }, [cart, tableNumber]);
 
   // Format price (no decimals for MXN)
   const fmt = (n: number) => `$${n.toFixed(0)}`;
@@ -732,53 +709,6 @@ export default function KioskScreen() {
     </header>
   );
 
-  /* ==================== Payment Stage ==================== */
-  if (view === 'payment' && clientSecret && orderId && stripePromise) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center p-8">
-        <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-sm border border-neutral-200">
-          <h2 className="text-2xl font-bold text-neutral-900 mb-2 text-center">Pago</h2>
-          <p className="text-neutral-500 text-sm text-center mb-8">
-            Completa el pago para confirmar tu orden
-          </p>
-
-          {error && (
-            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-2xl text-red-600 text-sm">
-              {error}
-            </div>
-          )}
-
-          <Elements
-            stripe={stripePromise}
-            options={{
-              clientSecret,
-              appearance: {
-                theme: 'stripe',
-                variables: {
-                  colorPrimary: palette?.['600'] || branding?.primaryColor || '#0d9488',
-                  borderRadius: '12px',
-                },
-              },
-            }}
-          >
-            <KioskPaymentForm
-              orderId={orderId}
-              onSuccess={() => setView('tracking')}
-              onError={(msg) => setError(msg)}
-            />
-          </Elements>
-
-          <button
-            onClick={() => setView('tracking')}
-            className="w-full mt-4 text-neutral-400 hover:text-neutral-600 text-sm py-2 transition-colors"
-          >
-            Omitir — pagar en caja
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   /* ==================== Tracking Stage ==================== */
   if (view === 'tracking' && orderId) {
     return (
@@ -786,7 +716,6 @@ export default function KioskScreen() {
         orderId={orderId}
         onNewOrder={() => {
           setOrderId(null);
-          setClientSecret(null);
           setView('menu');
           setBrands([]);
           setLoading(true);
@@ -973,7 +902,7 @@ export default function KioskScreen() {
         <div className="flex-1 overflow-y-auto pb-32 px-6 py-6">
           <div className="flex items-center gap-3 mb-6">
             <button
-              onClick={() => setView('menu')}
+              onClick={() => { setShowConfirmation(false); setView('menu'); }}
               className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 hover:bg-neutral-200 transition-colors"
             >
               <ArrowLeft size={18} />
@@ -991,7 +920,10 @@ export default function KioskScreen() {
                 return (
                   <div key={ci.cartId} className="bg-white rounded-2xl p-5 border border-neutral-100">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
+                      <button
+                        onClick={() => editCartItem(ci)}
+                        className="flex-1 min-w-0 text-left"
+                      >
                         <h3 className="text-neutral-900 font-semibold">{ci.name}</h3>
                         {ci.modifiers.length > 0 && (
                           <p className="text-neutral-400 text-xs mt-0.5">
@@ -1001,7 +933,8 @@ export default function KioskScreen() {
                         {ci.notes && (
                           <p className="text-neutral-400 text-xs mt-0.5 italic">{ci.notes}</p>
                         )}
-                      </div>
+                        <p className="text-brand-600 text-xs mt-1 font-medium">Toca para editar</p>
+                      </button>
                       <button
                         onClick={() => dispatch({ type: 'REMOVE_ITEM', cartId: ci.cartId })}
                         className="text-neutral-300 hover:text-red-400 p-1 ml-2"
@@ -1048,19 +981,51 @@ export default function KioskScreen() {
               <p className="text-2xl font-bold text-neutral-900">{fmt(cartTotal)}</p>
             </div>
             <button
-              onClick={handlePlaceOrder}
+              onClick={() => setShowConfirmation(true)}
               disabled={submitting}
               className="bg-black hover:bg-neutral-800 disabled:bg-neutral-300 disabled:text-neutral-500 text-white font-bold px-8 py-4 rounded-full transition-colors flex items-center gap-2 active:scale-[0.97] text-lg"
             >
-              {submitting ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                'finalizar'
-              )}
+              finalizar
             </button>
+          </div>
+        )}
+
+        {/* Confirmation overlay */}
+        {showConfirmation && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-xl">
+              <h3 className="text-2xl font-bold text-neutral-900 text-center mb-2">
+                Confirmar tu pedido?
+              </h3>
+              <p className="text-neutral-500 text-center mb-6">
+                {cartItemCount} {cartItemCount === 1 ? 'articulo' : 'articulos'} — <span className="font-bold text-neutral-900">{fmt(cartTotal)}</span>
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  className="flex-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold py-4 rounded-full transition-colors active:scale-[0.97]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    handlePlaceOrder();
+                  }}
+                  disabled={submitting}
+                  className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:bg-neutral-300 text-white font-bold py-4 rounded-full transition-colors flex items-center justify-center gap-2 active:scale-[0.97]"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    'Confirmar'
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1126,14 +1091,14 @@ export default function KioskScreen() {
         </div>
       )}
 
-      {/* Product row — horizontal scroll, fits viewport */}
-      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-hide px-4 py-3">
-        <div className="flex gap-3 h-full">
+      {/* Product row — horizontal scroll */}
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden scrollbar-hide px-4 py-3 flex items-start">
+        <div className="flex gap-3">
           {visibleItems.map(item => (
             <button
               key={item.id}
               onClick={() => openItem(item)}
-              className="bg-white rounded-2xl overflow-hidden border border-neutral-100 text-left hover:shadow-md transition-all active:scale-[0.97] flex flex-col flex-shrink-0 h-full"
+              className="bg-white rounded-2xl overflow-hidden border border-neutral-100 shadow-lg text-left active:shadow-xl active:scale-[0.97] transition-all flex flex-col flex-shrink-0"
               style={{ width: '180px' }}
             >
               {item.imageUrl ? (
@@ -1148,8 +1113,11 @@ export default function KioskScreen() {
                   <span className="text-3xl text-neutral-300">{item.name.charAt(0)}</span>
                 </div>
               )}
-              <div className="p-2.5 flex-1 flex flex-col justify-between">
+              <div className="p-2.5">
                 <h3 className="text-sm font-bold text-neutral-900 leading-tight line-clamp-2">{item.name}</h3>
+                {item.description && (
+                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2 leading-snug">{item.description}</p>
+                )}
                 <p className="text-sm font-bold text-brand-600 mt-1">{fmt(item.price)}</p>
               </div>
             </button>
@@ -1201,6 +1169,8 @@ export default function KioskScreen() {
 /* ==================== Shared Styles ==================== */
 
 const kioskStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  .kiosk-root, .kiosk-root * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .modifier-columns {

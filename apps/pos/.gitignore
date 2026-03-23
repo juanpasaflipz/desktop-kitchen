@@ -24,3 +24,4 @@ tests/.test-state.json
 
 # Android native (large C++ deps, not needed for Railway deploy)
 native-android/
+android/
