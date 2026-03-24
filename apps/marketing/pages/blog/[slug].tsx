@@ -1,8 +1,6 @@
-import { useRef } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { GetStaticPaths, GetStaticProps } from "next";
-import { motion, useInView } from "framer-motion";
 import { BlogLayout } from "../../components/blog/BlogLayout";
 import { PostContent } from "../../components/blog/PostContent";
 import { TableOfContents } from "../../components/blog/TableOfContents";
@@ -10,41 +8,16 @@ import { AuthorCard } from "../../components/blog/AuthorCard";
 import { RelatedPosts } from "../../components/blog/RelatedPosts";
 import { ShareButtons } from "../../components/blog/ShareButtons";
 import { HeroImage } from "../../components/blog/HeroImage";
+import { FadeIn } from "../../components/FadeIn";
 import { categories, getCategoryColors } from "../../lib/blog/categories";
 import { getPostsForLocale } from "../../lib/blog/posts";
 import { postsEs } from "../../lib/blog/posts";
 import { formatDate, getHeadings, getRelatedPosts } from "../../lib/blog/helpers";
-import { BlogPost } from "../../lib/blog/types";
 
 import en from "../../messages/en.json";
 import es from "../../messages/es.json";
 
 const msgs: Record<string, typeof en> = { en, es };
-const ease = [0.25, 0.4, 0.25, 1];
-
-function FadeIn({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 interface PostPageProps {
   slug: string;

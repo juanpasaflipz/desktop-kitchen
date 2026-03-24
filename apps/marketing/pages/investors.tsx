@@ -1,33 +1,9 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
+import { FadeIn } from "../components/FadeIn";
 
 const ease = [0.25, 0.4, 0.25, 1];
-
-function FadeIn({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 function SectionLabel({ number, label }: { number: string; label: string }) {
   return (
@@ -80,10 +56,10 @@ const Investors: NextPage = () => {
           name="description"
           content="Desktop Kitchen is building the Square of Latin America — a free POS that captures real-time transaction data from every restaurant it touches, then monetizes through merchant cash advances. Raising $5–8M."
         />
-        <link
-          rel="canonical"
-          href="https://www.desktop.kitchen/investors"
-        />
+        <link rel="canonical" href="https://www.desktop.kitchen/investors" />
+        <link rel="alternate" hrefLang="en" href="https://www.desktop.kitchen/investors" />
+        <link rel="alternate" hrefLang="es" href="https://es.desktop.kitchen/investors" />
+        <link rel="alternate" hrefLang="x-default" href="https://www.desktop.kitchen/investors" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         <meta
           property="og:title"

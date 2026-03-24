@@ -7,15 +7,15 @@
   "langSwitch": "Español",
   "langSwitchDomain": "es.desktop.kitchen",
 
-  "heroHeadline1": "YOUR KITCHEN.",
-  "heroHeadline2": "YOUR RULES.",
+  "heroHeadline1": "EVERYTHING YOUR",
+  "heroHeadline2": "KITCHEN NEEDS.",
   "heroSub": "The all-in-one POS platform built for quick-service and fast-casual restaurants.",
   "heroCta": "Start Free Trial",
   "heroCtaSecondary": "See it in action",
 
   "featuresLabel": "Features",
   "featuresHeadline": "EVERYTHING YOUR KITCHEN NEEDS.",
-  "featuresSub": "Eight powerful modules. One platform. Zero friction.",
+  "featuresSub": "Six powerful modules. One platform. Zero friction.",
 
   "feature1Title": "Point of Sale",
   "feature1Desc": "Fast, intuitive ordering with modifiers, combos, split payments, and Stripe integration. Built for speed at the counter.",
@@ -29,10 +29,6 @@
   "feature5Desc": "Stamp cards, SMS campaigns, and customer profiles. Turn first-time visitors into regulars automatically.",
   "feature6Title": "AI Intelligence",
   "feature6Desc": "Smart upsell suggestions, dynamic pricing, combo recommendations, and shrinkage detection — powered by real-time data.",
-  "feature7Title": "AI Assistant",
-  "feature7Desc": "Your 24/7 restaurant copilot. Ask questions about your sales, get menu optimization advice, and receive actionable insights in plain language.",
-  "feature8Title": "Financing",
-  "feature8Desc": "Access financing for your business based on your real sales data. Grow faster with capital that understands your restaurant.",
 
   "howLabel": "How It Works",
   "howHeadline": "UP AND RUNNING IN MINUTES.",
@@ -45,8 +41,8 @@
   "howStep3Desc": "Take orders, track inventory, and grow your business from day one. Works on any device with a browser.",
 
   "pricingLabel": "Pricing",
-  "pricingHeadline": "SIMPLE, TRANSPARENT PRICING.",
-  "pricingSub": "No hidden fees. No per-transaction cuts. Cancel anytime.",
+  "pricingHeadline": "MOST POS SYSTEMS WEREN'T BUILT FOR THIS.",
+  "pricingSub": "Traditional POS software was designed for dine-in restaurants with waitstaff and table numbers. If 50%+ of your revenue comes from delivery platforms, you've been using the wrong tool.",
 
   "pricing_free_name": "Free for Life",
   "pricing_free_tagline": "Everything you need to get started",
@@ -98,42 +94,7 @@
   "pricing_pro_missing": [],
 
   "pricingComingSoon": "Coming soon — try the free demo",
-  "pricingMonthly": "Monthly",
-  "pricingAnnual": "Annual",
-  "pricingAnnualSave": "Save 25%",
-  "pricingAnnualBilled": "Billed as ${amount}/year",
-  "pricingAnnualFree": "3 months free",
-  "pricingFooter1": "All plans billed monthly or annually. No contracts. Cancel anytime.",
-  "pricingFooter2": "MXN prices are approximate based on current exchange rate. Payments processed in USD via Stripe.",
-
-  "comparisonLabel": "Why Operators Switch",
-  "comparisonHeadline": "MOST POS SYSTEMS WEREN'T BUILT FOR THIS.",
-  "comparisonSub": "Traditional POS software was designed for dine-in restaurants with waitstaff and table numbers. If 50%+ of your revenue comes from delivery platforms, you've been using the wrong tool.",
-  "comparisonTraditional": "Traditional POS",
-  "comparisonDesktopKitchen": "Desktop Kitchen",
-  "comparisonBadge": "Built for delivery",
-  "comparisonPains": [
-    "Tracks gross sales",
-    "One brand per system",
-    "Built for waitstaff and dine-in",
-    "Manual reconciliation with delivery platforms",
-    "Generic sales reports",
-    "No customer data from delivery platforms",
-    "Commission costs buried in deposits"
-  ],
-  "comparisonDesktop": [
-    "Tracks real profit after Rappi, Uber Eats & DiDi commissions",
-    "Unlimited virtual brands from a single kitchen",
-    "Built for delivery-first operators",
-    "Automatic order import & revenue reconciliation",
-    "Ghost kitchen P&L by brand, by platform, by hour",
-    "Customer recapture tools to own your audience",
-    "Commission impact visible on every order"
-  ],
-  "comparisonQuote": "I was paying for a POS that had no idea I existed on four delivery platforms. My accountant hated me. Now everything reconciles automatically and I finally know which brand is actually making money.",
-  "comparisonQuoteAuthor": "Ghost kitchen operator, Mexico City",
-  "comparisonCtaText": "Ready to see your real numbers?",
-  "comparisonCtaButton": "Get Early Access",
+  "pricingFooter1": "No hidden fees. No per-transaction cuts. Cancel anytime.",
 
   "ctaHeadline": "READY TO RUN YOUR KITCHEN YOUR WAY?",
   "ctaSub": "Join restaurants already using Desktop Kitchen to streamline operations and grow revenue.",

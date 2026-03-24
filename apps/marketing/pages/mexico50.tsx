@@ -1,35 +1,12 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useRef, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
+import { FadeIn } from "../components/FadeIn";
 
 const ease = [0.25, 0.4, 0.25, 1];
 
 const POS_URL = "https://pos.desktop.kitchen";
-
-function FadeIn({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, delay, ease }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 /* ── Form state ── */
 
@@ -118,7 +95,11 @@ const Mexico50: NextPage = () => {
           content="El POS hecho para restaurantes con delivery en México. Oferta de lanzamiento: 50% off el primer año."
         />
         <meta property="og:image" content="https://desktop.kitchen/og-mexico50.png" />
-        <meta property="og:url" content="https://desktop.kitchen/mexico50" />
+        <link rel="canonical" href="https://es.desktop.kitchen/mexico50" />
+        <link rel="alternate" hrefLang="en" href="https://www.desktop.kitchen/mexico50" />
+        <link rel="alternate" hrefLang="es" href="https://es.desktop.kitchen/mexico50" />
+        <link rel="alternate" hrefLang="x-default" href="https://www.desktop.kitchen/mexico50" />
+        <meta property="og:url" content="https://es.desktop.kitchen/mexico50" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <link rel="icon" href="/favicon.svg" />
