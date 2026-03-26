@@ -1,8 +1,9 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useRef, useState, useEffect } from "react";
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FadeIn } from "../components/FadeIn";
 
 import en from "../messages/en.json";
 import es from "../messages/es.json";
@@ -11,31 +12,15 @@ const messages: Record<string, typeof en> = { en, es };
 
 const ease = [0.25, 0.4, 0.25, 1];
 
-function FadeIn({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+/* ── Inline SVG Icons for Features ── */
+
+function IconFinancing() {
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease }}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+    </svg>
   );
 }
-
-/* ── Inline SVG Icons for Features ── */
 
 function IconPOS() {
   return (
@@ -85,23 +70,7 @@ function IconAI() {
   );
 }
 
-function IconAssistant() {
-  return (
-    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
-    </svg>
-  );
-}
-
-function IconFinancing() {
-  return (
-    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-    </svg>
-  );
-}
-
-const featureIcons = [IconPOS, IconKitchen, IconDelivery, IconInventory, IconLoyalty, IconAI, IconAssistant, IconFinancing];
+const featureIcons = [IconFinancing, IconPOS, IconKitchen, IconDelivery, IconInventory, IconLoyalty, IconAI];
 
 /* ── Demo Modal ── */
 
@@ -118,10 +87,10 @@ function DemoModal({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [restaurant, setRestaurant] = useState("");
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
@@ -142,6 +111,7 @@ function DemoModal({
           email: email.trim(),
           phone: phone.trim() || undefined,
           restaurant_name: restaurant.trim(),
+          financing_consent: consent,
         }),
       });
       const data = await res.json();
@@ -162,7 +132,6 @@ function DemoModal({
         return;
       }
 
-      // Redirect to demo POS
       window.location.href = `https://${data.subdomain}.desktop.kitchen/?demo_token=${data.demo_token}`;
     } catch {
       setError("generic");
@@ -183,10 +152,8 @@ function DemoModal({
           className="fixed inset-0 z-50 flex items-center justify-center px-4"
           onClick={onClose}
         >
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -195,7 +162,6 @@ function DemoModal({
             className="relative w-full max-w-md bg-neutral-900 border border-white/10 rounded-2xl p-8"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-white/30 hover:text-white/60 transition-colors"
@@ -246,6 +212,19 @@ function DemoModal({
                 className="w-full px-4 py-3 bg-white/[0.05] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-teal-500 text-sm"
               />
 
+              {/* Financing consent checkbox */}
+              <label className="flex items-start gap-2.5 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 accent-amber-500"
+                />
+                <span className="text-xs text-white/40 leading-relaxed">
+                  {tAny.demoModalConsent}
+                </span>
+              </label>
+
               {error === "existing" && (
                 <p className="text-sm text-amber-400">
                   {tAny.demoModalExisting}{" "}
@@ -286,30 +265,12 @@ function DemoModal({
   );
 }
 
-/* ── Pricing helpers ── */
-
-const MXN_RATE = 17.1;
-
-function formatMXN(usd: number) {
-  if (usd === 0) return "Gratis";
-  const mxn = Math.round(usd * MXN_RATE);
-  // Manual thousands formatting — avoids hydration mismatch between
-  // Node.js (build) and browser (client) locale implementations
-  const str = mxn.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return `${str} MXN`;
-}
-
-function formatUSD(usd: number) {
-  if (usd === 0) return "Free";
-  return `$${usd} USD`;
-}
-
-/* ── Pricing Card ── */
+/* ── Pricing Card (simplified) ── */
 
 function PricingCard({
   name,
   tagline,
-  monthlyUsd,
+  price,
   limits,
   features,
   missing,
@@ -317,14 +278,13 @@ function PricingCard({
   onCtaClick,
   badge,
   highlighted,
-  currency,
-  billing,
-  annualUsd,
+  financingNote,
+  priceSubtext,
   t,
 }: {
   name: string;
   tagline: string;
-  monthlyUsd: number;
+  price: string;
   limits: string;
   features: string[];
   missing: string[];
@@ -332,14 +292,10 @@ function PricingCard({
   onCtaClick: () => void;
   badge?: string;
   highlighted?: boolean;
-  currency: string;
-  billing: "monthly" | "annual";
-  annualUsd: number;
+  financingNote?: string;
+  priceSubtext?: string;
   t: any;
 }) {
-  const isAnnual = billing === "annual" && monthlyUsd > 0;
-  const effectiveMonthly = isAnnual ? Math.round((annualUsd / 12) * 100) / 100 : monthlyUsd;
-
   return (
     <div
       className={`relative rounded-2xl border p-6 flex flex-col ${
@@ -362,39 +318,12 @@ function PricingCard({
       </div>
 
       <div className="mb-2">
-        {isAnnual && (
-          <span className="text-lg text-white/30 line-through mr-2">
-            {currency === "USD" ? formatUSD(monthlyUsd) : formatMXN(monthlyUsd)}
-          </span>
-        )}
-        <span className="text-4xl font-extrabold text-white">
-          {currency === "USD" ? formatUSD(effectiveMonthly) : formatMXN(effectiveMonthly)}
-        </span>
-        {effectiveMonthly > 0 && (
-          <span className="text-white/30 text-sm ml-1">/mo</span>
+        <span className="text-4xl font-extrabold text-white">{price}</span>
+        {price !== "Free" && <span className="text-lg text-white/40 font-normal">/mo</span>}
+        {priceSubtext && (
+          <p className="text-sm text-white/30 mt-1">{priceSubtext}</p>
         )}
       </div>
-
-      {effectiveMonthly > 0 && (
-        <p className="text-white/30 text-xs mb-1">
-          {currency === "USD"
-            ? `≈ ${formatMXN(effectiveMonthly)}/mes`
-            : `≈ ${formatUSD(effectiveMonthly)}/mo`}
-        </p>
-      )}
-
-      {isAnnual && (
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-green-400">
-            {(t.pricingAnnualBilled || "").replace("${amount}", String(annualUsd))}
-          </span>
-          <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full font-semibold">
-            {t.pricingAnnualFree}
-          </span>
-        </div>
-      )}
-
-      {!isAnnual && effectiveMonthly > 0 && <div className="mb-4" />}
 
       <div className="mb-6">
         <span className="text-xs text-teal-400 bg-teal-400/10 border border-teal-400/20 px-3 py-1 rounded-full">
@@ -407,25 +336,23 @@ function PricingCard({
         className={`block w-full text-center font-semibold py-3 rounded-xl transition-colors cursor-pointer ${
           highlighted
             ? "bg-teal-600 hover:bg-teal-700 text-white"
-            : monthlyUsd === 0
-            ? "bg-white/5 hover:bg-white/10 text-white"
-            : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
+            : "bg-white/5 hover:bg-white/10 text-white"
         }`}
       >
         {cta}
       </button>
-      {monthlyUsd > 0 && (
+      {highlighted && (
         <p className="text-[11px] text-white/25 text-center mt-2 mb-4">{t.pricingComingSoon}</p>
       )}
-      {monthlyUsd === 0 && <div className="mb-6" />}
+      {!highlighted && <div className="mb-6" />}
 
       <ul className="space-y-3 flex-1">
-        {features.map((f) => (
+        {features.map((f, i) => (
           <li key={f} className="flex items-start gap-2 text-sm">
-            <svg className="w-4 h-4 text-teal-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <svg className={`w-4 h-4 mt-0.5 shrink-0 ${i === 0 && highlighted ? "text-amber-400" : "text-teal-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span className="text-white/60">{f}</span>
+            <span className={`${i === 0 && highlighted ? "text-amber-300/80 font-medium" : "text-white/60"}`}>{f}</span>
           </li>
         ))}
         {missing.map((f) => (
@@ -435,126 +362,19 @@ function PricingCard({
           </li>
         ))}
       </ul>
+
+      {financingNote && (
+        <div className="mt-6 pt-4 border-t border-amber-500/20">
+          <p className="text-xs text-amber-400/70 leading-relaxed">{financingNote}</p>
+        </div>
+      )}
     </div>
-  );
-}
-
-/* ── Pricing Section ── */
-
-const pricingPlans = [
-  { key: "free", usd: 0, annualUsd: 0, highlight: false },
-  { key: "pro", usd: 60, annualUsd: 540, highlight: true },
-] as const;
-
-function PricingSection({ t, onCtaClick }: { t: typeof en; onCtaClick: () => void }) {
-  const [currency, setCurrency] = useState("USD");
-  const [billing, setBilling] = useState<"monthly" | "annual">("annual");
-
-  const tAny = t as any;
-
-  return (
-    <section id="precios" className="py-24 md:py-40 px-6 bg-neutral-950" aria-labelledby="pricing-heading">
-      <div className="max-w-7xl mx-auto">
-        <FadeIn>
-          <div className="text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-teal-500/60 font-mono mb-6">
-              {t.pricingLabel}
-            </p>
-            <h2 id="pricing-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
-              {t.pricingHeadline}
-            </h2>
-            <p className="mt-6 text-lg text-white/40 max-w-xl mx-auto">
-              {t.pricingSub}
-            </p>
-
-            {/* Billing toggle */}
-            <div className="mt-8 inline-flex items-center bg-white/[0.03] border border-white/10 rounded-xl p-1">
-              <button
-                onClick={() => setBilling("monthly")}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  billing === "monthly"
-                    ? "bg-teal-600 text-white"
-                    : "text-white/40 hover:text-white"
-                }`}
-              >
-                {tAny.pricingMonthly}
-              </button>
-              <button
-                onClick={() => setBilling("annual")}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all relative ${
-                  billing === "annual"
-                    ? "bg-teal-600 text-white"
-                    : "text-white/40 hover:text-white"
-                }`}
-              >
-                {tAny.pricingAnnual}
-                <span className="ml-2 text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold">
-                  {tAny.pricingAnnualSave}
-                </span>
-              </button>
-            </div>
-
-            {/* Currency toggle */}
-            <div className="mt-3 inline-flex items-center bg-white/[0.03] border border-white/10 rounded-xl p-1">
-              <button
-                onClick={() => setCurrency("USD")}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  currency === "USD"
-                    ? "bg-teal-600 text-white"
-                    : "text-white/40 hover:text-white"
-                }`}
-              >
-                USD
-              </button>
-              <button
-                onClick={() => setCurrency("MXN")}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  currency === "MXN"
-                    ? "bg-teal-600 text-white"
-                    : "text-white/40 hover:text-white"
-                }`}
-              >
-                MXN
-              </button>
-            </div>
-          </div>
-        </FadeIn>
-
-        <div className="mt-16 md:mt-20 grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {pricingPlans.map((plan, i) => (
-            <FadeIn key={plan.key} delay={i * 0.1}>
-              <PricingCard
-                name={t[`pricing_${plan.key}_name` as keyof typeof t] as string}
-                tagline={t[`pricing_${plan.key}_tagline` as keyof typeof t] as string}
-                monthlyUsd={plan.usd}
-                annualUsd={plan.annualUsd}
-                limits={t[`pricing_${plan.key}_limits` as keyof typeof t] as string}
-                features={t[`pricing_${plan.key}_features` as keyof typeof t] as string[]}
-                missing={t[`pricing_${plan.key}_missing` as keyof typeof t] as string[]}
-                cta={t[`pricing_${plan.key}_cta` as keyof typeof t] as string}
-                onCtaClick={onCtaClick}
-                badge={t[`pricing_${plan.key}_badge` as keyof typeof t] as string | undefined}
-                highlighted={plan.highlight}
-                currency={currency}
-                billing={billing}
-                t={tAny}
-              />
-            </FadeIn>
-          ))}
-        </div>
-
-        <div className="mt-12 text-center text-white/30 text-sm space-y-1">
-          <p>{t.pricingFooter1}</p>
-          <p>{t.pricingFooter2}</p>
-        </div>
-      </div>
-    </section>
   );
 }
 
 /* ── FAQ Section ── */
 
-function FAQSection({ t, locale }: { t: any; locale: string }) {
+function FAQSection({ t }: { t: any }) {
   const faqItems = t.faqItems;
   if (!faqItems || !Array.isArray(faqItems)) return null;
 
@@ -622,8 +442,8 @@ function StructuredData({ locale, t }: { locale: string; t: typeof en }) {
     url: "https://www.desktop.kitchen",
     logo: `${url}/logo.svg`,
     description: isSpanish
-      ? "Software punto de venta para restaurantes y ghost kitchens en México"
-      : "POS software for restaurants and ghost kitchens",
+      ? "POS gratuito para restaurantes con acceso a capital de trabajo en México"
+      : "Free POS for restaurants with path to working capital",
     sameAs: [],
     contactPoint: {
       "@type": "ContactPoint",
@@ -650,18 +470,18 @@ function StructuredData({ locale, t }: { locale: string; t: typeof en }) {
       },
       {
         "@type": "Offer",
-        price: "60",
+        price: "20",
         priceCurrency: "USD",
         name: "Pro",
         priceValidUntil: "2027-12-31",
         description: isSpanish
-          ? "Todo ilimitado: marcas, sucursales, IA, delivery, lealtad y más"
-          : "Unlimited everything: brands, locations, AI, delivery, loyalty and more",
+          ? "Todo ilimitado + elegibilidad para capital de trabajo"
+          : "Unlimited everything + working capital eligibility",
       },
     ],
     featureList: isSpanish
-      ? "Punto de Venta, Pantalla de Cocina, Inteligencia de Delivery, Gestión de Inventario, Lealtad y CRM, Inteligencia Artificial, Asistente IA, Financiamiento"
-      : "Point of Sale, Kitchen Display, Delivery Intelligence, Inventory Management, Loyalty & CRM, AI Intelligence, AI Assistant, Financing",
+      ? "Capital de Trabajo, Punto de Venta, Pantalla de Cocina, Inteligencia de Delivery, Gestión de Inventario, Lealtad y CRM, Inteligencia Artificial"
+      : "Working Capital, Point of Sale, Kitchen Display, Delivery Intelligence, Inventory Management, Loyalty & CRM, AI Intelligence",
     screenshot: `${url}/logo.svg`,
     aggregateRating: undefined,
   };
@@ -680,7 +500,6 @@ function StructuredData({ locale, t }: { locale: string; t: typeof en }) {
     },
   };
 
-  // FAQ schema for Spanish (where we have FAQ items)
   const tAny = t as any;
   const faqSchema = tAny.faqItems
     ? {
@@ -712,7 +531,7 @@ function StructuredData({ locale, t }: { locale: string; t: typeof en }) {
             {
               "@type": "ListItem",
               position: 2,
-              name: "Sistema Punto de Venta para Restaurantes en México",
+              name: "Capital de Trabajo para Restaurantes en México",
               item: "https://es.desktop.kitchen",
             },
           ]
@@ -746,22 +565,27 @@ const Home: NextPage = () => {
 
   const [demoOpen, setDemoOpen] = useState(false);
   const openDemo = () => setDemoOpen(true);
+  const startPro = () => {
+    if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+      window.location.href = "https://pos.desktop.kitchen/#/register?plan=pro";
+    } else {
+      setDemoOpen(true);
+    }
+  };
 
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.65], [1, 0]);
+  const featureKeys = [1, 2, 3, 4, 5, 6, 7] as const;
 
-  const featureKeys = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+  const tAny = t as any;
 
   return (
     <>
       <Head>
         <title>{t.title}</title>
         <meta name="description" content={t.description} />
+        <link rel="canonical" href={isSpanish ? "https://es.desktop.kitchen" : "https://www.desktop.kitchen"} />
+        <link rel="alternate" hrefLang="en" href="https://www.desktop.kitchen" />
+        <link rel="alternate" hrefLang="es" href="https://es.desktop.kitchen" />
+        <link rel="alternate" hrefLang="x-default" href="https://www.desktop.kitchen" />
         <meta property="og:site_name" content="Desktop Kitchen" />
         <meta property="og:description" content={t.ogDescription} />
         <meta property="og:title" content={t.ogTitle} />
@@ -778,21 +602,19 @@ const Home: NextPage = () => {
         <meta name="twitter:description" content={t.twitterDescription} />
         <meta name="twitter:image" content={`https://${isSpanish ? "es" : "www"}.desktop.kitchen/api/og?locale=${locale}`} />
 
-        {/* Additional SEO meta tags for Spanish page targeting Mexico */}
         {isSpanish && (
           <>
-            <meta name="keywords" content="sistema punto de venta, POS restaurante, software punto de venta México, ghost kitchen, cocina fantasma, punto de venta para restaurantes, POS delivery, Rappi Uber Eats DiDi, software restaurante México, sistema POS, punto de venta gratis" />
+            <meta name="keywords" content="capital de trabajo restaurante, financiamiento restaurante México, POS gratis restaurante, sistema punto de venta, ghost kitchen, cocina fantasma, punto de venta para restaurantes, POS delivery, Rappi Uber Eats DiDi, software restaurante México, préstamo restaurante" />
           </>
         )}
       </Head>
 
-      {/* Structured Data */}
       <StructuredData locale={locale || "en"} t={t} />
 
       {/* Top accent bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-teal-600 z-50" aria-hidden="true" />
 
-      {/* Navigation with language switcher */}
+      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-4 flex items-center justify-between" aria-label={isSpanish ? "Navegación principal" : "Main navigation"}>
         <a href={isSpanish ? "https://es.desktop.kitchen" : "https://www.desktop.kitchen"} className="flex items-center gap-2" aria-label="Desktop Kitchen - Inicio">
           <img src="/logo.svg" alt="Desktop Kitchen" className="w-8 h-8" width={32} height={32} />
@@ -807,7 +629,7 @@ const Home: NextPage = () => {
             </div>
           )}
           <a
-            href={`https://${(t as any).langSwitchDomain}`}
+            href={`https://${tAny.langSwitchDomain}`}
             className="text-[11px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors duration-200 font-mono"
             hrefLang={otherLocale}
           >
@@ -819,74 +641,96 @@ const Home: NextPage = () => {
       {/* Grain overlay */}
       <div className="grain-overlay" aria-hidden="true" />
 
-      {/* ─── HERO ─── */}
-      <header
-        ref={heroRef}
-        className="relative flex min-h-screen items-center justify-center overflow-hidden hero-bg"
-      >
-        <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          className="relative z-10 w-full max-w-5xl mx-auto px-6 text-center"
-        >
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease }}
-            className="mb-10"
-          >
-            <img
-              src="/logo.svg"
-              alt="Desktop Kitchen — Sistema Punto de Venta para Restaurantes"
-              className="mx-auto w-16 h-16"
-              width={64}
-              height={64}
-            />
-          </motion.div>
+      {/* ─── HERO (split layout) ─── */}
+      <header className="relative min-h-screen flex items-center overflow-hidden hero-bg">
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-32 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left: text */}
+          <div>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.3, ease }}
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.85] tracking-tighter text-white"
+            >
+              {t.heroHeadline1}
+              <br />
+              <span className="text-teal-500">{t.heroHeadline2}</span>
+            </motion.h1>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6, ease }}
+              className="mt-8 text-base sm:text-lg md:text-xl text-white/40 font-medium max-w-lg"
+            >
+              {t.heroSub}
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.75, ease }}
+              className="mt-3 text-xs sm:text-sm text-amber-400/50 font-mono tracking-wide"
+            >
+              {tAny.heroSubPowered}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.9, ease }}
+              className="mt-10"
+            >
+              <button
+                onClick={openDemo}
+                className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
+              >
+                {t.heroCta}
+              </button>
+            </motion.div>
+          </div>
+
+          {/* Right: food image collage */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.5, ease }}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-[0.85] tracking-tighter text-white"
+            className="relative hidden lg:block"
           >
-            {t.heroHeadline1}
-            <br />
-            <span className="text-teal-500">{t.heroHeadline2}</span>
-          </motion.h1>
+            {/* Teal glow behind images */}
+            <div className="absolute inset-0 bg-teal-500/20 blur-3xl rounded-full scale-75" aria-hidden="true" />
 
-          {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8, ease }}
-            className="mt-8 text-base sm:text-lg md:text-xl text-white/40 font-medium max-w-2xl mx-auto"
-          >
-            {t.heroSub}
-          </motion.p>
-
-          {/* CTA buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.1, ease }}
-            className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <button
-              onClick={openDemo}
-              className="bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
-            >
-              {t.heroCta}
-            </button>
-            <a
-              href={isSpanish ? "#funciones" : "#features"}
-              className="text-white/40 font-medium text-sm uppercase tracking-wider hover:text-white/60 transition-colors duration-200"
-            >
-              {t.heroCtaSecondary} &darr;
-            </a>
+            <div className="relative grid grid-cols-2 gap-4">
+              {/* Large image top-left */}
+              <div className="col-span-2 rounded-2xl overflow-hidden bg-teal-900/30 border border-white/10 aspect-[16/9]">
+                <img
+                  src="/images/hero-1.jpg"
+                  alt="California burrito on cutting board"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
+              </div>
+              {/* Bottom-left */}
+              <div className="rounded-2xl overflow-hidden bg-teal-900/30 border border-white/10 aspect-square">
+                <img
+                  src="/images/hero-2.png"
+                  alt="Desktop Kitchen kiosk menu"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
+              </div>
+              {/* Bottom-right */}
+              <div className="rounded-2xl overflow-hidden bg-teal-900/30 border border-white/10 aspect-square">
+                <img
+                  src="/images/hero-3.png"
+                  alt="Desktop Kitchen item detail with modifiers"
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
+              </div>
+            </div>
           </motion.div>
-        </motion.div>
+        </div>
 
         {/* Scroll indicator */}
         <motion.div
@@ -901,7 +745,7 @@ const Home: NextPage = () => {
       </header>
 
       <main>
-        {/* ─── FEATURES ─── */}
+        {/* ─── FEATURES (7 cards: financing hero + 6 ops) ─── */}
         <section id={isSpanish ? "funciones" : "features"} className="py-24 md:py-40 px-6 bg-neutral-950" aria-labelledby="features-heading">
           <div className="max-w-5xl mx-auto">
             <FadeIn>
@@ -916,18 +760,32 @@ const Home: NextPage = () => {
               </p>
             </FadeIn>
 
-            <div className="mt-16 md:mt-20 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="mt-16 md:mt-20 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {featureKeys.map((n, i) => {
                 const Icon = featureIcons[i];
                 const title = t[`feature${n}Title` as keyof typeof t] as string;
                 const desc = t[`feature${n}Desc` as keyof typeof t] as string;
+                const isFinancing = n === 1;
                 return (
                   <FadeIn key={n} delay={i * 0.08}>
-                    <article className="group bg-white/[0.03] border border-white/5 rounded-lg p-6 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300">
-                      <div className="w-12 h-12 rounded-lg bg-teal-600/10 flex items-center justify-center text-teal-500 mb-5 group-hover:bg-teal-600/20 transition-colors duration-300" aria-hidden="true">
+                    <article
+                      className={`group rounded-lg p-6 transition-all duration-300 ${
+                        isFinancing
+                          ? "bg-amber-500/[0.06] border-2 border-amber-500/20 hover:bg-amber-500/[0.1] hover:border-amber-500/30 sm:col-span-2 lg:col-span-1 financing-glow"
+                          : "bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10"
+                      }`}
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center mb-5 transition-colors duration-300 ${
+                          isFinancing
+                            ? "bg-amber-500/15 text-amber-400 group-hover:bg-amber-500/25"
+                            : "bg-teal-600/10 text-teal-500 group-hover:bg-teal-600/20"
+                        }`}
+                        aria-hidden="true"
+                      >
                         <Icon />
                       </div>
-                      <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
+                      <h3 className={`text-lg font-bold mb-2 ${isFinancing ? "text-amber-300" : "text-white"}`}>{title}</h3>
                       <p className="text-sm text-white/40 leading-relaxed">{desc}</p>
                     </article>
                   </FadeIn>
@@ -937,19 +795,21 @@ const Home: NextPage = () => {
           </div>
         </section>
 
-        {/* ─── HOW IT WORKS ─── */}
+        {/* ─── HOW FINANCING WORKS ─── */}
         <section id={isSpanish ? "como-funciona" : "how-it-works"} className="py-24 md:py-40 px-6 bg-neutral-900" aria-labelledby="how-heading">
           <div className="max-w-5xl mx-auto">
             <FadeIn>
-              <p className="text-xs uppercase tracking-[0.3em] text-teal-500/60 font-mono mb-6">
-                {t.howLabel}
-              </p>
-              <h2 id="how-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
-                {t.howHeadline}
-              </h2>
-              <p className="mt-6 text-lg text-white/40 max-w-xl">
-                {t.howSub}
-              </p>
+              <div className="text-center">
+                <p className="text-xs uppercase tracking-[0.3em] text-teal-500/60 font-mono mb-6">
+                  {t.howLabel}
+                </p>
+                <h2 id="how-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
+                  {t.howHeadline}
+                </h2>
+                <p className="mt-6 text-lg text-white/40 max-w-xl mx-auto">
+                  {t.howSub}
+                </p>
+              </div>
             </FadeIn>
 
             <div className="mt-16 md:mt-20 grid md:grid-cols-3 gap-12">
@@ -958,8 +818,8 @@ const Home: NextPage = () => {
                 const desc = t[`howStep${n}Desc` as keyof typeof t] as string;
                 return (
                   <FadeIn key={n} delay={i * 0.12}>
-                    <article>
-                      <div className="w-12 h-12 rounded-full border-2 border-teal-500/30 flex items-center justify-center text-teal-500 font-bold text-lg mb-6" aria-hidden="true">
+                    <article className="text-center">
+                      <div className="w-16 h-16 rounded-full border-2 border-teal-500/30 flex items-center justify-center text-teal-500 font-black text-2xl mb-6 mx-auto" aria-hidden="true">
                         {n}
                       </div>
                       <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
@@ -972,93 +832,64 @@ const Home: NextPage = () => {
           </div>
         </section>
 
-        {/* ─── COMPARISON ─── */}
-        <section id={isSpanish ? "comparacion" : "comparison"} className="py-24 md:py-40 px-6 bg-neutral-950" aria-labelledby="comparison-heading">
-          <div className="max-w-5xl mx-auto">
+        {/* ─── PRICING ─── */}
+        <section id="precios" className="py-24 md:py-40 px-6 bg-neutral-950" aria-labelledby="pricing-heading">
+          <div className="max-w-7xl mx-auto">
             <FadeIn>
-              <div className="text-center mb-16">
+              <div className="text-center">
                 <p className="text-xs uppercase tracking-[0.3em] text-teal-500/60 font-mono mb-6">
-                  {t.comparisonLabel}
+                  {t.pricingLabel}
                 </p>
-                <h2 id="comparison-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
-                  {t.comparisonHeadline}
+                <h2 id="pricing-heading" className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-white leading-[0.85]">
+                  {t.pricingHeadline}
                 </h2>
                 <p className="mt-6 text-lg text-white/40 max-w-2xl mx-auto">
-                  {t.comparisonSub}
+                  {t.pricingSub}
                 </p>
               </div>
             </FadeIn>
 
-            <FadeIn delay={0.1}>
-              <div className="rounded-2xl overflow-hidden border border-white/10">
-                {/* Table Header */}
-                <div className="grid grid-cols-2 bg-white/[0.06]">
-                  <div className="px-6 sm:px-8 py-4 text-white/40 font-semibold text-sm uppercase tracking-wider border-r border-white/10">
-                    {t.comparisonTraditional}
-                  </div>
-                  <div className="px-6 sm:px-8 py-4 text-teal-500 font-semibold text-sm uppercase tracking-wider flex items-center gap-2">
-                    <span>{t.comparisonDesktopKitchen}</span>
-                    <span className="hidden sm:inline bg-teal-600/10 text-teal-500 text-xs px-2 py-0.5 rounded-full border border-teal-500/20">
-                      {t.comparisonBadge}
-                    </span>
-                  </div>
-                </div>
+            <div className="mt-16 md:mt-20 grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <FadeIn>
+                <PricingCard
+                  name={tAny.pricing_free_name}
+                  tagline={tAny.pricing_free_tagline}
+                  price="Free"
+                  limits={tAny.pricing_free_limits}
+                  features={tAny.pricing_free_features}
+                  missing={tAny.pricing_free_missing}
+                  cta={tAny.pricing_free_cta}
+                  onCtaClick={openDemo}
+                  t={tAny}
+                />
+              </FadeIn>
+              <FadeIn delay={0.1}>
+                <PricingCard
+                  name={tAny.pricing_pro_name}
+                  tagline={tAny.pricing_pro_tagline}
+                  price={tAny.pricingProPrice}
+                  priceSubtext={isSpanish ? "~$350 MXN/mes" : "~$350 MXN/mo"}
+                  limits={tAny.pricing_pro_limits}
+                  features={tAny.pricing_pro_features}
+                  missing={tAny.pricing_pro_missing}
+                  cta={tAny.pricing_pro_cta}
+                  onCtaClick={startPro}
+                  badge={tAny.pricing_pro_badge}
+                  highlighted
+                  financingNote={tAny.pricingFinancingNote}
+                  t={tAny}
+                />
+              </FadeIn>
+            </div>
 
-                {/* Rows */}
-                {t.comparisonPains.map((pain: string, i: number) => (
-                  <div
-                    key={i}
-                    className={`grid grid-cols-2 border-t border-white/10 ${
-                      i % 2 === 0 ? "bg-white/[0.03]" : "bg-white/[0.015]"
-                    }`}
-                  >
-                    <div className="px-6 sm:px-8 py-5 flex items-start gap-3 border-r border-white/10">
-                      <span className="text-red-400 text-lg flex-shrink-0 leading-6" aria-hidden="true">&#10007;</span>
-                      <span className="text-white/40 text-sm sm:text-base">{pain}</span>
-                    </div>
-                    <div className="px-6 sm:px-8 py-5 flex items-start gap-3">
-                      <span className="text-teal-500 text-lg flex-shrink-0 leading-6" aria-hidden="true">&#10003;</span>
-                      <span className="text-white text-sm sm:text-base">{(t.comparisonDesktop as string[])[i]}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </FadeIn>
-
-            {/* Pull Quote */}
-            <FadeIn delay={0.2}>
-              <blockquote className="mt-12 bg-white/[0.03] border border-white/10 rounded-2xl px-8 py-8 text-center">
-                <p className="text-lg sm:text-xl text-white font-medium max-w-3xl mx-auto leading-relaxed">
-                  &ldquo;{t.comparisonQuote}&rdquo;
-                </p>
-                <footer className="text-white/30 mt-4 text-sm">
-                  <cite className="not-italic">{t.comparisonQuoteAuthor}</cite>
-                </footer>
-              </blockquote>
-            </FadeIn>
-
-            {/* CTA */}
-            <FadeIn delay={0.3}>
-              <div className="mt-12 text-center">
-                <p className="text-white/40 mb-6">
-                  {t.comparisonCtaText}
-                </p>
-                <button
-                  onClick={openDemo}
-                  className="inline-block bg-teal-600 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-all duration-200 hover:bg-teal-700 active:scale-[0.98]"
-                >
-                  {t.comparisonCtaButton}
-                </button>
-              </div>
-            </FadeIn>
+            <div className="mt-12 text-center text-white/30 text-sm">
+              <p>{t.pricingFooter1}</p>
+            </div>
           </div>
         </section>
 
-        {/* ─── PRICING ─── */}
-        <PricingSection t={t} onCtaClick={openDemo} />
-
-        {/* ─── FAQ (Spanish only for now) ─── */}
-        <FAQSection t={t} locale={locale || "en"} />
+        {/* ─── FAQ ─── */}
+        <FAQSection t={t} />
 
         {/* ─── FINAL CTA ─── */}
         <section className="py-24 md:py-32 px-6 bg-teal-600" aria-labelledby="cta-heading">
@@ -1094,9 +925,8 @@ const Home: NextPage = () => {
               {t.footerBrand}
             </p>
           </div>
-          {/* Footer tagline for SEO keyword reinforcement */}
-          {(t as any).footerTagline && (
-            <p className="text-xs text-white/20 mb-4">{(t as any).footerTagline}</p>
+          {tAny.footerTagline && (
+            <p className="text-xs text-white/20 mb-4">{tAny.footerTagline}</p>
           )}
           <nav className="flex items-center justify-center gap-6 text-sm text-white/40" aria-label={isSpanish ? "Enlaces del pie de página" : "Footer links"}>
             <a
@@ -1110,7 +940,7 @@ const Home: NextPage = () => {
               href="/blog"
               className="hover:text-teal-500 transition-colors duration-200"
             >
-              {(t as any).footerBlog || "Blog"}
+              {tAny.footerBlog || "Blog"}
             </a>
             <span className="text-white/10" aria-hidden="true">|</span>
             <button
@@ -1119,6 +949,13 @@ const Home: NextPage = () => {
             >
               {t.footerDemo}
             </button>
+            <span className="text-white/10" aria-hidden="true">|</span>
+            <a
+              href="/data-policy"
+              className="hover:text-teal-500 transition-colors duration-200"
+            >
+              {tAny.footerDataPolicy || "Data Policy"}
+            </a>
           </nav>
           <p className="mt-6 text-xs text-white/15" suppressHydrationWarning>
             &copy; {new Date().getFullYear()} Desktop Kitchen. {t.footerRights}

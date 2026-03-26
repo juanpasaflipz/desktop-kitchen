@@ -1,52 +1,51 @@
 {
-  "title": "Desktop Kitchen — Restaurant POS for QSR & Fast-Casual",
-  "description": "Desktop Kitchen is a modern point-of-sale system built for quick-service and fast-casual restaurants. POS, kitchen display, delivery intelligence, inventory, loyalty, and AI — all in one platform.",
-  "ogDescription": "Modern POS for QSR & fast-casual restaurants. POS, kitchen display, delivery, inventory, loyalty, and AI intelligence.",
-  "ogTitle": "Desktop Kitchen — Your Kitchen. Your Rules.",
-  "twitterDescription": "Modern POS for QSR & fast-casual restaurants. Start your free trial today.",
+  "title": "Desktop Kitchen — Restaurant POS + Working Capital for QSR & Fast-Casual",
+  "description": "Desktop Kitchen is a free restaurant POS that builds toward working capital. Run your operations, build your sales history, and unlock financing — no banks, no collateral.",
+  "ogDescription": "Free restaurant POS that leads to working capital. Build your sales history and unlock financing for your business.",
+  "ogTitle": "Desktop Kitchen — Grow Your Restaurant with Working Capital",
+  "twitterDescription": "Free POS for restaurants. Build sales history, unlock working capital. No banks, no collateral.",
   "langSwitch": "Español",
   "langSwitchDomain": "es.desktop.kitchen",
 
-  "heroHeadline1": "YOUR KITCHEN.",
-  "heroHeadline2": "YOUR RULES.",
-  "heroSub": "The all-in-one POS platform built for quick-service and fast-casual restaurants.",
+  "heroHeadline1": "GROW YOUR RESTAURANT WITH",
+  "heroHeadline2": "WORKING CAPITAL.",
+  "heroSub": "Start with a free POS. Build your sales history. Get access to financing — no banks, no collateral, based on your daily card transactions.",
+  "heroSubPowered": "Powered by your daily card transactions through our POS",
   "heroCta": "Start Free Trial",
   "heroCtaSecondary": "See it in action",
 
-  "featuresLabel": "Features",
-  "featuresHeadline": "EVERYTHING YOUR KITCHEN NEEDS.",
-  "featuresSub": "Eight powerful modules. One platform. Zero friction.",
+  "featuresLabel": "The Platform",
+  "featuresHeadline": "THE POS THAT FUNDS YOUR GROWTH.",
+  "featuresSub": "Seven powerful modules. One platform. From daily operations to working capital.",
 
-  "feature1Title": "Point of Sale",
-  "feature1Desc": "Fast, intuitive ordering with modifiers, combos, split payments, and Stripe integration. Built for speed at the counter.",
-  "feature2Title": "Kitchen Display",
-  "feature2Desc": "Real-time order flow from counter to kitchen. Track prep times, manage stations, and never lose a ticket.",
-  "feature3Title": "Delivery Intelligence",
-  "feature3Desc": "Manage Uber Eats, Rappi, and DiDi from one screen. Per-platform markup rules, virtual brands, and P&L analytics.",
-  "feature4Title": "Inventory Management",
-  "feature4Desc": "Track stock levels, set low-stock alerts, manage vendors and purchase orders. Know exactly what you have.",
-  "feature5Title": "Loyalty & CRM",
-  "feature5Desc": "Stamp cards, SMS campaigns, and customer profiles. Turn first-time visitors into regulars automatically.",
-  "feature6Title": "AI Intelligence",
-  "feature6Desc": "Smart upsell suggestions, dynamic pricing, combo recommendations, and shrinkage detection — powered by real-time data.",
-  "feature7Title": "AI Assistant",
-  "feature7Desc": "Your 24/7 restaurant copilot. Ask questions about your sales, get menu optimization advice, and receive actionable insights in plain language.",
-  "feature8Title": "Financing",
-  "feature8Desc": "Access financing for your business based on your real sales data. Grow faster with capital that understands your restaurant.",
+  "feature1Title": "Working Capital Access",
+  "feature1Desc": "Build your sales history on our POS, then get pre-approved for working capital. No banks, no paperwork — just your transaction data working for you.",
+  "feature2Title": "Point of Sale",
+  "feature2Desc": "Fast, intuitive ordering with modifiers, combos, split payments, and Stripe integration. Built for speed at the counter.",
+  "feature3Title": "Kitchen Display",
+  "feature3Desc": "Real-time order flow from counter to kitchen. Track prep times, manage stations, and never lose a ticket.",
+  "feature4Title": "Delivery Intelligence",
+  "feature4Desc": "Manage Uber Eats, Rappi, and DiDi from one screen. Per-platform markup rules, virtual brands, and P&L analytics.",
+  "feature5Title": "Inventory Management",
+  "feature5Desc": "Track stock levels, set low-stock alerts, manage vendors and purchase orders. Know exactly what you have.",
+  "feature6Title": "Loyalty & CRM",
+  "feature6Desc": "Stamp cards, SMS campaigns, and customer profiles. Turn first-time visitors into regulars automatically.",
+  "feature7Title": "AI Intelligence",
+  "feature7Desc": "Smart upsell suggestions, dynamic pricing, combo recommendations, and shrinkage detection — powered by real-time data.",
 
-  "howLabel": "How It Works",
-  "howHeadline": "UP AND RUNNING IN MINUTES.",
-  "howSub": "Three steps. No hardware. No contracts.",
-  "howStep1Title": "Sign Up",
-  "howStep1Desc": "Create your account and get instant access. No credit card required for your 14-day trial.",
-  "howStep2Title": "Customize",
-  "howStep2Desc": "Add your menu, upload your logo, set your brand colors. Your POS looks like your restaurant.",
-  "howStep3Title": "Start Selling",
-  "howStep3Desc": "Take orders, track inventory, and grow your business from day one. Works on any device with a browser.",
+  "howLabel": "How Financing Works",
+  "howHeadline": "FROM POS TO WORKING CAPITAL.",
+  "howSub": "Three steps to funding your growth. No banks. No collateral.",
+  "howStep1Title": "Sign Up & Run Your POS",
+  "howStep1Desc": "Create your free account and start processing orders. Accept card payments through our integrated payment system.",
+  "howStep2Title": "Build Your Sales History",
+  "howStep2Desc": "Run your business on Pro for 4-6 months with card payments. Your daily transaction data builds your financing profile automatically.",
+  "howStep3Title": "Get Pre-Approved",
+  "howStep3Desc": "Once eligible, get pre-approved for working capital based on your actual sales volume. No paperwork, no bank visits.",
 
   "pricingLabel": "Pricing",
-  "pricingHeadline": "SIMPLE, TRANSPARENT PRICING.",
-  "pricingSub": "No hidden fees. No per-transaction cuts. Cancel anytime.",
+  "pricingHeadline": "START FREE. GROW INTO FINANCING.",
+  "pricingSub": "Begin with a free POS. Upgrade to Pro to unlock unlimited features and the path to working capital for your business.",
 
   "pricing_free_name": "Free for Life",
   "pricing_free_tagline": "Everything you need to get started",
@@ -61,8 +60,8 @@
   ],
   "pricing_free_missing": [
     "Unlimited transactions",
+    "Working capital eligibility",
     "AI Assistant — your 24/7 restaurant copilot",
-    "Access to financing for your business",
     "Delivery platform integration",
     "AI-powered upselling & dynamic pricing",
     "SMS customer recapture",
@@ -71,17 +70,17 @@
   ],
 
   "pricing_pro_name": "Pro",
-  "pricing_pro_tagline": "Unlimited everything for operators ready to scale",
+  "pricing_pro_tagline": "Unlimited everything + path to working capital",
   "pricing_pro_badge": "Everything Included",
   "pricing_pro_limits": "Unlimited transactions · Unlimited brands",
   "pricing_pro_cta": "Start Pro",
   "pricing_pro_features": [
+    "Working capital eligibility after 4-6 months",
     "Unlimited virtual brands",
     "Unlimited locations",
     "Full POS with unlimited transactions",
     "AI Assistant — your 24/7 restaurant copilot",
     "AI-powered upselling & dynamic pricing",
-    "Access to financing for your business",
     "Rappi, Uber Eats & DiDi Food integration",
     "Commission tracking & delivery P&L",
     "SMS customer recapture campaigns",
@@ -96,71 +95,50 @@
     "Priority phone & WhatsApp support"
   ],
   "pricing_pro_missing": [],
+  "pricingFinancingNote": "Pro members with 4-6 months of card payment history may qualify for working capital.",
 
+  "pricingProPrice": "$20 USD",
   "pricingComingSoon": "Coming soon — try the free demo",
-  "pricingMonthly": "Monthly",
-  "pricingAnnual": "Annual",
-  "pricingAnnualSave": "Save 25%",
-  "pricingAnnualBilled": "Billed as ${amount}/year",
-  "pricingAnnualFree": "3 months free",
-  "pricingFooter1": "All plans billed monthly or annually. No contracts. Cancel anytime.",
-  "pricingFooter2": "MXN prices are approximate based on current exchange rate. Payments processed in USD via Stripe.",
+  "pricingFooter1": "No hidden fees. No per-transaction cuts. Cancel anytime.",
 
-  "comparisonLabel": "Why Operators Switch",
-  "comparisonHeadline": "MOST POS SYSTEMS WEREN'T BUILT FOR THIS.",
-  "comparisonSub": "Traditional POS software was designed for dine-in restaurants with waitstaff and table numbers. If 50%+ of your revenue comes from delivery platforms, you've been using the wrong tool.",
-  "comparisonTraditional": "Traditional POS",
-  "comparisonDesktopKitchen": "Desktop Kitchen",
-  "comparisonBadge": "Built for delivery",
-  "comparisonPains": [
-    "Tracks gross sales",
-    "One brand per system",
-    "Built for waitstaff and dine-in",
-    "Manual reconciliation with delivery platforms",
-    "Generic sales reports",
-    "No customer data from delivery platforms",
-    "Commission costs buried in deposits"
-  ],
-  "comparisonDesktop": [
-    "Tracks real profit after Rappi, Uber Eats & DiDi commissions",
-    "Unlimited virtual brands from a single kitchen",
-    "Built for delivery-first operators",
-    "Automatic order import & revenue reconciliation",
-    "Ghost kitchen P&L by brand, by platform, by hour",
-    "Customer recapture tools to own your audience",
-    "Commission impact visible on every order"
-  ],
-  "comparisonQuote": "I was paying for a POS that had no idea I existed on four delivery platforms. My accountant hated me. Now everything reconciles automatically and I finally know which brand is actually making money.",
-  "comparisonQuoteAuthor": "Ghost kitchen operator, Mexico City",
-  "comparisonCtaText": "Ready to see your real numbers?",
-  "comparisonCtaButton": "Get Early Access",
-
-  "ctaHeadline": "READY TO RUN YOUR KITCHEN YOUR WAY?",
-  "ctaSub": "Join restaurants already using Desktop Kitchen to streamline operations and grow revenue.",
+  "ctaHeadline": "READY TO GROW YOUR RESTAURANT?",
+  "ctaSub": "Start with a free POS today. Build your sales history and unlock access to working capital for your business.",
   "ctaButton": "Start Your Free Trial",
 
   "faqLabel": "FAQ",
   "faqHeadline": "GOT QUESTIONS?",
   "faqItems": [
     {
+      "q": "How does the financing / working capital work?",
+      "a": "Sign up for Desktop Kitchen, run your POS on the Pro plan for 4-6 months, and process card payments. Your daily transaction history builds a financing profile. Once eligible, you can get pre-approved for working capital based on your actual sales volume — no banks, no collateral, no lengthy applications."
+    },
+    {
+      "q": "Do I need to accept card payments to qualify?",
+      "a": "Yes. Card transaction history is the foundation of how we evaluate financing eligibility. The more consistent your card payment volume, the stronger your profile. Cash-only businesses aren't eligible for working capital."
+    },
+    {
+      "q": "How much working capital can I get?",
+      "a": "The amount is based on your monthly card sales volume. The more consistent and higher your transaction volume, the more you may qualify for. Specific amounts are determined during the pre-approval process."
+    },
+    {
+      "q": "Are there interest rates or fees on the financing?",
+      "a": "Working capital terms are transparent and disclosed upfront during the pre-approval process. There are no hidden fees. Full terms including any costs are presented before you accept any offer."
+    },
+    {
       "q": "What is a restaurant POS system?",
-      "a": "A restaurant POS (point of sale) system is software that manages orders, payments, inventory, and sales reports from a single platform. Desktop Kitchen is a modern POS designed specifically for quick-service restaurants, ghost kitchens, and delivery-first operators."
+      "a": "A restaurant POS (point of sale) system is software that manages orders, payments, inventory, and sales reports from a single platform. Desktop Kitchen is a modern POS designed specifically for quick-service restaurants, ghost kitchens, and delivery-first operators — with a built-in path to working capital."
     },
     {
       "q": "Does Desktop Kitchen integrate with Uber Eats, Rappi, and DiDi Food?",
       "a": "Yes. Desktop Kitchen pulls orders from Uber Eats, Rappi, and DiDi Food into a single screen. You can see per-platform commissions, set markup rules, and get real-time delivery P&L reports."
     },
     {
-      "q": "Do I need special hardware to use Desktop Kitchen?",
+      "q": "Do I need special hardware?",
       "a": "No. Desktop Kitchen runs in any web browser — tablet, laptop, PC, or phone. No special hardware or dedicated POS terminals required."
     },
     {
       "q": "How much does Desktop Kitchen cost?",
-      "a": "Desktop Kitchen has a Free for Life plan with up to 50 daily transactions. The Pro plan starts at $45 USD/month (billed annually) and unlocks unlimited everything — transactions, brands, locations, AI, delivery integration, and more."
-    },
-    {
-      "q": "What is a ghost kitchen?",
-      "a": "A ghost kitchen (also called a dark kitchen or cloud kitchen) is a restaurant that operates exclusively for delivery, with no dine-in space. Desktop Kitchen is ideal for ghost kitchens because it lets you manage multiple virtual brands, track per-platform commissions, and analyze profitability by brand."
+      "a": "Desktop Kitchen has a Free for Life plan with up to 50 daily transactions. The Pro plan is $20 USD/month (~$350 MXN) and unlocks unlimited everything — plus eligibility for working capital after 4-6 months of card payment history."
     },
     {
       "q": "Can I run multiple virtual brands from one kitchen?",
@@ -174,6 +152,8 @@
   "demoModalEmail": "Email",
   "demoModalPhone": "Phone (optional)",
   "demoModalRestaurant": "Restaurant Name",
+  "demoModalConsent": "I consent to Desktop Kitchen analyzing my transaction data to evaluate financing eligibility",
+  "demoModalConsentLink": "Learn about our data practices",
   "demoModalSubmit": "Launch My Demo",
   "demoModalLoading": "Setting up your demo...",
   "demoModalExisting": "An account with this email already exists.",
@@ -185,6 +165,7 @@
   "footerDocs": "Documentation",
   "footerDemo": "Live Demo",
   "footerBlog": "Blog",
+  "footerDataPolicy": "Data Policy",
   "footerRights": "All rights reserved.",
 
   "blogTitle": "Blog — Desktop Kitchen",

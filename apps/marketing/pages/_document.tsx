@@ -9,19 +9,13 @@ class MyDocument extends Document {
   render() {
     const locale = (this.props as any).locale || 'en';
     const isSpanish = locale === 'es';
-    const canonicalDomain = isSpanish ? 'es.desktop.kitchen' : 'www.desktop.kitchen';
-    const canonicalUrl = `https://${canonicalDomain}`;
 
     return (
       <Html lang={locale} dir="ltr">
         <Head>
           <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-          <link rel="canonical" href={canonicalUrl} />
 
-          {/* hreflang for bilingual SEO */}
-          <link rel="alternate" hrefLang="es" href="https://es.desktop.kitchen" />
-          <link rel="alternate" hrefLang="en" href="https://www.desktop.kitchen" />
-          <link rel="alternate" hrefLang="x-default" href="https://www.desktop.kitchen" />
+          {/* canonical + hreflang are set per-page via next/head to avoid duplicates */}
 
           {/* Preconnect for performance */}
           <link rel="preconnect" href="https://fonts.googleapis.com" />

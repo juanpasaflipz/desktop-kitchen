@@ -581,6 +581,21 @@ export default function CustomerOrderScreen() {
   // Format price
   const fmt = (n: number) => `$${n.toFixed(2)}`;
 
+  // Memoize Stripe Elements options to prevent re-initialization on every render
+  const stripeOptions = React.useMemo(() => clientSecret ? {
+    clientSecret,
+    appearance: {
+      theme: 'night' as const,
+      variables: {
+        colorPrimary: '#0d9488',
+        colorBackground: '#171717',
+        colorText: '#ffffff',
+        colorTextSecondary: '#a3a3a3',
+        borderRadius: '12px',
+      },
+    },
+  } : undefined, [clientSecret]);
+
   /* ==================== Payment Stage ==================== */
   if (stage === 'payment' && clientSecret && orderId && stripePromise) {
     return (
@@ -599,19 +614,7 @@ export default function CustomerOrderScreen() {
 
           <Elements
             stripe={stripePromise}
-            options={{
-              clientSecret,
-              appearance: {
-                theme: 'night',
-                variables: {
-                  colorPrimary: '#0d9488',
-                  colorBackground: '#171717',
-                  colorText: '#ffffff',
-                  colorTextSecondary: '#a3a3a3',
-                  borderRadius: '12px',
-                },
-              },
-            }}
+            options={stripeOptions}
           >
             <PaymentForm
               orderId={orderId}

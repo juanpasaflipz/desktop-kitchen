@@ -43,6 +43,7 @@ export async function createPaymentIntent(amount, metadata = {}) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to centavos
       currency: 'mxn',
+      automatic_payment_methods: { enabled: true },
       metadata,
     });
     return paymentIntent;

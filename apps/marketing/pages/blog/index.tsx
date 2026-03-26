@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
-import { motion, useInView } from "framer-motion";
 import { BlogLayout } from "../../components/blog/BlogLayout";
 import { FeaturedPost } from "../../components/blog/FeaturedPost";
 import { BlogCard } from "../../components/blog/BlogCard";
 import { CategoryFilter } from "../../components/blog/CategoryFilter";
+import { FadeIn } from "../../components/FadeIn";
 import { getPostsForLocale, featuredSlug } from "../../lib/blog/posts";
 import { getPostsByCategory } from "../../lib/blog/helpers";
 
@@ -12,31 +12,6 @@ import en from "../../messages/en.json";
 import es from "../../messages/es.json";
 
 const msgs: Record<string, typeof en> = { en, es };
-const ease = [0.25, 0.4, 0.25, 1];
-
-function FadeIn({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay, ease }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 export default function BlogIndex() {
   const { locale } = useRouter();

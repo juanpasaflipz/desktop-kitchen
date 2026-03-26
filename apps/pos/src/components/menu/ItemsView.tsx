@@ -139,20 +139,19 @@ export default function ItemsView({
                     <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                 )}
-                <div className="mb-3">
-                  <h4 className="font-bold text-white text-lg mb-1">
+                <div>
+                  <h4 className="font-bold text-white text-lg">
                     {item.name}
                   </h4>
                   <p className="text-2xl font-bold text-brand-500">
                     {formatPrice(item.price)}
                   </p>
+                  {item.description && (
+                    <p className="text-sm text-neutral-400 mt-1">
+                      {item.description}
+                    </p>
+                  )}
                 </div>
-
-                {item.description && (
-                  <p className="text-sm text-neutral-400 mb-4">
-                    {item.description}
-                  </p>
-                )}
 
                 <div className="flex gap-2 pt-4 border-t border-neutral-700">
                   <button

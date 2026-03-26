@@ -66,7 +66,7 @@ export default function MenuGrid({
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 items-start">
         {filteredItems.map((item) => {
           const isPush = pushItemIds.has(item.id);
           const isAvoid = avoidItemIds.has(item.id);
@@ -83,7 +83,7 @@ export default function MenuGrid({
                 }
               }}
               disabled={isSoldOut}
-              className={`rounded-xl hover:shadow-lg active:scale-[0.97] transition-all touch-manipulation flex flex-col h-52 lg:h-60 overflow-hidden relative ${
+              className={`rounded-xl hover:shadow-lg active:scale-[0.97] transition-all touch-manipulation flex flex-col overflow-hidden relative ${
                 isSoldOut
                   ? 'bg-neutral-900/40 border border-neutral-700 grayscale cursor-not-allowed'
                   : isLowStock
@@ -110,15 +110,18 @@ export default function MenuGrid({
               )}
 
               {/* Content */}
-              <div className="px-3.5 py-3.5 flex flex-col flex-1">
-                <div className="flex items-start justify-between flex-1">
+              <div className="px-3.5 py-3.5">
+                <div className="flex items-start justify-between">
                   <p className="font-semibold text-white text-sm lg:text-base leading-snug line-clamp-2 flex-1 text-left">{brandItemMap?.get(item.id)?.custom_name || item.name}</p>
                   <div className="flex items-center gap-1.5 ml-2 flex-shrink-0 mt-0.5">
                     {hasModifiers && <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-500" />}
                     {isPush && <span className="w-2.5 h-2.5 bg-green-500 rounded-full" />}
                   </div>
                 </div>
-                <p className={`font-bold text-lg mt-auto ${
+                {item.description && (
+                  <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2 leading-snug text-left">{item.description}</p>
+                )}
+                <p className={`font-bold text-lg mt-1 ${
                   isSoldOut ? 'text-neutral-600' : isAvoid ? 'text-neutral-500' : 'text-brand-500'
                 }`}>
                   {formatPrice(brandItemMap?.get(item.id)?.custom_price ?? item.price)}
