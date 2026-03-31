@@ -118,6 +118,21 @@
     "banner": "Estás explorando un demo — ¿listo para usar Desktop Kitchen en tu restaurante?",
     "dismiss": "Cerrar"
   },
+  "demoGuide": {
+    "title": "Bienvenido a tu restaurante demo",
+    "subtitle": "Cargamos 30 días de datos realistas. Explora lo que Desktop Kitchen puede hacer:",
+    "reports": "Reportes y Analítica",
+    "reportsDesc": "30 días de tendencias de ventas, horas pico e ingresos",
+    "ai": "Inteligencia Artificial",
+    "aiDesc": "Sugerencias de venta, alertas de inventario y precios dinámicos",
+    "delivery": "Analítica de Delivery",
+    "deliveryDesc": "Uber Eats, Rappi, Didi Food — P&L, márgenes y recaptura",
+    "inventory": "Gestión de Inventario",
+    "inventoryDesc": "Stock, merma, órdenes de compra y recetas",
+    "loyalty": "Programa de Lealtad",
+    "loyaltyDesc": "Tarjetas de sellos, SMS, referidos y métricas de clientes",
+    "startOrders": "Empezar a tomar pedidos"
+  },
   "freePlan": {
     "banner": "Estás en el plan Gratis — Actualiza a Pro para acceso ilimitado",
     "upgrade": "Actualizar"

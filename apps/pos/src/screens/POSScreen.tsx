@@ -49,6 +49,7 @@ import BrandLogo from '../components/BrandLogo';
 import { usePlan } from '../context/PlanContext';
 import TrialBanner from '../components/TrialBanner';
 import DemoBanner from '../components/DemoBanner';
+import DemoWelcomeGuide from '../components/DemoWelcomeGuide';
 import FinancingBanner from '../components/financing/FinancingBanner';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { useDeviceType } from '../hooks/useDeviceType';
@@ -802,6 +803,7 @@ const POSScreen: React.FC = () => {
         <DeliveryAlertBanner alerts={deliveryAlerts} onDismiss={dismissDeliveryAlert} />
         <TrialBanner />
         <DemoBanner />
+        <DemoWelcomeGuide />
         <FinancingBanner />
 
         {currentEmployee && ['admin', 'manager'].includes(currentEmployee.role) && (

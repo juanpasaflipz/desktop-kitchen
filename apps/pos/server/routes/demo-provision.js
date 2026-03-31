@@ -7,6 +7,7 @@ import { adminSql } from '../db/index.js';
 import { createTenant, getTenantByEmail } from '../tenants.js';
 import { sendPinEmail } from '../helpers/email.js';
 import { generateDemoData } from '../lib/demoDataGenerator.js';
+import { seedDemoMenu } from '../lib/demoMenuSeed.js';
 import { BCRYPT_ROUNDS, JWT_SECRET, JWT_EMPLOYEE_EXPIRY, JWT_OWNER_EXPIRY } from '../lib/constants.js';
 
 const router = Router();
@@ -97,11 +98,11 @@ router.post('/provision', demoLimiter, async (req, res) => {
       RETURNING id
     `;
 
-    // Generate demo_token (UUID, 15-min TTL)
+    // Generate demo_token (UUID, 24-hour TTL)
     const [tokenRow] = await adminSql`
       INSERT INTO demo_tokens (tenant_id, employee_id, expires_at)
-      VALUES (${slug}, ${employee.id}, NOW() + INTERVAL '15 minutes')
-      RETURNING token
+      VALUES (${slug}, ${employee.id}, NOW() + INTERVAL '24 hours')
+      RETURNING token, expires_at
     `;
 
     // Upsert lead (source='demo_landing')
@@ -125,25 +126,11 @@ router.post('/provision', demoLimiter, async (req, res) => {
     // Fire-and-forget: send PIN email
     sendPinEmail(cleanEmail, pin, restaurant_name, slug).catch(() => {});
 
-    // Fire-and-forget: generate demo data
+    // Fire-and-forget: seed rich menu + generate demo data
     (async () => {
       try {
-        // Seed example menu first (same as registration flow)
-        const catRows = await adminSql`
-          INSERT INTO menu_categories (name, sort_order, active, tenant_id)
-          VALUES ('Platillos', 1, true, ${slug})
-          ON CONFLICT DO NOTHING
-          RETURNING id
-        `;
-        if (catRows.length > 0) {
-          const categoryId = catRows[0].id;
-          await adminSql`
-            INSERT INTO menu_items (category_id, name, price, description, active, is_example, tenant_id)
-            VALUES
-              (${categoryId}, 'Ejemplo: Taco de Res', 45, 'Platillo de ejemplo', true, true, ${slug}),
-              (${categoryId}, 'Ejemplo: Agua de Jamaica', 25, 'Bebida de ejemplo', true, true, ${slug})
-          `;
-        }
+        // Seed a full realistic taqueria menu (8 categories, 35 items, modifiers, inventory)
+        await seedDemoMenu(adminSql, slug);
 
         const [run] = await adminSql`
           INSERT INTO stress_test_runs (tenant_id, config)
@@ -173,6 +160,7 @@ router.post('/provision', demoLimiter, async (req, res) => {
       success: true,
       subdomain: slug,
       demo_token: tokenRow.token,
+      demo_token_expires_at: tokenRow.expires_at,
     });
   } catch (error) {
     console.error('[Demo] Provision error:', error);
