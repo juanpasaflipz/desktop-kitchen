@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn } from "../components/FadeIn";
+import { WhatsAppCTA } from "../components/WhatsAppCTA";
 
 import en from "../messages/en.json";
 import es from "../messages/es.json";
@@ -965,6 +966,9 @@ const Home: NextPage = () => {
 
       {/* Demo Lead Capture Modal */}
       <DemoModal open={demoOpen} onClose={() => setDemoOpen(false)} t={t} />
+
+      {/* Floating WhatsApp CTA */}
+      <WhatsAppCTA locale={locale} />
     </>
   );
 };

@@ -88,8 +88,8 @@ app.use((req, _res, next) => {
 // Request metrics middleware — track throughput, error rates, latency
 app.use(requestMetricsMiddleware);
 
-// CORS — allow *.desktop.kitchen and localhost dev
-const CORS_ORIGIN_REGEX = /^(https?:\/\/(.*\.desktop\.kitchen|localhost(:\d+)?)|capacitor:\/\/localhost)$/;
+// CORS — allow *.desktop.kitchen, *.juanbertos.com, and localhost dev
+const CORS_ORIGIN_REGEX = /^(https?:\/\/(.*\.desktop\.kitchen|.*\.juanbertos\.com|localhost(:\d+)?)|capacitor:\/\/localhost)$/;
 app.use(cors({
   origin(origin, cb) {
     // Allow requests with no Origin header (curl, server-to-server, same-origin)
