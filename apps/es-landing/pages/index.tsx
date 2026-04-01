@@ -29,7 +29,7 @@ function FadeIn({
   );
 }
 
-const LEADS_API = "https://pos.desktop.kitchen/api/leads";
+const LEADS_API = "/api/leads";
 const WHATSAPP_PHONE = "5215512345678";
 const WHATSAPP_MESSAGE = "¡Hola! Quiero saber más sobre Juanberto's 🌯";
 
