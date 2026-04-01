@@ -292,7 +292,7 @@ export const post: BlogPost = {
       title: "Launch Your Loyalty Program This Week",
       text: "Desktop Kitchen includes digital stamp cards, SMS campaigns, referral tracking, and customer insights -- all built into your POS at no extra cost. Set it up in minutes and start turning first-time visitors into lifelong regulars.",
       buttonText: "Start free trial",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["fidelizar-clientes-delivery", "ia-en-la-cocina", "guia-completa-desktop-kitchen"],

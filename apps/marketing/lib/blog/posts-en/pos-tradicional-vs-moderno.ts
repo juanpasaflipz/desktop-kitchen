@@ -137,7 +137,7 @@ export const post: BlogPost = {
       title: "Leave your outdated POS behind",
       text: "Try Desktop Kitchen for free and discover how much money you are leaving on the table with your current system. No contracts, no hardware, no complications.",
       buttonText: "Start for free today",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "comisiones-rappi-uber-didi", "pantalla-cocina-eficiente"],

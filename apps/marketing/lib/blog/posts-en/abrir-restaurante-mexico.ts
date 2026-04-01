@@ -242,7 +242,7 @@ export const post: BlogPost = {
       title: "Launch Your Restaurant with the Right Technology",
       text: "Desktop Kitchen gives you a professional POS, kitchen display, inventory management, and delivery integration from day one -- for free. Focus your capital on what matters: great food and a solid team.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: [

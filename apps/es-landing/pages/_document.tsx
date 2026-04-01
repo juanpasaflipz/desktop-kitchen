@@ -17,9 +17,10 @@ class MyDocument extends Document {
             rel="stylesheet"
           />
           <meta name="theme-color" content="#DC2626" />
+          <meta name="robots" content="index, follow" />
           <meta
             name="description"
-            content="JUANBERTO'S — Los burritos californianos llegan a Roma Sur, CDMX. Carne asada. Papas adentro. Sin atajos. Apúntate a la lista."
+            content="JUANBERTO'S — Burritos californianos en Roma Sur, CDMX. Carne asada de verdad, papas frescas adentro, sin atajos. Próxima apertura en Coahuila 192. Apúntate a la lista."
           />
           <meta property="og:site_name" content="JUANBERTO'S" />
           <meta

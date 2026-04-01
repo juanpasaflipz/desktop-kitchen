@@ -127,7 +127,7 @@ export const post: BlogPost = {
       title: "Turn delivery customers into your own customers",
       text: "Stop giving your customers away to the platforms. With Desktop Kitchen you can build your own base of loyal customers with integrated CRM, loyalty, and SMS tools.",
       buttonText: "Try for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["marcas-virtuales-delivery", "comisiones-rappi-uber-didi", "pos-tradicional-vs-moderno"],

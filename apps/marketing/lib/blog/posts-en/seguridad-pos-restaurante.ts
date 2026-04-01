@@ -275,7 +275,7 @@ export const post: BlogPost = {
       title: "Secure Your Restaurant with Desktop Kitchen",
       text: "6-digit PINs, bcrypt hashing, brute-force lockout, role-based access, full audit logging, and RLS data isolation -- all built in from day one. Start your free account and see the difference a security-first POS makes.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "pos-tradicional-vs-moderno", "ia-en-la-cocina"],

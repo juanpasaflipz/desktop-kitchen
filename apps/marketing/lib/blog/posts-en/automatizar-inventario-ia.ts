@@ -128,7 +128,7 @@ export const post: BlogPost = {
       title: "Put your inventory on autopilot",
       text: "Let artificial intelligence handle your inventory while you focus on what matters: cooking and serving your customers. Try Desktop Kitchen for free.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["ia-en-la-cocina", "reducir-merma-restaurante", "guia-completa-desktop-kitchen"],

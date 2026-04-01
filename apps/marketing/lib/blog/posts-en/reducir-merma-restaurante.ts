@@ -173,7 +173,7 @@ export const post: BlogPost = {
       title: "Control Waste with Data, Not Intuition",
       text: "Desktop Kitchen gives you full visibility of your inventory, smart waste detection, and actionable reports. Start for free and recover what you have been losing.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["ia-en-la-cocina", "automatizar-inventario-ia", "pantalla-cocina-eficiente"],

@@ -135,7 +135,7 @@ export const post: BlogPost = {
       title: "Activate AI in Your Kitchen",
       text: "Desktop Kitchen includes artificial intelligence from the free plan. Start receiving upselling suggestions, shrinkage detection, and menu optimization from day one.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["automatizar-inventario-ia", "guia-completa-desktop-kitchen", "reducir-merma-restaurante"],

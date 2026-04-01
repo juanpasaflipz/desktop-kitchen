@@ -299,7 +299,7 @@ export const post: BlogPost = {
       title: "Activa tu programa de lealtad hoy",
       text: "Desktop Kitchen incluye tarjetas de sellos digitales, campanas de SMS y seguimiento de referidos integrados en tu punto de venta. Sin costos extra, sin integraciones complicadas. Empieza a fidelizar a tus clientes desde el primer dia.",
       buttonText: "Comenzar prueba gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["fidelizar-clientes-delivery", "ia-en-la-cocina", "guia-completa-desktop-kitchen"],

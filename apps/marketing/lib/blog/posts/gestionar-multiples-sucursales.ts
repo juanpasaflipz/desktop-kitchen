@@ -218,7 +218,7 @@ export const post: BlogPost = {
       title: "Prepara tu restaurante para crecer",
       text: "Desktop Kitchen esta disenado para escalar contigo. Desde tu primer local hasta tu decima sucursal, un solo sistema centralizado con datos aislados, reportes unificados y control total. Empieza gratis y crece cuando estes listo.",
       buttonText: "Crear cuenta gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "automatizar-inventario-ia", "pos-tradicional-vs-moderno"],

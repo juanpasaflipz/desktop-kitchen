@@ -126,7 +126,7 @@ export const post: BlogPost = {
       title: "Elimina los tickets perdidos de tu cocina",
       text: "Moderniza tu cocina con la pantalla de cocina de Desktop Kitchen. Sin hardware especial, sin instalacion complicada. Solo abre tu navegador y empieza a recibir pedidos.",
       buttonText: "Empieza gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "reducir-merma-restaurante", "pos-tradicional-vs-moderno"],

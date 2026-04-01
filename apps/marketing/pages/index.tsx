@@ -342,10 +342,7 @@ function PricingCard({
       >
         {cta}
       </button>
-      {highlighted && (
-        <p className="text-[11px] text-white/25 text-center mt-2 mb-4">{t.pricingComingSoon}</p>
-      )}
-      {!highlighted && <div className="mb-6" />}
+      <div className="mb-6" />
 
       <ul className="space-y-3 flex-1">
         {features.map((f, i) => (
@@ -792,6 +789,26 @@ const Home: NextPage = () => {
                   </FadeIn>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── SOCIAL PROOF / METRICS ─── */}
+        <section className="py-16 px-6 bg-neutral-950 border-y border-white/5">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+              {([1, 2, 3, 4] as const).map((n, i) => (
+                <FadeIn key={n} delay={i * 0.08}>
+                  <div className="text-center">
+                    <p className="text-3xl md:text-4xl font-black text-teal-400 tracking-tight">
+                      {(tAny as any)[`proofStat${n}`]}
+                    </p>
+                    <p className="text-sm text-white/40 mt-2">
+                      {(tAny as any)[`proofLabel${n}`]}
+                    </p>
+                  </div>
+                </FadeIn>
+              ))}
             </div>
           </div>
         </section>

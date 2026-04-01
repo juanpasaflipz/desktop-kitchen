@@ -235,7 +235,7 @@ export const post: BlogPost = {
       title: "Ready to Scale Your Restaurant?",
       text: "Desktop Kitchen gives you the multi-location infrastructure you need from day one. One dashboard, isolated data per branch, shared menus, consolidated reports. Start with your first location and scale when you are ready.",
       buttonText: "Start your free account",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "automatizar-inventario-ia", "pos-tradicional-vs-moderno"],

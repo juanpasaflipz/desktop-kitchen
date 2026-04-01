@@ -148,7 +148,7 @@ export const post: BlogPost = {
       title: "Know your real profitability by platform",
       text: "Set up Desktop Kitchen and activate Delivery Intelligence to see exactly how much you earn on Rappi, Uber Eats, and DiDi Food after commissions.",
       buttonText: "Try for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["que-es-ghost-kitchen", "marcas-virtuales-delivery", "reducir-merma-restaurante"],

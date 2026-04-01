@@ -146,7 +146,7 @@ export const post: BlogPost = {
       title: "Lanza tu Ghost Kitchen con Desktop Kitchen",
       text: "Configura tu cocina fantasma en 15 minutos. Menú, marcas virtuales, pantalla de cocina y reportes de rentabilidad — todo incluido en el plan gratuito.",
       buttonText: "Empezar gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["marcas-virtuales-delivery", "comisiones-rappi-uber-didi", "guia-completa-desktop-kitchen"],

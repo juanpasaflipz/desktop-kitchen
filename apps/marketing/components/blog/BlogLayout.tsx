@@ -99,7 +99,7 @@ export function BlogLayout({
             </Link>
           </div>
           <a
-            href="https://pos.desktop.kitchen/#/onboarding"
+            href="https://pos.desktop.kitchen/#/register"
             className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2 rounded transition-colors"
           >
             {locale === "es" ? "Prueba Gratis" : "Start Free"}
@@ -125,7 +125,7 @@ export function BlogLayout({
               <a className="hover:text-teal-500 transition-colors">Blog</a>
             </Link>
             <span className="text-white/10">|</span>
-            <a href="https://pos.desktop.kitchen/#/onboarding" className="hover:text-teal-500 transition-colors">
+            <a href="https://pos.desktop.kitchen/#/register" className="hover:text-teal-500 transition-colors">
               {locale === "es" ? "Demo en Vivo" : "Live Demo"}
             </a>
           </div>

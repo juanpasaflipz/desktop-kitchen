@@ -139,7 +139,7 @@ export const post: BlogPost = {
       title: "Configura tu POS en 15 minutos",
       text: "Crea tu cuenta gratuita y empieza a recibir pedidos hoy. Sin tarjeta de crédito, sin contratos, sin complicaciones.",
       buttonText: "Crear cuenta gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["que-es-ghost-kitchen", "pantalla-cocina-eficiente", "ia-en-la-cocina"],

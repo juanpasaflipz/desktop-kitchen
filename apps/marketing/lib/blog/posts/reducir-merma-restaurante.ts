@@ -173,7 +173,7 @@ export const post: BlogPost = {
       title: "Controla la merma con datos, no con intuición",
       text: "Desktop Kitchen te da visibilidad total de tu inventario, detección inteligente de merma y reportes accionables. Empieza gratis y recupera lo que estás perdiendo.",
       buttonText: "Empezar gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["ia-en-la-cocina", "automatizar-inventario-ia", "pantalla-cocina-eficiente"],

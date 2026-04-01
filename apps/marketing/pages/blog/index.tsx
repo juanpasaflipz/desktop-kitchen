@@ -104,7 +104,7 @@ export default function BlogIndex() {
             </h2>
             <p className="text-white/50 mb-8 max-w-lg mx-auto">{t.blogCtaSub}</p>
             <a
-              href="https://pos.desktop.kitchen/#/onboarding"
+              href="https://pos.desktop.kitchen/#/register"
               className="inline-block bg-teal-600 hover:bg-teal-700 text-white font-semibold px-8 py-4 rounded text-sm uppercase tracking-wider transition-colors"
             >
               {t.blogCtaButton}

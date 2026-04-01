@@ -128,7 +128,7 @@ export const post: BlogPost = {
       title: "Pon tu inventario en piloto automatico",
       text: "Deja que la inteligencia artificial se encargue de tu inventario mientras tu te enfocas en lo que importa: cocinar y atender a tus clientes. Prueba Desktop Kitchen gratis.",
       buttonText: "Empieza gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["ia-en-la-cocina", "reducir-merma-restaurante", "guia-completa-desktop-kitchen"],

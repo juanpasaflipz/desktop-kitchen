@@ -135,7 +135,7 @@ export const post: BlogPost = {
       title: "Activa la IA en tu cocina",
       text: "Desktop Kitchen incluye inteligencia artificial desde el plan gratuito. Empieza a recibir sugerencias de upselling, detección de merma y optimización de menú desde el primer día.",
       buttonText: "Empezar gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["automatizar-inventario-ia", "guia-completa-desktop-kitchen", "reducir-merma-restaurante"],

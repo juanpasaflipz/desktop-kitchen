@@ -287,7 +287,7 @@ export const post: BlogPost = {
       title: "Lanza tu restaurante con la tecnología correcta desde el día uno",
       text: "Configura tu POS en 15 minutos, empieza a vender hoy y toma decisiones con datos reales. Sin inversión inicial, sin contratos y sin complicaciones.",
       buttonText: "Crear cuenta gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "pos-tradicional-vs-moderno", "reducir-merma-restaurante"],

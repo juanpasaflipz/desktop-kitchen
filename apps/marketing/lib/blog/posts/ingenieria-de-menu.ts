@@ -288,7 +288,7 @@ export const post: BlogPost = {
       title: "Optimiza tu menu con datos en tiempo real",
       text: "Desktop Kitchen analiza automaticamente la rentabilidad y popularidad de cada platillo, sugiere combos inteligentes y te alerta cuando un producto necesita atencion. Deja que los datos diseinen tu menu mas rentable.",
       buttonText: "Empieza tu prueba gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["reducir-merma-restaurante", "ia-en-la-cocina", "comisiones-rappi-uber-didi"],

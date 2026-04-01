@@ -126,7 +126,7 @@ export const post: BlogPost = {
       title: "Eliminate lost tickets from your kitchen",
       text: "Modernize your kitchen with Desktop Kitchen's Kitchen Display System. No special hardware, no complicated setup. Just open your browser and start receiving orders.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "reducir-merma-restaurante", "pos-tradicional-vs-moderno"],

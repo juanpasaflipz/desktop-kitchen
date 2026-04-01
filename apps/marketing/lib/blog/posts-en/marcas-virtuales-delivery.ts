@@ -119,7 +119,7 @@ export const post: BlogPost = {
       title: "Multiply your sales with virtual brands",
       text: "Set up and manage all your virtual brands from a single system. Desktop Kitchen gives you the tools to operate multiple concepts without the headaches.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["que-es-ghost-kitchen", "comisiones-rappi-uber-didi", "fidelizar-clientes-delivery"],

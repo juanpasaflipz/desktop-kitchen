@@ -85,7 +85,44 @@ const Home: NextPage = () => {
   return (
     <>
       <Head>
-        <title>JUANBERTO&apos;S — Burritos Californianos — Roma Sur, CDMX</title>
+        <title>JUANBERTO&apos;S — Burritos Californianos en Roma Sur, CDMX | Próxima Apertura</title>
+        <link rel="canonical" href="https://es.juanbertos.com" />
+        <link rel="alternate" hrefLang="es" href="https://es.juanbertos.com" />
+        <link rel="alternate" hrefLang="en" href="https://www.juanbertos.com" />
+        <link rel="alternate" hrefLang="x-default" href="https://www.juanbertos.com" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Restaurant",
+              name: "JUANBERTO'S",
+              description:
+                "Burritos californianos en Roma Sur, CDMX. Carne asada. Papas adentro. Sin atajos.",
+              url: "https://es.juanbertos.com",
+              telephone: "",
+              email: "hello@juanbertos.com",
+              servesCuisine: ["Mexican", "California Burritos"],
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: "Coahuila 192",
+                addressLocality: "Roma Sur",
+                addressRegion: "CDMX",
+                addressCountry: "MX",
+              },
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: 19.4058,
+                longitude: -99.1604,
+              },
+              openingHoursSpecification: [],
+              image: "https://es.juanbertos.com/logo.png",
+              sameAs: [
+                "https://www.instagram.com/juanbertos.california.burritos",
+              ],
+            }),
+          }}
+        />
       </Head>
 
       {/* Top accent bar */}

@@ -127,7 +127,7 @@ export const post: BlogPost = {
       title: "Convierte clientes de delivery en clientes propios",
       text: "Deja de regalar tus clientes a las plataformas. Con Desktop Kitchen puedes construir tu propia base de clientes leales con herramientas de CRM, lealtad y SMS integradas.",
       buttonText: "Prueba gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["marcas-virtuales-delivery", "comisiones-rappi-uber-didi", "pos-tradicional-vs-moderno"],

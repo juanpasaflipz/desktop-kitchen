@@ -274,7 +274,7 @@ export const post: BlogPost = {
       title: "Engineer Your Menu with Data, Not Guesswork",
       text: "Desktop Kitchen automatically classifies your menu items, suggests high-margin combos, and alerts you when ingredient costs shift your profitability. Start for free and see your menu matrix in action.",
       buttonText: "Start for free",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["reducir-merma-restaurante", "ia-en-la-cocina", "comisiones-rappi-uber-didi"],

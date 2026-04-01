@@ -234,7 +234,7 @@ export const post: BlogPost = {
       title: "Protege tu restaurante con un POS seguro",
       text: "Desktop Kitchen incluye PINs de 6 digitos con bcrypt, bloqueo por fuerza bruta, alertas de seguridad, roles granulares, audit log inmutable y aislamiento de datos. Todo incluido, sin costo extra.",
       buttonText: "Crear cuenta segura gratis",
-      buttonUrl: "https://pos.desktop.kitchen/#/onboarding",
+      buttonUrl: "https://pos.desktop.kitchen/#/register",
     },
   ],
   relatedSlugs: ["guia-completa-desktop-kitchen", "pos-tradicional-vs-moderno", "ia-en-la-cocina"],
